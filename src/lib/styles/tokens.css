@@ -1,0 +1,121 @@
+/*
+ * Wolny Namiot — design tokens
+ * Lift z VRS v2 brand-system-v3 + podmiana palette + nowy --color-pop-green
+ * Architektura hierarchii: Alert (primary) / Active (accent) / Ambient (subtle)
+ */
+
+:root {
+	/* ─────────────────────────────────────────────────────────────
+	 * WN brand palette (5 colors + green accent)
+	 * ───────────────────────────────────────────────────────────── */
+	--wn-plotno: #f5f1e8; /* off-white canvas (main bg) */
+	--wn-plotno-2: #faf7ef;
+	--wn-atrament: #1a1d2e; /* dark navy (main ink/text) */
+	--wn-atrament-2: #2a2d42;
+	--wn-zarowka: #f5d35c; /* warm yellow (highlights) */
+	--wn-pomidor: #e8544f; /* tomato red (alerts/pop) */
+	--wn-granat: #1e3a5f; /* deep navy (primary accent) */
+	--wn-granat-soft: #d8e0ec;
+	--wn-granat-ink: #0d1f38;
+	--wn-zielony: #3ab68d; /* NEW — CTA/success accent */
+	--wn-zielony-soft: #d5f0e4;
+	--wn-zielony-ink: #1a6b51;
+
+	/* ─────────────────────────────────────────────────────────────
+	 * VRS v2 token aliases (lift-compatible)
+	 * Dzięki temu komponenty z brand-system-v3 działają 1:1
+	 * ───────────────────────────────────────────────────────────── */
+	--ink: var(--wn-atrament);
+	--ink-2: var(--wn-atrament-2);
+	--ink-dark: #0d1019;
+	--mute: #555a6e;
+	--dim: #8a8f9f;
+	--line: #e2ddd2;
+	--line-2: #ede9de;
+	--paper: var(--wn-plotno);
+	--paper-2: var(--wn-plotno-2);
+	--card: #ffffff;
+
+	/* Primary accent = WN granat (zamiast VRS red) */
+	--red: var(--wn-granat);
+	--red-soft: var(--wn-granat-soft);
+	--red-ink: var(--wn-granat-ink);
+
+	/* Status colors */
+	--ok: var(--wn-zielony);
+	--warn: var(--wn-zarowka);
+	--danger: var(--wn-pomidor);
+
+	/* NEW — green pop accent (CTA, success, active status) */
+	--color-pop-green: var(--wn-zielony);
+	--color-pop-green-soft: var(--wn-zielony-soft);
+	--color-pop-green-ink: var(--wn-zielony-ink);
+
+	/* ─────────────────────────────────────────────────────────────
+	 * Category palette (status namiotu)
+	 * ───────────────────────────────────────────────────────────── */
+	--c-available: var(--wn-zielony); /* dostępny */
+	--c-reserved: var(--wn-zarowka); /* zarezerwowany */
+	--c-in-use: var(--wn-granat); /* w użyciu */
+	--c-maintenance: #e89a4f; /* serwis */
+	--c-broken: var(--wn-pomidor); /* uszkodzony */
+	--c-transport: #8b5cf6; /* w transporcie */
+	--c-retired: var(--mute); /* wycofany */
+	--c-normal: var(--wn-atrament-2);
+
+	/* ─────────────────────────────────────────────────────────────
+	 * Radii
+	 * ───────────────────────────────────────────────────────────── */
+	--r-sm: 6px;
+	--r-md: 10px;
+	--r-lg: 16px;
+	--r-xl: 24px;
+
+	/* ─────────────────────────────────────────────────────────────
+	 * Typography — WN brand fonts
+	 * display: Instrument Serif (italic accents), sans: Inter, mono: JetBrains Mono
+	 * Archivo Black do hero / nagłówków punktowych
+	 * ───────────────────────────────────────────────────────────── */
+	--font-display: 'Instrument Serif', Georgia, serif;
+	--font-hero: 'Archivo Black', 'Inter', -apple-system, sans-serif;
+	--font-sans:
+		'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+	/* ─────────────────────────────────────────────────────────────
+	 * Shadows + transitions
+	 * ───────────────────────────────────────────────────────────── */
+	--shadow-sm: 0 1px 2px rgba(26, 29, 46, 0.05);
+	--shadow-md: 0 4px 8px rgba(26, 29, 46, 0.08);
+	--shadow-lg: 0 10px 25px rgba(26, 29, 46, 0.12);
+	--transition: 150ms ease;
+}
+
+/* Base reset + body */
+* {
+	box-sizing: border-box;
+}
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+body {
+	background: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-sans);
+	font-size: 15px;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+a {
+	color: inherit;
+}
+
+/* Focus-visible (a11y) */
+*:focus-visible {
+	outline: 3px solid var(--wn-granat);
+	outline-offset: 2px;
+	border-radius: 3px;
+}

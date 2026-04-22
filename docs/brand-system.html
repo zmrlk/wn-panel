@@ -1,0 +1,2022 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VRS — Brand System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1D1D1B;
+    --ink-2:#2C2E31;
+    --mute:#555555;
+    --dim:#888888;
+    --line:#E5E5E5;
+    --line-2:#F0F1F3;
+    --paper:#FFFFFF;
+    --paper-2:#FAFAFA;
+    --card:#FFFFFF;
+    --ink-dark:#0F1011;
+    --red:#DC2626;
+    --red-soft:#FEE2E2;
+    --red-ink:#7A1515;
+
+    /* category palette */
+    --c-biuro:#37E8FB;
+    --c-dom:#42F0CD;
+    --c-nad:#8B3AF8;
+    --c-urlop:#FF4013;
+    --c-szkol:#00A3D7;
+    --c-teren:#87E250;
+    --c-zast:#F5EC00;
+    --c-normal:#00F9A4;
+
+    --ok:#16A34A;
+    --warn:#EA580C;
+    --danger:#DC2626;
+
+    --r-sm:6px;
+    --r-md:10px;
+    --r-lg:16px;
+    --r-xl:24px;
+
+    --font-display:'Fraunces', Georgia, serif;
+    --font-sans:'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-sans);
+    font-size:15px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  a{color:inherit}
+  ::selection{background:var(--red);color:#fff}
+
+  /* ===== Layout ===== */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px}
+  .section{padding:140px 0;border-top:1px solid var(--line)}
+  .section:first-of-type{border-top:0}
+  .section-num{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.18em;
+    color:var(--mute);
+    text-transform:uppercase;
+    margin-bottom:28px;
+    display:flex;align-items:center;gap:14px;
+  }
+  .section-num::after{content:"";flex:1;height:1px;background:var(--line)}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.18em;
+    color:var(--mute);
+    text-transform:uppercase;
+  }
+  .eyebrow-serif{
+    font-family:var(--font-display);
+    font-style:italic;
+    font-weight:300;
+    font-size:15px;
+    color:var(--mute);
+    letter-spacing:0;
+  }
+  h1,h2,h3{font-family:var(--font-display);font-weight:400;letter-spacing:-0.01em;color:var(--ink);margin:0}
+  h2{font-size:56px;line-height:1.02;letter-spacing:-0.025em;margin-bottom:24px}
+  h2 em{font-style:italic;font-weight:300;color:var(--red)}
+  h3{font-size:28px;line-height:1.15;margin-bottom:12px}
+  p{margin:0 0 16px;max-width:62ch;color:var(--ink-2)}
+  .lede{font-size:20px;line-height:1.5;color:var(--ink-2);max-width:60ch;font-weight:300}
+
+  /* ===== Hero ===== */
+  .hero{
+    padding:80px 0 120px;
+    position:relative;
+  }
+  .hero-top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:80px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:80px;
+  }
+  .hero-mark{display:flex;align-items:center;gap:14px}
+  .hero-mark .dot{
+    width:14px;height:14px;border-radius:50%;
+    background:var(--red);
+    box-shadow:0 0 0 4px rgba(220,38,38,.12);
+  }
+  .hero-mark strong{font-weight:600;letter-spacing:-0.01em;font-size:16px}
+  .hero-nav{display:flex;gap:28px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);align-items:center}
+  .hero-nav a{text-decoration:none;transition:color .2s}
+  .hero-nav a:hover{color:var(--ink)}
+  .hero-nav-cta{color:var(--red) !important;padding:6px 12px;border:1px solid var(--red);border-radius:var(--r-sm);transition:all .2s}
+  .hero-nav-cta:hover{background:var(--red);color:#fff !important}
+
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1fr 380px;
+    gap:80px;
+    align-items:end;
+  }
+  .hero h1{
+    font-size:128px;
+    line-height:0.92;
+    letter-spacing:-0.045em;
+    font-weight:300;
+    margin-bottom:32px;
+  }
+  .hero h1 em{font-style:italic;color:var(--red);font-weight:400}
+  .hero-meta{font-family:var(--font-mono);font-size:12px;color:var(--mute);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:40px}
+  .hero-side{
+    font-size:14px;line-height:1.6;color:var(--ink-2);
+    border-left:1px solid var(--line);padding-left:28px;
+  }
+  .hero-side dl{display:grid;grid-template-columns:auto 1fr;gap:14px 20px;margin:0}
+  .hero-side dt{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--mute);padding-top:3px}
+  .hero-side dd{margin:0;color:var(--ink)}
+
+  /* ===== 01 Essence ===== */
+  .essence-grid{
+    display:grid;
+    grid-template-columns: 2fr 1fr;
+    gap:100px;
+    align-items:start;
+  }
+  .manifesto{
+    font-family:var(--font-display);
+    font-weight:300;
+    font-size:42px;
+    line-height:1.2;
+    letter-spacing:-0.02em;
+    color:var(--ink);
+    max-width:18ch;
+  }
+  .manifesto em{font-style:italic;color:var(--red);font-weight:400}
+  .manifesto-meta{margin-top:48px;padding-top:28px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px}
+  .mm-num{font-family:var(--font-display);font-size:48px;line-height:1;color:var(--ink);font-weight:400;letter-spacing:-0.03em}
+  .mm-lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--mute);margin-top:8px}
+
+  .principles{display:flex;flex-direction:column;gap:32px}
+  .principle{border-top:1px solid var(--line);padding-top:20px}
+  .principle b{display:block;font-weight:500;font-size:14px;margin-bottom:6px}
+  .principle span{font-size:13px;color:var(--mute);line-height:1.55}
+
+  /* ===== 02 Logo ===== */
+  .logo-grid{display:grid;grid-template-columns: 1.2fr 1fr;gap:60px;align-items:stretch}
+  .logo-big{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    padding:80px 60px;
+    display:flex;align-items:center;justify-content:center;
+    min-height:360px;
+  }
+  .logo-big svg{width:100%;height:auto;max-width:420px}
+  .logo-specs{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .logo-spec{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:28px;display:flex;flex-direction:column;justify-content:space-between;
+    min-height:170px;
+  }
+  .logo-spec .cap{font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--mute)}
+  .logo-spec .mark{display:flex;align-items:center;justify-content:center;flex:1}
+
+  /* Wordmark */
+  .wordmark{
+    font-family:var(--font-display);
+    font-weight:400;
+    font-size:96px;
+    line-height:0.9;
+    letter-spacing:-0.04em;
+    color:var(--ink);
+  }
+  .wordmark .dot{color:var(--red)}
+  .wordmark-sm{font-size:32px}
+  .wordmark-xs{font-size:18px}
+
+  /* Sygnet: stylized V with red corner */
+  .sygnet{
+    width:120px;height:120px;
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .sygnet .glyph{
+    font-family:var(--font-display);
+    font-weight:400;
+    font-size:96px;
+    line-height:1;
+    letter-spacing:-0.05em;
+    color:var(--ink);
+  }
+  .sygnet .mark{
+    position:absolute;
+    top:16px;right:16px;
+    width:12px;height:12px;border-radius:50%;
+    background:var(--red);
+  }
+  .sygnet.inv{background:var(--ink);border-radius:var(--r-md)}
+  .sygnet.inv .glyph{color:var(--paper)}
+  .sygnet.red{background:var(--red);border-radius:var(--r-md)}
+  .sygnet.red .glyph{color:#fff}
+  .sygnet.red .mark{background:#fff}
+
+  /* ===== 03 Color ===== */
+  .color-primary{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:16px;
+    margin-bottom:32px;
+  }
+  .swatch{
+    border-radius:var(--r-lg);
+    padding:32px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    min-height:220px;
+    border:1px solid var(--line);
+    background:var(--card);
+  }
+  .swatch.red-lg{background:var(--red);color:#fff;border-color:var(--red)}
+  .swatch.ink-lg{background:var(--ink-dark);color:#F4F4F5;border-color:var(--ink-dark)}
+  .swatch-name{font-family:var(--font-display);font-size:28px;font-weight:400;letter-spacing:-0.02em}
+  .swatch-vals{font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;opacity:0.8;line-height:1.8}
+
+  .categories{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:12px;
+    margin-bottom:40px;
+  }
+  .cat{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    padding:24px 24px 22px;
+    position:relative;
+    overflow:hidden;
+    min-height:170px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    transition:transform .25s cubic-bezier(0.16,1,0.3,1), border-color .25s, box-shadow .25s;
+  }
+  .cat:hover{transform:translateY(-2px);border-color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.06)}
+  .cat::before{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(145deg, var(--cat-color) 0%, transparent 65%);
+    opacity:0.18;pointer-events:none;
+  }
+  .cat-ghost{
+    position:absolute;top:-24px;right:-20px;
+    font-size:130px;line-height:1;
+    opacity:0.22;pointer-events:none;
+    transform:rotate(-8deg);
+    transition:transform .4s cubic-bezier(0.16,1,0.3,1), opacity .3s;
+  }
+  .cat:hover .cat-ghost{transform:rotate(-4deg) scale(1.06);opacity:0.3}
+  .cat-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .cat-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .cat-dot{width:10px;height:10px;border-radius:50%;background:var(--cat-color);box-shadow:0 0 0 3px color-mix(in oklab, var(--cat-color) 24%, transparent)}
+  .cat-name{font-family:var(--font-sans);font-weight:600;font-size:15px;letter-spacing:-0.005em;color:var(--ink);position:relative;z-index:1;line-height:1.2;margin-top:auto}
+  .cat-hex{font-family:var(--font-mono);font-size:11px;color:var(--mute);margin-top:4px;letter-spacing:0.04em;position:relative;z-index:1}
+
+  .status-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:40px}
+  .status{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:18px 20px;display:flex;align-items:center;gap:14px;
+  }
+  .status-dot{width:10px;height:10px;border-radius:50%}
+  .status-name{font-weight:500;font-size:13px}
+  .status-hex{font-family:var(--font-mono);font-size:11px;color:var(--mute);margin-left:auto}
+
+  .dark-demo{
+    background:#0F1011;
+    color:#E6E4DF;
+    border-radius:var(--r-lg);
+    padding:40px;
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:40px;
+    align-items:center;
+  }
+  .dark-demo .eyebrow{color:#6B6E73}
+  .dark-demo h3{color:#F7F4EE;margin-bottom:8px;font-family:var(--font-display);font-weight:400}
+  .dark-demo p{color:#9A9DA3;font-size:14px}
+  .dark-swatches{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .dark-sw{
+    padding:14px;border-radius:var(--r-sm);
+    font-family:var(--font-mono);font-size:10px;
+  }
+
+  /* ===== 04 Typography ===== */
+  .type-spec{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:60px;
+    margin-bottom:60px;
+  }
+  .type-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    padding:40px;
+  }
+  .type-sample{font-size:96px;line-height:1;letter-spacing:-0.03em;margin-bottom:24px}
+  .type-sample.mono{font-family:var(--font-mono);font-size:72px;font-weight:500}
+  .type-sample.sans{font-family:var(--font-sans);font-weight:600;font-size:80px}
+  .type-meta{display:flex;justify-content:space-between;padding-top:20px;border-top:1px solid var(--line)}
+  .type-meta span{font-family:var(--font-mono);font-size:11px;color:var(--mute);letter-spacing:0.06em}
+
+  .type-scale{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:40px;
+  }
+  .scale-row{
+    display:grid;grid-template-columns: 60px 1fr 160px;
+    align-items:baseline;gap:24px;
+    padding:14px 0;border-bottom:1px solid var(--line-2);
+  }
+  .scale-row:last-child{border-bottom:0}
+  .scale-size{font-family:var(--font-mono);font-size:11px;color:var(--mute);letter-spacing:0.06em}
+  .scale-use{font-family:var(--font-display);font-style:italic;font-weight:300;font-size:13px;color:var(--mute);text-align:right;letter-spacing:0}
+  .scale-sample{color:var(--ink)}
+  .s-10{font-size:10px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase}
+  .s-11{font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase}
+  .s-12{font-size:12px}
+  .s-13{font-size:13px}
+  .s-14{font-size:14px}
+  .s-16{font-size:16px}
+  .s-18{font-size:18px;font-weight:600;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+  .s-22{font-size:22px;font-weight:600}
+  .s-28{font-size:28px;font-weight:700;font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+
+  /* ===== 05 Tokens ===== */
+  .tokens-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+  .tok-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:32px;
+  }
+  .tok-title{font-family:var(--font-mono);font-size:11px;font-weight:600;margin-bottom:22px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink);display:flex;align-items:baseline;gap:10px}
+  .tok-title em{font-family:var(--font-display);font-style:italic;color:var(--mute);font-weight:300;font-size:14px;letter-spacing:0;text-transform:none}
+  .tok-row{display:flex;align-items:center;gap:16px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+  .tok-row:last-child{border-bottom:0}
+  .tok-lbl{font-family:var(--font-mono);font-size:11px;color:var(--mute);min-width:80px;letter-spacing:0.06em}
+  .tok-val{font-family:var(--font-mono);font-size:12px;color:var(--ink)}
+  .tok-viz{margin-left:auto}
+
+  .sp-box{background:var(--ink);border-radius:2px;height:10px;opacity:0.85}
+  .radius-box{width:60px;height:40px;background:var(--paper-2);border:1px solid var(--line)}
+  .shadow-box{width:60px;height:40px;background:var(--card);border-radius:var(--r-sm)}
+  .sh-1{box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .sh-2{box-shadow:0 2px 6px rgba(0,0,0,.06)}
+  .sh-3{box-shadow:0 8px 24px rgba(0,0,0,.08)}
+  .sh-4{box-shadow:0 16px 48px rgba(0,0,0,.12)}
+
+  .motion-bar{height:6px;background:var(--line-2);border-radius:3px;width:120px;overflow:hidden;position:relative}
+  .motion-bar::after{
+    content:"";position:absolute;left:0;top:0;bottom:0;width:30%;background:var(--ink);border-radius:3px;
+    animation:slide 3s cubic-bezier(0.16,1,0.3,1) infinite;
+  }
+  .motion-bar.fast::after{animation-duration:0.6s}
+  .motion-bar.normal::after{animation-duration:1.2s}
+  .motion-bar.slow::after{animation-duration:2.4s}
+  .motion-bar.lazy::after{animation-duration:4s}
+  @keyframes slide{
+    0%{left:-30%}
+    50%{left:100%}
+    100%{left:100%}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .motion-bar::after{animation:none}
+  }
+
+  /* ===== 06 Icons (emoji) ===== */
+  .icon-grid{
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    gap:0;
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    overflow:hidden;
+    background:var(--card);
+  }
+  .icn{
+    aspect-ratio:1;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:12px;
+    border-right:1px solid var(--line-2);
+    border-bottom:1px solid var(--line-2);
+    padding:18px 10px;
+    position:relative;
+    transition:background .2s;
+  }
+  .icn:hover{background:#F8F9FA}
+  .icn:nth-child(8n){border-right:0}
+  .icn:nth-last-child(-n+8){border-bottom:0}
+  .icn svg{width:26px;height:26px;stroke:var(--ink);stroke-width:1.3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .icn-lbl{font-family:var(--font-mono);font-size:10px;color:var(--mute);letter-spacing:0.08em;text-transform:uppercase}
+  @media(max-width:1100px){.icon-grid{grid-template-columns:repeat(4,1fr)}.icn:nth-child(8n){border-right:1px solid var(--line-2)}.icn:nth-child(4n){border-right:0}.icn:nth-last-child(-n+8){border-bottom:1px solid var(--line-2)}.icn:nth-last-child(-n+4){border-bottom:0}}
+
+  .emoji-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+  }
+  .emo{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:24px 24px 22px;
+    position:relative;overflow:hidden;
+    min-height:150px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    transition:transform .25s cubic-bezier(0.16,1,0.3,1),border-color .25s,box-shadow .25s;
+  }
+  .emo:hover{transform:translateY(-2px);border-color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.05)}
+  .emo-ghost{
+    position:absolute;top:-18px;right:-14px;
+    font-size:110px;line-height:1;
+    opacity:0.20;pointer-events:none;
+    transform:rotate(-8deg);
+    transition:transform .4s cubic-bezier(0.16,1,0.3,1),opacity .3s;
+  }
+  .emo:hover .emo-ghost{transform:rotate(-4deg) scale(1.06);opacity:0.28}
+  .emo-top{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .emo-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .emo-name{font-family:var(--font-sans);font-weight:600;font-size:15px;letter-spacing:-0.005em;color:var(--ink);position:relative;z-index:1;line-height:1.2;margin-top:auto}
+  .emo-code{font-family:var(--font-mono);font-size:11px;color:var(--mute);margin-top:4px;letter-spacing:0.04em;position:relative;z-index:1}
+
+  /* ===== 07 UI preview ===== */
+  .ui-showcase{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:var(--r-xl);
+    padding:40px;
+  }
+  .dashboard-mock{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:var(--r-lg);
+    padding:24px;
+    font-size:13px;
+  }
+  /* TOP HEADER */
+  .dm-top{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 18px;
+    border:1px solid var(--line);border-radius:var(--r-md);
+    margin-bottom:12px;
+    position:relative;overflow:hidden;
+  }
+  .dm-top::after{
+    content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;
+    background:radial-gradient(circle,rgba(220,38,38,.08),transparent 70%);
+    pointer-events:none;
+  }
+  .dm-avatar{
+    width:44px;height:44px;border-radius:50%;
+    background:#FDE68A;
+    display:flex;align-items:center;justify-content:center;
+    font-size:22px;
+    box-shadow:0 0 0 2px rgba(255,255,255,.8);
+    flex-shrink:0;
+  }
+  .dm-eyebrow{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .dm-name{font-size:18px;font-weight:700;color:var(--ink);line-height:1.2;margin-top:2px}
+  .dm-sub{font-size:11px;color:var(--mute);margin-top:2px}
+
+  /* Row 2 */
+  .dm-row2{
+    display:grid;grid-template-columns:1fr 220px 90px;gap:8px;margin-bottom:8px;
+  }
+  .dm-hero{
+    border:1px solid var(--line);border-radius:var(--r-md);
+    padding:18px;
+    background:linear-gradient(135deg,#fff 0%,#fff 55%,#FEE2E2 100%);
+  }
+  .dm-hero-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .dm-hero-head .cap{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .dm-hero-head .chip{font-size:9px;padding:2px 6px;background:#FEE2E2;color:var(--red);font-weight:600;border-radius:3px}
+  .dm-hero-num{font-family:var(--font-mono);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;color:var(--ink)}
+  .dm-hero-sub{font-size:10px;color:var(--mute);margin-top:4px}
+  .dm-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:14px;background:var(--line-2)}
+  .dm-legend{display:flex;gap:10px;margin-top:8px;font-size:9px;color:var(--mute);flex-wrap:wrap}
+  .dm-legend span{display:inline-flex;align-items:center;gap:4px}
+  .dm-legend i{width:6px;height:6px;border-radius:50%;display:inline-block}
+
+  .dm-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .dm-mini{
+    border:1px solid var(--line);border-radius:var(--r-sm);padding:10px;
+    display:flex;flex-direction:column;justify-content:center;
+  }
+  .dm-mini .lbl{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .dm-mini .val{font-family:var(--font-mono);font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+
+  .dm-cta{display:flex;flex-direction:column;gap:6px}
+  .dm-cta .btn{
+    flex:1;display:flex;align-items:center;justify-content:center;
+    border-radius:var(--r-sm);font-size:10px;font-weight:600;padding:6px;text-align:center;
+    line-height:1.2;
+  }
+  .dm-cta .btn.pri{background:var(--red);color:#fff}
+  .dm-cta .btn.sec{background:#FFF7ED;color:var(--warn);border:1px solid rgba(234,88,12,.3)}
+
+  /* Row C */
+  .dm-rowc{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+  .dm-tile{
+    border:1px solid var(--line);border-radius:var(--r-md);padding:14px;height:130px;
+    display:flex;flex-direction:column;
+  }
+  .dm-tile-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+  .dm-tile-head .ic{font-size:14px}
+  .dm-tile-head .t{font-size:11px;font-weight:600}
+  .dm-tile-head .n{margin-left:auto;font-family:var(--font-mono);font-size:9px;color:var(--mute)}
+  .dm-tile-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .dm-tile-empty .e{font-size:24px}
+  .dm-tile-empty .t{font-size:10px;color:var(--mute);text-align:center}
+
+  /* Bento preview */
+  .bento{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    grid-auto-rows:120px;
+    gap:10px;
+    margin-top:24px;
+  }
+  .bento-cell{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:22px;overflow:hidden;position:relative;
+    display:flex;flex-direction:column;justify-content:space-between;
+    transition:transform .25s cubic-bezier(0.16,1,0.3,1),border-color .25s,box-shadow .25s;
+  }
+  .bento-cell:hover{transform:translateY(-2px);border-color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.05)}
+  .bento-hero{grid-column:span 2;grid-row:span 2;background:linear-gradient(145deg,#FFF1EE,var(--card) 65%)}
+  .bento-wide{grid-column:span 2}
+  .bento-tall{grid-row:span 2}
+  .bento .cap{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .bento .num{font-family:var(--font-sans);font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;color:var(--ink)}
+  .bento .num.big{font-size:56px;color:var(--red);letter-spacing:-0.03em}
+  .bento .hint{font-family:var(--font-mono);font-size:10px;color:var(--mute);letter-spacing:0.04em}
+
+  /* Ambient variants — hierarchy of attention */
+  .dm-tile.ambient{background:var(--paper-2);border-style:dashed;color:var(--mute)}
+  .dm-tile.ambient .dm-tile-head .t{color:var(--mute);font-weight:500}
+  .dm-tile-ambient-body{flex:1;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--mute);font-style:italic;text-align:center;line-height:1.4}
+  .bento-cell.ambient{background:var(--paper-2);border-style:dashed}
+  .bento-cell.ambient .num{color:var(--mute) !important;font-size:20px !important;font-weight:500}
+  .bento-cell.ambient .cap{color:var(--dim)}
+  .bento-cell.ambient .hint{color:var(--dim)}
+
+  /* Active tile (default state highlighted) */
+  .dm-tile.active-tile{border-color:var(--ink);box-shadow:var(--sh-2,0 2px 8px rgba(0,0,0,0.04))}
+
+  /* Alert tile */
+  .dm-tile.alert-tile{border-color:var(--red);background:linear-gradient(180deg,rgba(220,38,38,0.06),var(--card) 50%)}
+  .dm-tile.alert-tile .dm-tile-head .t{color:var(--red);font-weight:600}
+
+  /* Sparkline */
+  .spark{width:100%;height:40px;display:block}
+
+  /* ===== 08 Voice ===== */
+  .voice-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  }
+  .voice-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:32px;
+  }
+  .voice-bad, .voice-good{padding:16px;border-radius:var(--r-sm);font-size:14px;margin-bottom:10px}
+  .voice-bad{background:#FEF2F2;color:var(--red-ink);text-decoration:line-through;text-decoration-color:rgba(220,38,38,.4);opacity:0.8}
+  .voice-good{background:#F0FDF4;color:#14532D}
+  .voice-good::before{content:"→ ";font-weight:600}
+
+  .tones{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:40px}
+  .tone{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:24px;
+  }
+  .tone h4{margin:0 0 4px;font-family:var(--font-display);font-weight:400;font-size:22px;letter-spacing:-0.01em}
+  .tone .when{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute);margin-bottom:16px}
+  .tone .ex{font-size:14px;color:var(--ink-2);line-height:1.5;font-style:italic}
+
+  /* ===== 10 Applications ===== */
+  .apps-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .app{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:32px;display:flex;flex-direction:column;gap:20px;min-height:240px;
+    position:relative;overflow:hidden;
+    transition:transform .2s cubic-bezier(0.16,1,0.3,1),border-color .2s;
+  }
+  .app:hover{transform:translateY(-2px);border-color:var(--ink)}
+  .app.primary{background:var(--ink);color:var(--paper)}
+  .app.primary .app-hex{color:#fff;opacity:0.9}
+  .app.primary p{color:#9A9DA3}
+  .app-head{display:flex;align-items:baseline;gap:12px}
+  .app-hex{font-family:var(--font-mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--mute)}
+  .app h3{font-size:32px;margin:0}
+  .app-desc{font-size:14px;line-height:1.5;color:var(--ink-2);margin-top:auto}
+  .app-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+    padding:4px 10px;border-radius:99px;border:1px solid var(--line);
+    color:var(--mute);align-self:flex-start;
+  }
+  .app.primary .app-badge{border-color:rgba(255,255,255,.2);color:#9A9DA3}
+  .app.primary .app-badge.live{background:var(--red);color:#fff;border-color:var(--red)}
+
+  /* App mini-preview tile inside app card */
+  .app-preview{
+    margin-top:16px;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:14px 16px;display:flex;flex-direction:column;gap:8px;
+  }
+  .app.primary .app-preview{background:#252629;border-color:rgba(255,255,255,.08)}
+  .app-preview-head{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mute)}
+  .app.primary .app-preview-head{color:#9A9DA3}
+  .app-preview-num{font-family:var(--font-mono);margin-left:auto;font-size:10px}
+  .app-preview-bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;display:flex;gap:1px}
+  .app-preview-bar > div{height:100%}
+
+  /* Case study: ScrollTile × 4 */
+  .case-study{
+    margin-top:60px;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--r-xl);
+    padding:60px;
+  }
+  .case-head{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end;margin-bottom:40px}
+  .case-head h3{font-size:38px;line-height:1.1;letter-spacing:-0.02em}
+  .case-head h3 em{color:var(--red);font-style:italic}
+  .case-head p{font-size:15px;color:var(--ink-2);line-height:1.6;max-width:40ch;margin:0}
+  .case-4grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .case-tile{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:20px;min-height:170px;display:flex;flex-direction:column;
+  }
+  .case-tile-label{font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--mute);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  .case-tile-label .product{color:var(--red);font-weight:600}
+  .case-tile-head{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;font-weight:600}
+  .case-tile-head .icon{font-size:15px}
+  .case-tile-num{font-family:var(--font-mono);font-size:10px;color:var(--mute);margin-left:auto}
+  .case-tile-body{flex:1;display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ink-2);padding-top:8px;border-top:1px solid var(--line-2)}
+  .case-tile-body .row{display:flex;justify-content:space-between;align-items:center;padding:2px 0}
+  .case-tile-body .row span:last-child{font-family:var(--font-mono);font-size:10px;color:var(--mute)}
+  .case-footnote{margin-top:32px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;color:var(--mute);text-align:center;line-height:1.7}
+  .case-footnote b{color:var(--ink);font-weight:600}
+
+  /* Philosophy / peer design systems */
+  .peer-grid{
+    margin-top:80px;display:grid;grid-template-columns:repeat(6,1fr);gap:16px;
+  }
+  .peer{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:24px 16px;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;
+    min-height:140px;text-align:center;
+    transition:border-color .2s;
+  }
+  .peer:hover{border-color:var(--ink)}
+  .peer.self{background:var(--ink-dark);color:#fff;border-color:var(--ink-dark)}
+  .peer.self .peer-name{color:#fff}
+  .peer.self .peer-owner{color:#9A9DA3}
+  .peer.self .peer-stat{color:var(--red)}
+  .peer-name{font-family:var(--font-display);font-size:18px;font-weight:500;letter-spacing:-0.01em}
+  .peer-owner{font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mute)}
+  .peer-stat{font-family:var(--font-mono);font-size:10px;color:var(--mute);margin-top:auto}
+
+  /* Roadmap */
+  .roadmap{
+    margin-top:80px;padding:48px 60px;
+    background:linear-gradient(135deg,var(--paper-2) 0%,var(--card) 100%);
+    border:1px solid var(--line);border-radius:var(--r-xl);
+  }
+  .roadmap-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:40px;gap:40px;flex-wrap:wrap}
+  .roadmap-head h3{font-size:32px;line-height:1.1;letter-spacing:-0.02em}
+  .roadmap-head p{font-size:14px;color:var(--mute);margin:0;max-width:40ch}
+  .roadmap-track{
+    position:relative;padding:20px 0;
+    display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+  }
+  .roadmap-track::before{
+    content:"";position:absolute;left:12px;right:12px;top:34px;height:1px;background:var(--line);z-index:0;
+  }
+  .roadmap-step{position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding-right:8px}
+  .roadmap-dot{width:14px;height:14px;border-radius:50%;background:var(--card);border:2px solid var(--ink);margin-top:14px;margin-bottom:2px}
+  .roadmap-step.done .roadmap-dot{background:var(--ok);border-color:var(--ok)}
+  .roadmap-step.now .roadmap-dot{background:var(--red);border-color:var(--red);box-shadow:0 0 0 6px rgba(220,38,38,0.15)}
+  .roadmap-step.next .roadmap-dot{background:var(--card);border-color:var(--ink)}
+  .roadmap-step.planned .roadmap-dot{background:var(--paper-2);border-color:var(--line);border-style:dashed}
+  .roadmap-date{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--mute)}
+  .roadmap-title{font-size:14px;font-weight:600;line-height:1.3}
+  .roadmap-desc{font-size:11px;color:var(--mute);line-height:1.5}
+
+  /* Pricing tiers */
+  .pricing{margin-top:80px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .tier{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:32px 28px;display:flex;flex-direction:column;gap:18px;
+    position:relative;overflow:hidden;
+    transition:transform .25s cubic-bezier(0.16,1,0.3,1),border-color .25s,box-shadow .25s;
+  }
+  .tier:hover{transform:translateY(-3px);border-color:var(--ink);box-shadow:0 12px 28px rgba(0,0,0,0.06)}
+  .tier.popular{border-color:var(--red);background:linear-gradient(180deg,rgba(220,38,38,0.03) 0%,var(--card) 30%)}
+  .tier-badge{
+    position:absolute;top:14px;right:14px;
+    background:var(--red);color:#fff;font-family:var(--font-mono);font-size:9px;
+    letter-spacing:0.14em;text-transform:uppercase;font-weight:700;
+    padding:4px 10px;border-radius:99px;
+  }
+  .tier-name{font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--mute);font-weight:600}
+  .tier-price{font-family:var(--font-display);font-weight:400;font-size:48px;line-height:1;letter-spacing:-0.03em;display:flex;align-items:baseline;gap:6px}
+  .tier-price .currency{font-size:22px;color:var(--mute);font-weight:400}
+  .tier-price .unit{font-size:12px;font-family:var(--font-mono);color:var(--mute);font-weight:500;letter-spacing:0.08em;margin-left:4px}
+  .tier-for{font-size:13px;color:var(--ink-2);margin:0;min-height:42px;line-height:1.4}
+  .tier-features{display:flex;flex-direction:column;gap:10px;padding-top:18px;border-top:1px dashed var(--line);font-size:13px;line-height:1.4;margin:0;padding-left:0}
+  .tier-features li{list-style:none;position:relative;padding-left:22px}
+  .tier-features li::before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+  .tier-features li.no{color:var(--dim);opacity:0.7}
+  .tier-features li.no::before{content:"—";color:var(--dim)}
+  .tier-cta{
+    margin-top:auto;padding:12px 20px;border-radius:var(--r-sm);
+    font-family:var(--font-mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;
+    text-align:center;cursor:pointer;transition:all .2s;text-decoration:none;display:block;
+  }
+  .tier-cta.pri{background:var(--red);color:#fff;border:1px solid var(--red)}
+  .tier-cta.pri:hover{background:var(--red-ink);border-color:var(--red-ink)}
+  .tier-cta.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .tier-cta.sec:hover{border-color:var(--ink)}
+
+  /* ===== Ghost emoji utility — signature visual texture ===== */
+  .has-ghost{position:relative;overflow:hidden}
+  .ghost{
+    position:absolute;top:-14px;right:-10px;
+    font-size:100px;line-height:1;
+    opacity:0.16;pointer-events:none;user-select:none;
+    transform:rotate(-8deg);
+    transition:transform .4s cubic-bezier(0.16,1,0.3,1),opacity .3s;
+    z-index:0;
+  }
+  .has-ghost:hover .ghost{transform:rotate(-4deg) scale(1.05);opacity:0.22}
+  .ghost.sm{font-size:68px;top:-8px;right:-4px}
+  .ghost.md{font-size:100px}
+  .ghost.lg{font-size:140px;top:-18px;right:-14px}
+  .ghost.xl{font-size:180px;top:-24px;right:-20px}
+  .ghost.left{right:auto;left:-10px;transform:rotate(8deg)}
+  .ghost.bottom{top:auto;bottom:-18px}
+  .ghost.dark{opacity:0.08}
+  .ghost.bright{opacity:0.28}
+  .has-ghost > *:not(.ghost){position:relative;z-index:1}
+
+  /* ===== 11 Accessibility ===== */
+  .a11y-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:60px}
+  .a11y-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:32px}
+  .a11y-row{display:grid;grid-template-columns:40px 1fr auto auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line-2)}
+  .a11y-row:last-child{border-bottom:none}
+  .a11y-swatch{width:40px;height:40px;border-radius:var(--r-sm);border:1px solid var(--line)}
+  .a11y-pair{display:flex;flex-direction:column;gap:3px;font-size:13px}
+  .a11y-pair span:last-child{font-family:var(--font-mono);font-size:10px;color:var(--mute)}
+  .a11y-ratio{font-family:var(--font-mono);font-size:13px;font-weight:600;min-width:48px;text-align:right}
+  .a11y-badge{font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;padding:4px 10px;border-radius:99px;text-transform:uppercase;font-weight:600;min-width:50px;text-align:center}
+  .a11y-badge.aaa{background:#DCFCE7;color:#14532D}
+  .a11y-badge.aa{background:#DBEAFE;color:#1E3A8A}
+  .a11y-badge.fail{background:#FEE2E2;color:var(--red-ink)}
+
+  .focus-demo{display:flex;flex-direction:column;gap:16px;margin-top:20px}
+  .focus-btn{
+    padding:10px 20px;background:var(--red);color:#fff;border:none;border-radius:var(--r-sm);
+    font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;align-self:flex-start;
+    transition:box-shadow .2s;
+  }
+  .focus-btn.focused{box-shadow:0 0 0 3px rgba(220,38,38,.3),0 0 0 1px var(--ink)}
+  .focus-btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  .focus-input{
+    padding:10px 14px;border:1px solid var(--line);border-radius:var(--r-sm);
+    font-size:14px;font-family:inherit;background:var(--card);color:var(--ink);
+  }
+  .focus-input.focused{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.2)}
+
+  .a11y-rules{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .a11y-rule{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--r-md);padding:28px 24px;display:flex;flex-direction:column;gap:8px}
+  .a11y-rule .icn{font-size:24px;margin-bottom:8px}
+  .a11y-rule h4{font-family:var(--font-display);font-weight:500;font-size:20px;letter-spacing:-0.01em;margin:0}
+  .a11y-rule p{font-size:12px;color:var(--ink-2);line-height:1.55;margin:0}
+  .a11y-rule .meta{font-family:var(--font-mono);font-size:10px;color:var(--mute);letter-spacing:0.1em;margin-top:auto;padding-top:14px}
+
+  /* ===== 09 Attention Hierarchy ===== */
+  .hier-layers{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:60px}
+  .hier-layer{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+    padding:40px 32px;display:flex;flex-direction:column;gap:24px;min-height:420px;position:relative;
+  }
+  .hier-layer.alert{border-color:var(--red);background:linear-gradient(180deg,rgba(220,38,38,0.04) 0%,var(--card) 40%)}
+  .hier-layer.ambient{background:var(--paper-2);border-style:dashed}
+  .hier-head{display:flex;align-items:center;gap:16px}
+  .hier-badge{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .hier-layer.alert .hier-badge{background:var(--red);color:#fff;animation:hier-pulse 2s infinite}
+  .hier-layer.active .hier-badge{background:var(--ink);color:#fff}
+  .hier-layer.ambient .hier-badge{background:transparent;border:1px solid var(--line);color:var(--mute)}
+  @keyframes hier-pulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.35)}50%{box-shadow:0 0 0 10px rgba(220,38,38,0)}}
+  .hier-layer h3{font-size:28px;line-height:1.1;letter-spacing:-0.02em;margin:0}
+  .hier-tag{font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--mute);margin-bottom:4px}
+  .hier-layer p{font-size:14px;line-height:1.6;color:var(--ink-2);margin:0;max-width:none}
+  .hier-rules{margin-top:auto;padding-top:20px;border-top:1px dashed var(--line);font-size:12px;color:var(--mute);line-height:1.7}
+  .hier-rules span{display:block;margin-bottom:4px}
+  .hier-rules b{color:var(--ink);font-weight:500;display:inline-block;min-width:58px}
+
+  .hier-compare{display:grid;grid-template-columns:1fr 1fr;gap:40px;background:var(--paper-2);border-radius:var(--r-lg);padding:48px;margin-bottom:60px}
+  .hier-compare h4{font-family:var(--font-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--mute);margin:0 0 20px 0;font-weight:600}
+  .hier-compare h4.bad{color:var(--warn)}
+  .hier-compare h4.good{color:var(--ok)}
+  .hier-ex{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+    padding:16px 20px;margin-bottom:10px;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;
+  }
+  .hier-ex.big{font-size:18px;padding:22px 24px;font-weight:600}
+  .hier-ex.hot{background:linear-gradient(135deg,#FEE2E2,#fff);border-color:var(--red)}
+  .hier-ex.bg{background:var(--paper-2);border-style:dashed;color:var(--mute);font-size:12px;padding:10px 16px}
+  .hier-note{font-size:12px;color:var(--mute);margin:12px 0 0 0;line-height:1.5;font-style:italic}
+
+  .hier-rule{
+    margin-top:40px;padding:32px 40px;border:1px solid var(--line);border-radius:var(--r-lg);
+    background:var(--card);display:grid;grid-template-columns:1fr 2fr;gap:40px;align-items:center;
+  }
+
+  /* ===== Footer ===== */
+  .footer{
+    border-top:1px solid var(--line);
+    padding:80px 0 60px;
+    margin-top:60px;
+  }
+  .footer-grid{display:flex;justify-content:space-between;align-items:flex-end;gap:40px;flex-wrap:wrap}
+  .footer h3{font-family:var(--font-display);font-weight:300;font-size:42px;letter-spacing:-0.02em;max-width:20ch}
+  .footer h3 em{color:var(--red);font-style:italic}
+  .footer-meta{font-family:var(--font-mono);font-size:11px;color:var(--mute);letter-spacing:0.1em;text-align:right}
+  .footer-meta div{margin-bottom:6px}
+  .footer-links{display:grid;grid-template-columns:repeat(3,auto);gap:60px;margin-top:60px;padding-top:40px;border-top:1px solid var(--line)}
+  .footer-col .eyebrow{display:block;margin-bottom:14px}
+  .footer-col a{display:block;color:var(--ink);text-decoration:none;font-size:13px;padding:4px 0;transition:color .2s}
+  .footer-col a:hover{color:var(--red)}
+  .footer-col span{display:block;font-size:13px;color:var(--mute);padding:4px 0}
+
+  /* Subtle entry */
+  .fade-in{animation:fade 0.8s cubic-bezier(0.16,1,0.3,1) both}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  @media (max-width: 900px){
+    .wrap{padding:0 24px}
+    .section{padding:80px 0}
+    .hero{padding:40px 0 60px}
+    .hero h1{font-size:72px}
+    .hero-grid,.essence-grid,.logo-grid,.color-primary,.type-spec,.voice-grid,.apps-grid{grid-template-columns:1fr;gap:32px}
+    h2{font-size:40px}
+    .manifesto{font-size:30px}
+    .categories,.emoji-grid,.tokens-grid,.dm-row2,.dm-rowc,.bento,.tones{grid-template-columns:repeat(2,1fr) !important}
+    .dm-row2{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-top">
+      <div class="hero-mark">
+        <span class="dot"></span>
+        <strong>VRS Brand System</strong>
+      </div>
+      <nav class="hero-nav">
+        <a href="#essence">01 Esencja</a>
+        <a href="#logo">02 Logo</a>
+        <a href="#color">03 Kolor</a>
+        <a href="#type">04 Typografia</a>
+        <a href="#tokens">05 Tokeny</a>
+        <a href="#icons">06 Ikony</a>
+        <a href="#ui">07 UI</a>
+        <a href="#voice">08 Voice</a>
+        <a href="#hierarchy">09 Hierarchia</a>
+        <a href="#apps">10 Zastosowania</a>
+        <a href="#a11y">11 Dostępność</a>
+        <a href="/design-system" class="hero-nav-cta">→ Live</a>
+      </nav>
+    </div>
+
+    <div class="hero-grid">
+      <div>
+        <div class="hero-meta">Retail Platform · Design System · v1.1 · 04·2026 · Made in Poland 🇵🇱</div>
+        <h1>Retail,<br/>bardziej <em>ludzkie</em>.</h1>
+      </div>
+      <aside class="hero-side">
+        <dl>
+          <dt>System</dt><dd>VRS — Retail Platform</dd>
+          <dt>Skala</dt><dd>134 oddziały · 460 użytkowników</dd>
+          <dt>Język</dt><dd>Polski first</dd>
+          <dt>Zasięg</dt><dd>VRS · STAGO · Leady · Produkcja</dd>
+          <dt>Dziedziczy</dt><dd>Platform DS (npm: @vrs/ui)</dd>
+        </dl>
+      </aside>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 01 ESSENCE ============ -->
+<section class="section" id="essence">
+  <div class="wrap">
+    <div class="section-num">01 — Esencja</div>
+    <div class="essence-grid">
+      <div>
+        <div class="eyebrow" style="margin-bottom:18px">Manifest</div>
+        <p class="manifesto">
+          ERP nie musi być <em>zimne</em>. Doradca w oddziale, kierownik regionu i centrala IT — każdy widzi te same dane, ale inaczej. VRS <em>czyta kontekst</em> i mówi po ludzku.
+        </p>
+        <div class="manifesto-meta">
+          <div>
+            <div class="mm-num">134</div>
+            <div class="mm-lbl">Oddziały</div>
+          </div>
+          <div>
+            <div class="mm-num">460</div>
+            <div class="mm-lbl">Użytkownicy</div>
+          </div>
+          <div>
+            <div class="mm-num">4</div>
+            <div class="mm-lbl">Warstwy UI</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="principles">
+        <div class="eyebrow">Zasady</div>
+        <div class="principle">
+          <b>Profesjonalny ale ludzki</b>
+          <span>Emotki w UI nie są ozdobą — pomagają skanować. „🏢 Biuro" czytasz 40% szybciej niż „Typ wpisu: biuro".</span>
+        </div>
+        <div class="principle">
+          <b>Dashboard opowiada historię</b>
+          <span>Nie tabele, nie wykresy bez kontekstu. Cztery warstwy: kto jesteś → co ważne → co widzisz → co do ciebie.</span>
+        </div>
+        <div class="principle">
+          <b>Żyje z userem</b>
+          <span>Czas dnia, dzień tygodnia, rola, energia, streak, sezon. Komponenty adaptują się — nie są statyczne.</span>
+        </div>
+        <div class="principle">
+          <b>Polski first</b>
+          <span>„Dużo tego — może filtr?" zamiast „Too many records". „Ty", nie „Pan/Pani". Empatia nie kosztuje.</span>
+        </div>
+        <div class="principle">
+          <b>Platform-ready</b>
+          <span>Ten sam system karmi VRS, STAGO, Leady, Produkcję. Jak Polaris dla Shopify, Primer dla GitHub.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 LOGO ============ -->
+<section class="section" id="logo">
+  <div class="wrap">
+    <div class="section-num">02 — Logo</div>
+    <h2>Wordmark z <em>sygnałem</em>.</h2>
+    <p class="lede" style="margin-bottom:60px">Punkt — miniatura retailowej lokalizacji na mapie — siedzi w prawym górnym rogu. Mały sygnał, duża obecność. Czerwień tylko tam, gdzie musi.</p>
+
+    <div class="logo-grid">
+      <div class="logo-big">
+        <div class="wordmark">VRS<span class="dot">·</span></div>
+      </div>
+      <div class="logo-specs">
+        <div class="logo-spec">
+          <div class="cap">Wordmark · kompakt</div>
+          <div class="mark"><div class="wordmark wordmark-sm">VRS<span class="dot">·</span></div></div>
+          <div class="cap" style="color:var(--dim)">32/24/18 px</div>
+        </div>
+        <div class="logo-spec">
+          <div class="cap">Sygnet · light</div>
+          <div class="mark"><div class="sygnet"><span class="glyph">V</span><span class="mark"></span></div></div>
+          <div class="cap" style="color:var(--dim)">Favicon, app icon</div>
+        </div>
+        <div class="logo-spec">
+          <div class="cap">Sygnet · dark</div>
+          <div class="mark"><div class="sygnet inv"><span class="glyph">V</span><span class="mark"></span></div></div>
+          <div class="cap" style="color:var(--dim)">Dark UI</div>
+        </div>
+        <div class="logo-spec">
+          <div class="cap">Sygnet · primary</div>
+          <div class="mark"><div class="sygnet red"><span class="glyph">V</span><span class="mark"></span></div></div>
+          <div class="cap" style="color:var(--dim)">Brand moment</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+      <div class="logo-spec" style="min-height:110px">
+        <div class="cap">Padding</div>
+        <div class="mark"><span style="font-family:var(--font-mono);font-size:14px">= ½ × wysokość glifu</span></div>
+      </div>
+      <div class="logo-spec" style="min-height:110px">
+        <div class="cap">Min rozmiar</div>
+        <div class="mark"><span style="font-family:var(--font-mono);font-size:14px">wordmark 16 px · sygnet 20 px</span></div>
+      </div>
+      <div class="logo-spec" style="min-height:110px">
+        <div class="cap">Rotacja</div>
+        <div class="mark"><span style="font-family:var(--font-mono);font-size:14px">brak — zawsze 0°</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 COLOR ============ -->
+<section class="section" id="color">
+  <div class="wrap">
+    <div class="section-num">03 — Kolor</div>
+    <h2>Czerwień <em>oszczędnie</em>. Reszta pracuje w tle.</h2>
+    <p class="lede" style="margin-bottom:60px">Jedna pełna czerwień — VRS Red. Używana dla CTA, brand momentów i sygnałów. Osiem kolorów kategorii mapuje typy wpisów w kalendarzach, chipach i wykresach.</p>
+
+    <div class="color-primary">
+      <div class="swatch red-lg">
+        <div>
+          <div class="eyebrow" style="color:rgba(255,255,255,.7);margin-bottom:10px">Primary</div>
+          <div class="swatch-name">VRS Red</div>
+        </div>
+        <div class="swatch-vals">
+          HEX&nbsp;&nbsp;#DC2626<br>
+          RGB&nbsp;&nbsp;220 · 38 · 38<br>
+          OKLCH&nbsp;&nbsp;0.577 0.245 27.3
+        </div>
+      </div>
+      <div class="swatch ink-lg">
+        <div>
+          <div class="eyebrow" style="color:rgba(244,244,245,.6);margin-bottom:10px">Ink</div>
+          <div class="swatch-name">Night #0F</div>
+        </div>
+        <div class="swatch-vals">
+          HEX&nbsp;&nbsp;#0F1011<br>
+          RGB&nbsp;&nbsp;15 · 16 · 17<br>
+          OKLCH&nbsp;&nbsp;0.144 0.003 285
+        </div>
+      </div>
+    </div>
+
+    <div class="eyebrow" style="margin-bottom:16px">Paleta kategorii — emoji-mapped</div>
+    <div class="categories">
+      <div class="cat" style="--cat-color:#37E8FB"><span class="cat-ghost">🏢</span><div class="cat-top"><span class="cat-tag">01</span><span class="cat-dot"></span></div><div><div class="cat-name">Biuro</div><div class="cat-hex">#37E8FB</div></div></div>
+      <div class="cat" style="--cat-color:#42F0CD"><span class="cat-ghost">🏠</span><div class="cat-top"><span class="cat-tag">02</span><span class="cat-dot"></span></div><div><div class="cat-name">Dom</div><div class="cat-hex">#42F0CD</div></div></div>
+      <div class="cat" style="--cat-color:#8B3AF8"><span class="cat-ghost">🌙</span><div class="cat-top"><span class="cat-tag">03</span><span class="cat-dot"></span></div><div><div class="cat-name">Nadgodziny</div><div class="cat-hex">#8B3AF8</div></div></div>
+      <div class="cat" style="--cat-color:#FF4013"><span class="cat-ghost">🏖</span><div class="cat-top"><span class="cat-tag">04</span><span class="cat-dot"></span></div><div><div class="cat-name">Urlop</div><div class="cat-hex">#FF4013</div></div></div>
+      <div class="cat" style="--cat-color:#00A3D7"><span class="cat-ghost">🎓</span><div class="cat-top"><span class="cat-tag">05</span><span class="cat-dot"></span></div><div><div class="cat-name">Szkolenie</div><div class="cat-hex">#00A3D7</div></div></div>
+      <div class="cat" style="--cat-color:#87E250"><span class="cat-ghost">🚗</span><div class="cat-top"><span class="cat-tag">06</span><span class="cat-dot"></span></div><div><div class="cat-name">Teren</div><div class="cat-hex">#87E250</div></div></div>
+      <div class="cat" style="--cat-color:#F5EC00"><span class="cat-ghost">🔄</span><div class="cat-top"><span class="cat-tag">07</span><span class="cat-dot"></span></div><div><div class="cat-name">Zastępstwo</div><div class="cat-hex">#F5EC00</div></div></div>
+      <div class="cat" style="--cat-color:#00F9A4"><span class="cat-ghost">⏱</span><div class="cat-top"><span class="cat-tag">08</span><span class="cat-dot"></span></div><div><div class="cat-name">Normalne godziny</div><div class="cat-hex">#00F9A4</div></div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-bottom:16px">Status</div>
+    <div class="status-row">
+      <div class="status"><div class="status-dot" style="background:var(--ok)"></div><div class="status-name">Success — ✓ zatwierdzony</div><div class="status-hex">#16A34A</div></div>
+      <div class="status"><div class="status-dot" style="background:var(--warn)"></div><div class="status-name">Warning — ⏳ oczekuje</div><div class="status-hex">#EA580C</div></div>
+      <div class="status"><div class="status-dot" style="background:var(--danger)"></div><div class="status-name">Danger — ✗ odrzucony</div><div class="status-hex">#DC2626</div></div>
+    </div>
+
+    <div class="dark-demo">
+      <div>
+        <div class="eyebrow" style="color:#6B6E73;margin-bottom:10px">Dark mode</div>
+        <h3>Bardzo ciemny, lekko ciepły.</h3>
+        <p>Nocna zmiana w oddziale, kierownik patrzący na regionalny raport o 23:00. Tło #0F1011, nie czysta czerń — miększe dla oczu.</p>
+      </div>
+      <div class="dark-swatches">
+        <div class="dark-sw" style="background:#0F1011;color:#71717A">bg · #0F1011</div>
+        <div class="dark-sw" style="background:#1A1B1D;color:#A1A1AA">surface · #1A1B1D</div>
+        <div class="dark-sw" style="background:#25272A;color:#A1A1AA">strong · #25272A</div>
+        <div class="dark-sw" style="background:#DC2626;color:#fff">accent · #DC2626</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 TYPOGRAPHY ============ -->
+<section class="section" id="type">
+  <div class="wrap">
+    <div class="section-num">04 — Typografia</div>
+    <h2>Dwa kroje. <em>Jedna</em> dyscyplina.</h2>
+    <p class="lede" style="margin-bottom:60px">Inter dla UI i copy. JetBrains Mono dla wszystkiego co liczbowe — dat, KPI, kodu. Whitelist: 10/11/12/13/14/16/18/22/28&nbsp;px. Nic poza.</p>
+
+    <div class="type-spec">
+      <div class="type-card">
+        <div class="type-sample sans">Aa</div>
+        <h3 style="font-family:var(--font-sans);font-weight:600;font-size:22px;margin-bottom:6px">Inter</h3>
+        <p style="font-size:14px;color:var(--mute);margin-bottom:20px">Sans-serif · 300/400/500/600/700 · interface, body, nagłówki</p>
+        <div class="type-meta">
+          <span>ABCDEFGHIJKLMNOPQRSTUVWXYZ</span>
+          <span>0123456789</span>
+        </div>
+      </div>
+      <div class="type-card">
+        <div class="type-sample mono">130h</div>
+        <h3 style="font-family:var(--font-sans);font-weight:600;font-size:22px;margin-bottom:6px">JetBrains Mono</h3>
+        <p style="font-size:14px;color:var(--mute);margin-bottom:20px">Monospace · 400/500/600 · cyfry, daty, kod, KPI z tabular-nums</p>
+        <div class="type-meta">
+          <span>01.04 → 30.04</span>
+          <span>+18% ↑</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="type-scale">
+      <div class="eyebrow" style="margin-bottom:20px">Skala — whitelist</div>
+      <div class="scale-row"><div class="scale-size">28 px</div><div class="scale-sample s-28">130h</div><div class="scale-use">Big number · KPI</div></div>
+      <div class="scale-row"><div class="scale-size">22 px</div><div class="scale-sample s-22">Dzień dobry, Karol</div><div class="scale-use">Big name · TOP HEADER</div></div>
+      <div class="scale-row"><div class="scale-size">18 px</div><div class="scale-sample s-18">17</div><div class="scale-use">Mini-KPI value</div></div>
+      <div class="scale-row"><div class="scale-size">16 px</div><div class="scale-sample s-16">Zatwierdź N wpisów pracowników</div><div class="scale-use">Body primary</div></div>
+      <div class="scale-row"><div class="scale-size">14 px</div><div class="scale-sample s-14">Kierownik regionalny widzi 17 oddziałów</div><div class="scale-use">Body default</div></div>
+      <div class="scale-row"><div class="scale-size">13 px</div><div class="scale-sample s-13">V090 Bielany Wrocławskie Auchan</div><div class="scale-use">Body small</div></div>
+      <div class="scale-row"><div class="scale-size">12 px</div><div class="scale-sample s-12">Data wprowadzenia: 19.04.2026 · 09:00</div><div class="scale-use">Meta</div></div>
+      <div class="scale-row"><div class="scale-size">11 px</div><div class="scale-sample s-11">Okres · Moje</div><div class="scale-use">Label uppercase · eyebrow</div></div>
+      <div class="scale-row"><div class="scale-size">10 px</div><div class="scale-sample s-10">Region R04 · 17 odz.</div><div class="scale-use">Micro label</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 TOKENS ============ -->
+<section class="section" id="tokens">
+  <div class="wrap">
+    <div class="section-num">05 — Tokeny</div>
+    <h2>Decyzje <em>zamrożone</em> w zmiennych.</h2>
+    <p class="lede" style="margin-bottom:60px">Zero hardcoded hex w kodzie. Zero custom spacing. Komponent nie musi pytać designera — czyta token.</p>
+
+    <div class="tokens-grid">
+      <div class="tok-card">
+        <div class="tok-title">Spacing<em>— rytm 4 px</em></div>
+        <div class="tok-row"><div class="tok-lbl">--sp-1</div><div class="tok-val">4 px</div><div class="tok-viz"><div class="sp-box" style="width:4px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sp-2</div><div class="tok-val">8 px</div><div class="tok-viz"><div class="sp-box" style="width:8px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sp-3</div><div class="tok-val">12 px</div><div class="tok-viz"><div class="sp-box" style="width:12px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sp-4</div><div class="tok-val">16 px</div><div class="tok-viz"><div class="sp-box" style="width:16px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sp-5</div><div class="tok-val">20 px</div><div class="tok-viz"><div class="sp-box" style="width:20px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sp-6</div><div class="tok-val">24 px</div><div class="tok-viz"><div class="sp-box" style="width:24px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sp-8</div><div class="tok-val">32 px</div><div class="tok-viz"><div class="sp-box" style="width:32px"></div></div></div>
+      </div>
+
+      <div class="tok-card">
+        <div class="tok-title">Radii<em>— narożniki</em></div>
+        <div class="tok-row"><div class="tok-lbl">--r-sm</div><div class="tok-val">6 px · chipy, buttons sm</div><div class="tok-viz"><div class="radius-box" style="border-radius:6px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--r-md</div><div class="tok-val">10 px · kafelki, inputy</div><div class="tok-viz"><div class="radius-box" style="border-radius:10px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--r-lg</div><div class="tok-val">16 px · sekcje, kafel HERO</div><div class="tok-viz"><div class="radius-box" style="border-radius:16px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--r-xl</div><div class="tok-val">24 px · drawer, modal</div><div class="tok-viz"><div class="radius-box" style="border-radius:24px"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--r-full</div><div class="tok-val">999 px · avatar, pigułki</div><div class="tok-viz"><div class="radius-box" style="border-radius:999px"></div></div></div>
+      </div>
+
+      <div class="tok-card">
+        <div class="tok-title">Shadows<em>— głębia</em></div>
+        <div class="tok-row"><div class="tok-lbl">--sh-1</div><div class="tok-val">rest · subtle</div><div class="tok-viz"><div class="shadow-box sh-1"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sh-2</div><div class="tok-val">card · default</div><div class="tok-viz"><div class="shadow-box sh-2"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sh-3</div><div class="tok-val">hover · elevated</div><div class="tok-viz"><div class="shadow-box sh-3"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">--sh-4</div><div class="tok-val">drawer · modal</div><div class="tok-viz"><div class="shadow-box sh-4"></div></div></div>
+      </div>
+
+      <div class="tok-card">
+        <div class="tok-title">Motion<em>— tempo</em></div>
+        <div class="tok-row"><div class="tok-lbl">instant</div><div class="tok-val">50 ms</div><div class="tok-viz"><div class="motion-bar" style="animation-duration:0.1s"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">fast</div><div class="tok-val">150 ms · hover, click</div><div class="tok-viz"><div class="motion-bar fast"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">normal</div><div class="tok-val">300 ms · panel open</div><div class="tok-viz"><div class="motion-bar normal"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">slow</div><div class="tok-val">600 ms · page transition</div><div class="tok-viz"><div class="motion-bar slow"></div></div></div>
+        <div class="tok-row"><div class="tok-lbl">lazy</div><div class="tok-val">1000 ms · ambient</div><div class="tok-viz"><div class="motion-bar lazy"></div></div></div>
+        <div class="tok-row" style="margin-top:8px"><div class="tok-lbl">stagger</div><div class="tok-val">60 ms między siblings · zawsze respect prefers-reduced-motion</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 ICONS / EMOJI ============ -->
+<section class="section" id="icons">
+  <div class="wrap">
+    <div class="section-num">06 — Ikony</div>
+    <h2>Ikony <em>— 16 cienkich</em>.</h2>
+    <p class="lede" style="margin-bottom:60px">Stroke 1.3, geometryczne, outline only. Bez fill. Używane w listach, nawigacji, checkpointach, dokumentach. Nie zastępują emoji — uzupełniają je w roli utility.</p>
+
+    <div class="icon-grid" style="margin-bottom:60px">
+      <div class="icn"><svg viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span class="icn-lbl">dom</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="icn-lbl">zegar</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg><span class="icn-lbl">kartoteka</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><path d="M4 18s3-6 8-6 8 6 8 6"/><path d="M4 18l2-3 2 2 2-4 3 4 2-3 2 2 3-2"/></svg><span class="icn-lbl">wykres</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg><span class="icn-lbl">osoba</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg><span class="icn-lbl">kalendarz</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><path d="M5 21V4l8 3 6-2v13l-6 2-8-3z"/></svg><span class="icn-lbl">flaga</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="14" rx="1"/><path d="M8 21h8M12 18v3"/></svg><span class="icn-lbl">ekran</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span class="icn-lbl">lokacja</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18v.5"/></svg><span class="icn-lbl">ostrzeżenie</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><path d="M4 8h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 8V5a3 3 0 0 1 6 0v3"/></svg><span class="icn-lbl">zasoby</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span class="icn-lbl">żądania</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="icn-lbl">oko</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><path d="M6 21V4h11l-2 4 2 4H6"/></svg><span class="icn-lbl">sztandar</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></svg><span class="icn-lbl">ustawienia</span></div>
+      <div class="icn"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="icn-lbl">strzałka</span></div>
+    </div>
+
+    <div class="eyebrow" style="margin-bottom:20px;display:block">Grafiki · Typy wpisów</div>
+    <div class="emoji-grid" style="margin-bottom:40px">
+      <div class="emo"><span class="emo-ghost">🏢</span><div class="emo-top"><span class="emo-tag">01</span></div><div><div class="emo-name">Biuro</div><div class="emo-code">TYPE_EMOJI.biuro</div></div></div>
+      <div class="emo"><span class="emo-ghost">🏠</span><div class="emo-top"><span class="emo-tag">02</span></div><div><div class="emo-name">Dom</div><div class="emo-code">TYPE_EMOJI.dom</div></div></div>
+      <div class="emo"><span class="emo-ghost">⏱</span><div class="emo-top"><span class="emo-tag">03</span></div><div><div class="emo-name">Normalne godz.</div><div class="emo-code">TYPE_EMOJI.normal</div></div></div>
+      <div class="emo"><span class="emo-ghost">🌙</span><div class="emo-top"><span class="emo-tag">04</span></div><div><div class="emo-name">Nadgodziny</div><div class="emo-code">TYPE_EMOJI.nadgodziny</div></div></div>
+      <div class="emo"><span class="emo-ghost">🏖</span><div class="emo-top"><span class="emo-tag">05</span></div><div><div class="emo-name">Urlop</div><div class="emo-code">TYPE_EMOJI.urlop</div></div></div>
+      <div class="emo"><span class="emo-ghost">🎓</span><div class="emo-top"><span class="emo-tag">06</span></div><div><div class="emo-name">Szkolenie</div><div class="emo-code">TYPE_EMOJI.szkolenie</div></div></div>
+      <div class="emo"><span class="emo-ghost">🚗</span><div class="emo-top"><span class="emo-tag">07</span></div><div><div class="emo-name">Teren</div><div class="emo-code">TYPE_EMOJI.teren</div></div></div>
+      <div class="emo"><span class="emo-ghost">🔄</span><div class="emo-top"><span class="emo-tag">08</span></div><div><div class="emo-name">Zastępstwo</div><div class="emo-code">TYPE_EMOJI.zastepstwo</div></div></div>
+    </div>
+
+    <div class="eyebrow" style="margin-bottom:20px;display:block;margin-top:48px">Kontekst · Czas, sezon, achievement</div>
+    <div class="emoji-grid">
+      <div class="emo"><span class="emo-ghost">☀️</span><div class="emo-top"><span class="emo-tag">AM</span></div><div><div class="emo-name">Dzień dobry</div><div class="emo-code">hour &lt; 12</div></div></div>
+      <div class="emo"><span class="emo-ghost">👋</span><div class="emo-top"><span class="emo-tag">PM</span></div><div><div class="emo-name">Cześć</div><div class="emo-code">hour &lt; 17</div></div></div>
+      <div class="emo"><span class="emo-ghost">🎋</span><div class="emo-top"><span class="emo-tag">EVE</span></div><div><div class="emo-name">Dobry wieczór</div><div class="emo-code">hour ≥ 17</div></div></div>
+      <div class="emo"><span class="emo-ghost">🏖</span><div class="emo-top"><span class="emo-tag">WKN</span></div><div><div class="emo-name">Weekend</div><div class="emo-code">dow ∈ {6,0}</div></div></div>
+      <div class="emo"><span class="emo-ghost">👀</span><div class="emo-top"><span class="emo-tag">50%</span></div><div><div class="emo-name">50% progress</div><div class="emo-code">progress ≥ 0.5</div></div></div>
+      <div class="emo"><span class="emo-ghost">💪</span><div class="emo-top"><span class="emo-tag">70%</span></div><div><div class="emo-name">70% progress</div><div class="emo-code">progress ≥ 0.7</div></div></div>
+      <div class="emo"><span class="emo-ghost">🔥</span><div class="emo-top"><span class="emo-tag">90%</span></div><div><div class="emo-name">90% + streak</div><div class="emo-code">streak ≥ 7d</div></div></div>
+      <div class="emo"><span class="emo-ghost">🏆</span><div class="emo-top"><span class="emo-tag">100%</span></div><div><div class="emo-name">100% + rekord</div><div class="emo-code">streak ≥ 100d</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 UI ============ -->
+<section class="section" id="ui">
+  <div class="wrap">
+    <div class="section-num">07 — UI</div>
+    <h2>Cztery warstwy. <em>Jedna</em> rytmika.</h2>
+    <p class="lede" style="margin-bottom:30px">Każdy dashboard modułu — Home, Grafiki, Wizyty, Sprzęt — ma tę samą strukturę. TOP&nbsp;HEADER &rarr; dominujący KPI + mini-KPI + CTA &rarr; widok główny &rarr; cztery ScrollTile. Każdy kafel należy do jednej z trzech warstw <a href="#hierarchy" style="color:var(--red);text-decoration:underline;text-decoration-color:rgba(220,38,38,.3);text-underline-offset:3px">hierarchii uwagi</a>.</p>
+
+    <div style="display:flex;gap:24px;margin-bottom:40px;flex-wrap:wrap;font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase">
+      <span style="display:inline-flex;align-items:center;gap:8px"><span style="width:10px;height:10px;background:var(--red);border-radius:50%"></span>Alert · Oczekują 3</span>
+      <span style="display:inline-flex;align-items:center;gap:8px"><span style="width:10px;height:10px;background:var(--ink);border-radius:50%"></span>Active · KPI 130h, Zespół, Aktywność</span>
+      <span style="display:inline-flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border:1px dashed var(--mute);border-radius:50%"></span>Ambient · Do poprawy, Streak</span>
+    </div>
+
+    <div class="ui-showcase">
+      <div class="dashboard-mock">
+        <!-- TOP HEADER -->
+        <div class="dm-top">
+          <div class="dm-avatar">🦡</div>
+          <div>
+            <div class="dm-eyebrow">Dobry wieczór 🎋 · Piątek</div>
+            <div class="dm-name">Karol Zamarlik</div>
+            <div class="dm-sub">📅 Grafiki · V090 Bielany Wrocławskie Auchan</div>
+          </div>
+        </div>
+
+        <!-- ROW 2 -->
+        <div class="dm-row2">
+          <div class="dm-hero">
+            <div class="dm-hero-head">
+              <span style="font-size:12px">📅</span>
+              <span class="cap">Kwiecień 2026</span>
+              <span class="chip">moje</span>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:10px">
+              <div class="dm-hero-num">130h</div>
+              <div class="dm-hero-sub">17 wpisów · 22 dni robocze</div>
+            </div>
+            <div class="dm-bar">
+              <div style="width:42%;background:var(--c-normal)"></div>
+              <div style="width:18%;background:var(--c-biuro)"></div>
+              <div style="width:14%;background:var(--c-nad)"></div>
+              <div style="width:12%;background:var(--c-urlop)"></div>
+              <div style="width:8%;background:var(--c-teren)"></div>
+              <div style="width:6%;background:var(--c-szkol)"></div>
+            </div>
+            <div class="dm-legend">
+              <span><i style="background:var(--c-normal)"></i>⏱ Normalne 42%</span>
+              <span><i style="background:var(--c-biuro)"></i>🏢 Biuro 18%</span>
+              <span><i style="background:var(--c-nad)"></i>🌙 Nadg. 14%</span>
+              <span><i style="background:var(--c-urlop)"></i>🏖 Urlop 12%</span>
+              <span style="color:var(--line);margin:0 2px">|</span>
+              <span style="color:var(--ok)">✓ 14</span>
+              <span style="color:var(--warn)">⏳ 3</span>
+            </div>
+          </div>
+
+          <div class="dm-mini-grid">
+            <div class="dm-mini"><div class="lbl">🗓 Dni</div><div class="val">22</div></div>
+            <div class="dm-mini"><div class="lbl">🌙 Nadg.</div><div class="val">18h</div></div>
+            <div class="dm-mini"><div class="lbl">🏖 Urlop</div><div class="val">4d</div></div>
+            <div class="dm-mini"><div class="lbl">👥 Dziś</div><div class="val">6/8</div></div>
+          </div>
+
+          <div class="dm-cta">
+            <div class="btn pri">+ Nowy wpis</div>
+            <div class="btn sec">⚖ Zatwierdź 3</div>
+          </div>
+        </div>
+
+        <!-- ROW C -->
+        <div class="dm-rowc">
+          <div class="dm-tile">
+            <div class="dm-tile-head"><span class="ic">👥</span><span class="t">Zespół dziś</span><span class="n">6/8</span></div>
+            <div style="display:flex;align-items:center">
+              <span style="width:26px;height:26px;border-radius:50%;background:#FDE68A;display:inline-flex;align-items:center;justify-content:center;font-size:13px;margin-right:-6px;border:2px solid #fff">🐻</span>
+              <span style="width:26px;height:26px;border-radius:50%;background:#BFDBFE;display:inline-flex;align-items:center;justify-content:center;font-size:13px;margin-right:-6px;border:2px solid #fff">🦊</span>
+              <span style="width:26px;height:26px;border-radius:50%;background:#FBCFE8;display:inline-flex;align-items:center;justify-content:center;font-size:13px;margin-right:-6px;border:2px solid #fff">🐰</span>
+              <span style="width:26px;height:26px;border-radius:50%;background:#D9F99D;display:inline-flex;align-items:center;justify-content:center;font-size:13px;margin-right:-6px;border:2px solid #fff">🦝</span>
+              <span style="width:26px;height:26px;border-radius:50%;background:#FED7AA;display:inline-flex;align-items:center;justify-content:center;font-size:13px;border:2px solid #fff">🐼</span>
+            </div>
+            <div style="margin-top:auto;font-size:10px;color:var(--mute)">Anna · Marta · Piotr · +3</div>
+          </div>
+
+          <div class="dm-tile">
+            <div class="dm-tile-head"><span class="ic">🔥</span><span class="t">Aktywność</span><span class="n">pon-pt</span></div>
+            <div style="flex:1;display:flex;align-items:flex-end;gap:4px;padding:4px 0">
+              <div style="flex:1;height:60%;background:var(--red);border-radius:2px"></div>
+              <div style="flex:1;height:80%;background:var(--red);border-radius:2px"></div>
+              <div style="flex:1;height:45%;background:var(--red);border-radius:2px"></div>
+              <div style="flex:1;height:95%;background:var(--red);border-radius:2px"></div>
+              <div style="flex:1;height:70%;background:var(--red);border-radius:2px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--mute);margin-top:4px"><span>Pn</span><span>Wt</span><span>Śr</span><span>Cz</span><span>Pt</span></div>
+          </div>
+
+          <div class="dm-tile alert-tile">
+            <div class="dm-tile-head"><span class="ic">⏳</span><span class="t">Oczekują</span><span class="n" style="color:var(--red)">3</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:4px;font-size:11px">
+              <div style="display:flex;justify-content:space-between"><span>🌙 Anna</span><span style="color:var(--warn);font-family:var(--font-mono);font-size:10px">2h</span></div>
+              <div style="display:flex;justify-content:space-between"><span>🏖 Piotr</span><span style="color:var(--warn);font-family:var(--font-mono);font-size:10px">5d</span></div>
+              <div style="display:flex;justify-content:space-between"><span>🚗 Marta</span><span style="color:var(--warn);font-family:var(--font-mono);font-size:10px">1d</span></div>
+            </div>
+          </div>
+
+          <div class="dm-tile ambient">
+            <div class="dm-tile-head"><span class="ic" style="opacity:0.5">✓</span><span class="t">Do poprawy</span></div>
+            <div class="dm-tile-ambient-body">wszystko&nbsp;zatwierdzone<br/><span style="font-family:var(--font-mono);font-style:normal;font-size:10px;color:var(--dim);margin-top:4px;display:block">14 / 14</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento preview -->
+      <div style="margin-top:40px">
+        <div class="eyebrow" style="margin-bottom:14px">Bento grid · adaptive</div>
+        <div class="bento">
+          <div class="bento-cell bento-hero">
+            <div>
+              <div class="cap">Sieć · Kwiecień</div>
+              <div style="font-size:10px;color:var(--mute);margin-top:2px">134 oddz. · 460 userów</div>
+            </div>
+            <div>
+              <div class="num big" style="color:var(--red)">5.99M</div>
+              <div class="hint">PLN · +18% YoY ↑</div>
+            </div>
+          </div>
+          <div class="bento-cell ambient">
+            <div class="cap">Streak</div>
+            <div class="num">🔥 24</div>
+            <div class="hint">dni z rzędu · stabilnie</div>
+          </div>
+          <div class="bento-cell">
+            <div class="cap">Top oddz.</div>
+            <div style="font-size:22px;font-weight:600">V090</div>
+            <div class="hint">Bielany · 127k PLN</div>
+          </div>
+          <div class="bento-cell bento-wide">
+            <div class="cap">Trend 14 dni</div>
+            <svg class="spark" viewBox="0 0 200 40" preserveAspectRatio="none">
+              <path d="M0,30 L15,25 L30,28 L45,18 L60,22 L75,12 L90,16 L105,8 L120,14 L135,6 L150,10 L165,4 L180,8 L200,2" stroke="#DC2626" stroke-width="1.5" fill="none"/>
+              <path d="M0,30 L15,25 L30,28 L45,18 L60,22 L75,12 L90,16 L105,8 L120,14 L135,6 L150,10 L165,4 L180,8 L200,2 L200,40 L0,40 Z" fill="#FEE2E2" opacity="0.6"/>
+            </svg>
+            <div class="hint">Sprzedaż vs. 14d moving avg</div>
+          </div>
+          <div class="bento-cell">
+            <div class="cap">Cel mies.</div>
+            <div class="num">89%</div>
+            <div style="height:4px;background:var(--line-2);border-radius:2px;margin-top:6px"><div style="width:89%;height:100%;background:var(--red);border-radius:2px"></div></div>
+          </div>
+          <div class="bento-cell">
+            <div class="cap">Pending</div>
+            <div class="num" style="color:var(--warn)">7</div>
+            <div class="hint">wpisów do zatw.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 VOICE ============ -->
+<section class="section" id="voice">
+  <div class="wrap">
+    <div class="section-num">08 — Voice</div>
+    <h2>Mów <em>do człowieka</em>, nie do bazy danych.</h2>
+    <p class="lede" style="margin-bottom:60px">Po polsku. Ty, nie Pan. Empatia zamiast suchego komunikatu. Emotki tam, gdzie przyspieszają skanowanie — nigdy tam, gdzie się narzucają.</p>
+
+    <div class="voice-grid">
+      <div class="voice-card">
+        <div class="eyebrow" style="margin-bottom:20px">Nie mów</div>
+        <div class="voice-bad">„Brak rekordów do wyświetlenia"</div>
+        <div class="voice-bad">„Error: validation failed on field.amount"</div>
+        <div class="voice-bad">„Too many records — please apply filter"</div>
+        <div class="voice-bad">„User has no permission to access this resource"</div>
+        <div class="voice-bad">„Are you sure you want to delete this item?"</div>
+      </div>
+
+      <div class="voice-card">
+        <div class="eyebrow" style="margin-bottom:20px">Mów</div>
+        <div class="voice-good">🎯 Wszystko zatwierdzone. Nic nie wymaga uwagi.</div>
+        <div class="voice-good">Kwota wygląda inaczej niż zwykle — sprawdzisz jeszcze raz?</div>
+        <div class="voice-good">Dużo tego — może filtr po regionie?</div>
+        <div class="voice-good">🔒 Ten widok jest dla Centrali. Napisz do admina jeśli potrzebujesz.</div>
+        <div class="voice-good">Na pewno usuwamy? Tego nie da się cofnąć.</div>
+      </div>
+    </div>
+
+    <div class="tones">
+      <div class="tone has-ghost">
+        <span class="ghost">😊</span>
+        <h4>Friendly</h4>
+        <div class="when">Default · doradca codziennie</div>
+        <div class="ex">„Świetnie! 3 wpisy dziś 👏 Tak trzymaj."</div>
+      </div>
+      <div class="tone has-ghost">
+        <span class="ghost">🎯</span>
+        <h4>Focused</h4>
+        <div class="when">Kierownik · focus mode</div>
+        <div class="ex">„130h · 17 wpisów · 3 oczekujące."</div>
+      </div>
+      <div class="tone has-ghost">
+        <span class="ghost">🎉</span>
+        <h4>Playful</h4>
+        <div class="when">Weekend · piątek 17:00+</div>
+        <div class="ex">„Weekend! 🏖 Tylko kluczowe info."</div>
+      </div>
+      <div class="tone has-ghost">
+        <span class="ghost">🎩</span>
+        <h4>Professional</h4>
+        <div class="when">Centrala · board view</div>
+        <div class="ex">„Sieć: 5,99M PLN. Delta YoY +18%."</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 ATTENTION HIERARCHY ============ -->
+<section class="section" id="hierarchy">
+  <div class="wrap">
+    <div class="section-num">09 — Hierarchia uwagi</div>
+    <h2>Trzy warstwy. <em>Jedna</em> dyscyplina.</h2>
+    <p class="lede" style="margin-bottom:60px">Dashboard nie jest płaski. Nie wszystko walczy o twoją uwagę. <strong>Alert</strong> krzyczy — <strong>Active</strong> pracuje — <strong>Ambient</strong> potwierdza, że wszystko gra. Gdy stan jest OK, znika w tle. Zostaje miejsce na to, co naprawdę wymaga akcji.</p>
+
+    <div class="hier-layers">
+      <div class="hier-layer alert has-ghost">
+        <span class="ghost lg bright">❗</span>
+        <div class="hier-head">
+          <div class="hier-badge">❗</div>
+          <div>
+            <div class="hier-tag">01 · Foreground</div>
+            <h3>Alert</h3>
+          </div>
+        </div>
+        <p>Wymaga akcji teraz. Czerwień, puls, pełny kafel. Przerywa flow tylko wtedy, gdy musi — bo za często = tracisz wagę sygnału.</p>
+        <div class="hier-rules">
+          <span><b>Gdy:</b> błąd, deadline dziś, pending ≥ 5, przekroczony limit</span>
+          <span><b>Forma:</b> czerwień + ikonka + CTA (zawsze)</span>
+          <span><b>Motion:</b> pulse 2 s infinite</span>
+          <span><b>Limit:</b> max 2 alerty na widok</span>
+        </div>
+      </div>
+
+      <div class="hier-layer active has-ghost">
+        <span class="ghost lg">⚡</span>
+        <div class="hier-head">
+          <div class="hier-badge">●</div>
+          <div>
+            <div class="hier-tag">02 · Midground</div>
+            <h3>Active</h3>
+          </div>
+        </div>
+        <p>Twoja bieżąca praca. Neutralne kafle, default shadow, wyraźne liczby. Ten stan dominuje dashboardy — to tu mieszka codzienność doradcy, kierownika, centrali.</p>
+        <div class="hier-rules">
+          <span><b>Gdy:</b> bieżące KPI, nowe wpisy, zadania dziś</span>
+          <span><b>Forma:</b> card + sh-2 + typografia wg priorytetu</span>
+          <span><b>Motion:</b> fade-in 300 ms, stagger 60 ms</span>
+          <span><b>Limit:</b> ~60–70% powierzchni ekranu</span>
+        </div>
+      </div>
+
+      <div class="hier-layer ambient has-ghost">
+        <span class="ghost lg dark">🫖</span>
+        <div class="hier-head">
+          <div class="hier-badge">○</div>
+          <div>
+            <div class="hier-tag">03 · Background</div>
+            <h3>Ambient</h3>
+          </div>
+        </div>
+        <p>Stan OK, nie wymaga akcji. Potwierdzenia, stabilne streaki, kompletne listy. Niska opacity, tekst tylko, dashed border. <em>Jeśli jest OK — niech będzie w tle.</em></p>
+        <div class="hier-rules">
+          <span><b>Gdy:</b> ✓ wszystko zatwierdzone, streak stabilny, kompletne</span>
+          <span><b>Forma:</b> text-only, dashed border, mniejszy font</span>
+          <span><b>Motion:</b> brak · lub lazy breath 6 s</span>
+          <span><b>Limit:</b> ~20–30% powierzchni ekranu</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hier-compare">
+      <div>
+        <h4 class="bad">Źle — wszystko krzyczy</h4>
+        <div class="hier-ex big">
+          <span>🎯 Wszystko zatwierdzone!</span>
+          <span style="font-family:var(--font-mono);color:var(--ok)">100%</span>
+        </div>
+        <div class="hier-ex big hot">
+          <span>🔥 STREAK 24 DNI</span>
+          <span style="font-size:24px;color:var(--red)">24</span>
+        </div>
+        <div class="hier-ex big">
+          <span>Sieć · 5,99M PLN</span>
+          <span style="color:var(--red);font-weight:700">+18%</span>
+        </div>
+        <p class="hier-note">Trzy kafle na tym samym poziomie krzyku. Oko nie wie, gdzie patrzeć. Ważne tonie w szumie — a „wszystko OK" dostaje tyle samo miejsca, co realna praca.</p>
+      </div>
+
+      <div>
+        <h4 class="good">Dobrze — warstwy pracują</h4>
+        <div class="hier-ex bg">
+          <span>✓ wszystko zatwierdzone</span>
+          <span style="font-family:var(--font-mono)">14 / 14</span>
+        </div>
+        <div class="hier-ex bg">
+          <span>🔥 24 dni z rzędu</span>
+          <span style="font-family:var(--font-mono);color:var(--mute)">streak</span>
+        </div>
+        <div class="hier-ex big">
+          <span>Sieć · Kwiecień</span>
+          <span style="color:var(--red);font-weight:600">5,99M PLN</span>
+        </div>
+        <p class="hier-note">Ambient tonie. Active ma miejsce na oddech. Alert — gdy się pojawi — jest widoczny natychmiast, bo nic z nim nie konkuruje.</p>
+      </div>
+    </div>
+
+    <div class="hier-rule">
+      <div>
+        <div class="eyebrow" style="margin-bottom:8px">Reguła kciuka</div>
+        <h3 style="font-size:22px;line-height:1.2">Jeśli jest OK — niech <em style="color:var(--red);font-style:italic">będzie w tle</em>.</h3>
+      </div>
+      <p style="font-size:14px;color:var(--mute);margin:0;max-width:none;line-height:1.6">Nie każdy kafel musi być wielki. Nie każda liczba musi krzyczeć. Gdy stan jest stabilny, pracujący, rutynowy — oszczędzaj uwagę usera. Zostanie mu więcej energii dla tego, co naprawdę wymaga akcji. Ta zasada napędza każdy komponent w VRS — ScrollTile, BentoGrid, empty states, notifications.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 APPLICATIONS ============ -->
+<section class="section" id="apps">
+  <div class="wrap">
+    <div class="section-num">10 — Zastosowania</div>
+    <h2>Jeden system. <em>Wiele</em> produktów.</h2>
+    <p class="lede" style="margin-bottom:60px">VRS to platforma — ten sam tokens file, te same komponenty, ta sama gramatyka UI zasilają cztery produkty. Jak Polaris napędza aplikacje Shopify, Primer napędza GitHub.</p>
+
+    <div class="apps-grid">
+      <div class="app primary has-ghost">
+        <span class="ghost xl" style="opacity:0.09">🏪</span>
+        <div class="app-head">
+          <div class="app-hex">01 · Flagship</div>
+          <span class="app-badge live">Live</span>
+        </div>
+        <h3 style="color:#fff">VRS</h3>
+        <p style="color:#9A9DA3">Retail System dla 134 oddziałów. Grafiki, wizyty, sprzęt, reklamacje, analiza sprzedaży. Doradca, kierownik regionu, centrala — trzy role, jedno źródło.</p>
+        <div class="app-preview">
+          <div class="app-preview-head">📅 Kwiecień 2026 <span class="app-preview-num">130h</span></div>
+          <div class="app-preview-bar">
+            <div style="width:42%;background:var(--c-normal)"></div>
+            <div style="width:18%;background:var(--c-biuro)"></div>
+            <div style="width:14%;background:var(--c-nad)"></div>
+            <div style="width:12%;background:var(--c-urlop)"></div>
+            <div style="width:14%;background:var(--c-teren)"></div>
+          </div>
+        </div>
+        <div class="app-desc" style="color:#6B6E73;font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em">134 oddz. · 460 userów · Capacitor + Web</div>
+      </div>
+
+      <div class="app has-ghost">
+        <span class="ghost xl">📦</span>
+        <div class="app-head">
+          <div class="app-hex">02 · Next</div>
+          <span class="app-badge">Q3 2026</span>
+        </div>
+        <h3>STAGO</h3>
+        <p>ERP dla producenta pawilonów handlowych — leady, oferty PDF, kalkulator cenowy, katalog 12 modeli, konfigurator. Te same ScrollTile, ta sama gramatyka UI — inne fixture.</p>
+        <div class="app-preview">
+          <div class="app-preview-head">📦 Oferty w toku <span class="app-preview-num">23 / 47</span></div>
+          <div class="app-preview-bar">
+            <div style="width:48%;background:var(--ok)"></div>
+            <div style="width:18%;background:var(--warn)"></div>
+            <div style="width:34%;background:var(--line-2)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app has-ghost">
+        <span class="ghost xl">🎯</span>
+        <div class="app-head">
+          <div class="app-hex">03 · Planned</div>
+          <span class="app-badge">Q4 2026</span>
+        </div>
+        <h3>Leady / CRM</h3>
+        <p>Pipeline klientów, kwalifikacja leadu, śledzenie deali. Kafelki dominującego KPI mapują na etap lejka sprzedaży; CTA zależne od roli handlowca i statusu leadu.</p>
+        <div class="app-preview">
+          <div class="app-preview-head">🎯 Pipeline · Q2 <span class="app-preview-num">12 hot</span></div>
+          <div class="app-preview-bar">
+            <div style="width:28%;background:var(--c-biuro)"></div>
+            <div style="width:22%;background:var(--c-szkol)"></div>
+            <div style="width:18%;background:var(--c-nad)"></div>
+            <div style="width:32%;background:var(--red)"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="app has-ghost">
+        <span class="ghost xl">🏭</span>
+        <div class="app-head">
+          <div class="app-hex">04 · Planned</div>
+          <span class="app-badge">2027</span>
+        </div>
+        <h3>Produkcja</h3>
+        <p>Zlecenia, braki, wydajność linii. Emoji mapping rozszerzony: 🏭 linia, 🔧 serwis, ⚙️ zlecenie, 📦 wysyłka.</p>
+        <div class="app-preview">
+          <div class="app-preview-head">🏭 Linie aktywne <span class="app-preview-num">4 / 6</span></div>
+          <div class="app-preview-bar">
+            <div style="width:67%;background:var(--c-teren)"></div>
+            <div style="width:33%;background:var(--line-2)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASE STUDY: ScrollTile × 4 -->
+    <div class="case-study">
+      <div class="case-head">
+        <div>
+          <div class="eyebrow" style="margin-bottom:14px">Case study</div>
+          <h3>Jeden ScrollTile. <em>Cztery</em> konteksty.</h3>
+        </div>
+        <p>Ten sam primitive — te same props (icon, title, count, emptyState, alert) — w czterech produktach, czterech rolach, czterech emocjach. Tak wygląda platform design system.</p>
+      </div>
+
+      <div class="case-4grid">
+        <div class="case-tile has-ghost">
+          <span class="ghost">👥</span>
+          <div class="case-tile-label"><span>01 · Retail</span><span class="product">VRS</span></div>
+          <div class="case-tile-head"><span class="icon">👥</span>Zespół dziś <span class="case-tile-num">6/8</span></div>
+          <div class="case-tile-body">
+            <div class="row"><span>🐻 Anna</span><span>biuro</span></div>
+            <div class="row"><span>🦊 Marta</span><span>teren</span></div>
+            <div class="row"><span>🐰 Piotr</span><span>dom</span></div>
+            <div class="row"><span style="color:var(--dim)">+ 3</span><span></span></div>
+          </div>
+        </div>
+
+        <div class="case-tile has-ghost">
+          <span class="ghost">📦</span>
+          <div class="case-tile-label"><span>02 · B2B Sales</span><span class="product">STAGO</span></div>
+          <div class="case-tile-head"><span class="icon">📦</span>Oferty w toku <span class="case-tile-num">3</span></div>
+          <div class="case-tile-body">
+            <div class="row"><span>Warzywniak Tomek</span><span>ATRI</span></div>
+            <div class="row"><span>Sklep rowerowy</span><span>MILA</span></div>
+            <div class="row"><span>Piekarnia Jasionka</span><span>NORD</span></div>
+          </div>
+        </div>
+
+        <div class="case-tile has-ghost">
+          <span class="ghost">🎯</span>
+          <div class="case-tile-label"><span>03 · CRM</span><span class="product">Leady</span></div>
+          <div class="case-tile-head"><span class="icon">🎯</span>Gorące leady <span class="case-tile-num">12</span></div>
+          <div class="case-tile-body">
+            <div class="row"><span>ACME Sp. z o.o.</span><span>80%</span></div>
+            <div class="row"><span>Max-GSM Denis</span><span>72%</span></div>
+            <div class="row"><span>Rondo Sklepy</span><span>65%</span></div>
+            <div class="row"><span style="color:var(--dim)">+ 9</span><span></span></div>
+          </div>
+        </div>
+
+        <div class="case-tile has-ghost">
+          <span class="ghost">🏭</span>
+          <div class="case-tile-label"><span>04 · Factory</span><span class="product">Produkcja</span></div>
+          <div class="case-tile-head"><span class="icon">🏭</span>Linie aktywne <span class="case-tile-num">4/6</span></div>
+          <div class="case-tile-body">
+            <div class="row"><span>⚙️ Linia A · MIG</span><span>98%</span></div>
+            <div class="row"><span>⚙️ Linia B · Plazma</span><span>82%</span></div>
+            <div class="row"><span>🔧 Linia C · serwis</span><span style="color:var(--warn)">pauza</span></div>
+            <div class="row"><span style="color:var(--dim)">+ 3</span><span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="case-footnote">
+        ↓ <b>ScrollTile</b> · props: icon, title, count, size, isEmpty, emptyEmoji, emptyText, onExpand ↓<br>
+        Ten sam primitive · cztery produkty · zero rozjazdu
+      </div>
+    </div>
+
+    <!-- PEER DESIGN SYSTEMS -->
+    <div style="margin-top:80px">
+      <div class="eyebrow" style="margin-bottom:16px">W kontekście</div>
+      <h3 style="font-size:32px;line-height:1.1;letter-spacing:-0.02em;margin-bottom:12px">Platform design systems, które wyznaczyły kierunek.</h3>
+      <p class="lede" style="margin-bottom:40px">Nie wymyślamy — stoimy na ramionach gigantów. VRS dziedziczy z tradycji Polaris, Primer, Material, Fluent, Lightning. Różnica: mniejsza skala, polski first, empatia wpisana w primitives.</p>
+
+      <div class="peer-grid">
+        <div class="peer"><div class="peer-owner">Shopify</div><div class="peer-name">Polaris</div><div class="peer-stat">e-commerce · 1M+ apps</div></div>
+        <div class="peer"><div class="peer-owner">GitHub</div><div class="peer-name">Primer</div><div class="peer-stat">dev tools · 100M users</div></div>
+        <div class="peer"><div class="peer-owner">Google</div><div class="peer-name">Material 3</div><div class="peer-stat">universal · ∞ scale</div></div>
+        <div class="peer"><div class="peer-owner">Microsoft</div><div class="peer-name">Fluent 2</div><div class="peer-stat">enterprise · Office</div></div>
+        <div class="peer"><div class="peer-owner">Salesforce</div><div class="peer-name">Lightning</div><div class="peer-stat">CRM · 150k+ orgs</div></div>
+        <div class="peer self"><div class="peer-owner">Vapemaniacy</div><div class="peer-name">VRS</div><div class="peer-stat">retail · 460 userów</div></div>
+      </div>
+    </div>
+
+    <!-- ROADMAP -->
+    <div class="roadmap">
+      <div class="roadmap-head">
+        <div>
+          <div class="eyebrow" style="margin-bottom:10px">Roadmap</div>
+          <h3>Od flagship do platformy.</h3>
+        </div>
+        <p>Plan ewolucji z jednego produktu (VRS) do otwartego platform design systemu dostępnego dla każdego SvelteKit projektu.</p>
+      </div>
+
+      <div class="roadmap-track">
+        <div class="roadmap-step done">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-date">Q1 2026 ✓</div>
+          <div class="roadmap-title">Fundament</div>
+          <div class="roadmap-desc">Tokens · ScrollTile · BentoGrid · livingContext · dark mode</div>
+        </div>
+        <div class="roadmap-step now">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-date">Q2 2026 · teraz</div>
+          <div class="roadmap-title">VRS Live</div>
+          <div class="roadmap-desc">Go-live 460 userów · 134 oddz. · Brand book v1 · 48 sekcji</div>
+        </div>
+        <div class="roadmap-step next">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-date">Q3 2026</div>
+          <div class="roadmap-title">STAGO port</div>
+          <div class="roadmap-desc">Te same primitives → ERP pawilonów. @vrs/ui npm v0.1</div>
+        </div>
+        <div class="roadmap-step planned">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-date">Q4 2026</div>
+          <div class="roadmap-title">vrs-design.md</div>
+          <div class="roadmap-desc">AI spec · Storybook · Leady/CRM implementation</div>
+        </div>
+        <div class="roadmap-step planned">
+          <div class="roadmap-dot"></div>
+          <div class="roadmap-date">2027</div>
+          <div class="roadmap-title">Produkcja + open</div>
+          <div class="roadmap-desc">Factory module · marketplace listing · community</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICING -->
+    <div style="margin-top:80px">
+      <div class="eyebrow" style="margin-bottom:16px">Cennik · Q3 2026 launch</div>
+      <h3 style="font-size:32px;line-height:1.1;letter-spacing:-0.02em;margin-bottom:12px">Cztery progi. <em style="color:var(--red);font-style:italic">Jeden</em> system.</h3>
+      <p class="lede" style="margin-bottom:40px">Od darmowego fundamentu dla indywidualnych devów do enterprise wdrożenia z własnym theme'em. Każdy próg zawiera wszystko z niższego. Jedna płatność — roczne updaty w cenie.</p>
+
+      <div class="pricing">
+        <div class="tier">
+          <div class="tier-name">01 · Free</div>
+          <div class="tier-price"><span class="currency">$</span>0</div>
+          <p class="tier-for">Dla uczących się, OSS projektów, eksperymentów.</p>
+          <ul class="tier-features">
+            <li>Tokens (kolor · spacing · motion)</li>
+            <li>Podstawowe komponenty</li>
+            <li>MIT License</li>
+            <li class="no">Full brand book</li>
+            <li class="no">Figma library</li>
+            <li class="no">Wsparcie</li>
+          </ul>
+          <a href="#" class="tier-cta sec">GitHub · npm</a>
+        </div>
+
+        <div class="tier popular">
+          <span class="tier-badge">Popularne</span>
+          <div class="tier-name">02 · Pro</div>
+          <div class="tier-price"><span class="currency">$</span>59<span class="unit">/ raz</span></div>
+          <p class="tier-for">Dla solo devów i freelancerów budujących własne produkty.</p>
+          <ul class="tier-features">
+            <li>Wszystko z Free</li>
+            <li>Pełny brand book (HTML · PDF)</li>
+            <li>48+ komponentów Svelte</li>
+            <li>Figma library</li>
+            <li>12 miesięcy updatów</li>
+            <li class="no">Multi-seat · Slack support</li>
+          </ul>
+          <a href="#" class="tier-cta pri">Kup Pro · $59</a>
+        </div>
+
+        <div class="tier">
+          <div class="tier-name">03 · Team</div>
+          <div class="tier-price"><span class="currency">$</span>99<span class="unit">/ raz</span></div>
+          <p class="tier-for">Dla agencji i zespołów do 5 osób pracujących nad wieloma projektami.</p>
+          <ul class="tier-features">
+            <li>Wszystko z Pro</li>
+            <li>5 seats (dev / designer)</li>
+            <li>Storybook z live playground</li>
+            <li>Slack community access</li>
+            <li>Priority email support</li>
+            <li>24 miesiące updatów</li>
+          </ul>
+          <a href="#" class="tier-cta sec">Kup Team · $99</a>
+        </div>
+
+        <div class="tier">
+          <div class="tier-name">04 · Enterprise</div>
+          <div class="tier-price" style="font-size:32px">Custom</div>
+          <p class="tier-for">Dla firm z własnym brandem, SLA i legal requirements.</p>
+          <ul class="tier-features">
+            <li>Wszystko z Team</li>
+            <li>Unlimited seats</li>
+            <li>Własny theme (kolory, typografia)</li>
+            <li>Dedicated Slack channel</li>
+            <li>SLA · legal review</li>
+            <li>Onboarding workshop</li>
+          </ul>
+          <a href="#" class="tier-cta sec">Porozmawiajmy</a>
+        </div>
+      </div>
+
+      <p style="margin-top:28px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;color:var(--mute);text-align:center">
+        Wszystkie ceny netto · Faktura VAT · Stripe / PayPal / BLIK · 14 dni gwarancji zwrotu
+      </p>
+    </div>
+
+    <div style="margin-top:60px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:40px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px">
+      <div>
+        <div class="eyebrow" style="margin-bottom:12px">W pakiecie Pro · Q2 2026</div>
+        <h3 style="font-size:22px;margin-bottom:8px">@vrs/ui</h3>
+        <p style="font-size:14px;color:var(--mute);margin:0">npm package — komponenty + tokens. Drop-in dla każdego SvelteKit projektu.</p>
+      </div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:12px">W pakiecie Team · Q3 2026</div>
+        <h3 style="font-size:22px;margin-bottom:8px">vrs-design.md</h3>
+        <p style="font-size:14px;color:var(--mute);margin:0">Markdown spec — wrzuć do projektu, AI generuje UI w stylu VRS bez dalszych instrukcji.</p>
+      </div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:12px">Free · już teraz</div>
+        <h3 style="font-size:22px;margin-bottom:8px"><a href="/design-system" style="color:inherit;text-decoration:underline;text-decoration-color:var(--red);text-underline-offset:4px">/design-system</a></h3>
+        <p style="font-size:14px;color:var(--mute);margin:0">Live preview 48+ sekcji + 22 wykresów + dark mode. Copy-paste snippets, tokeny, wzorce.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11 ACCESSIBILITY ============ -->
+<section class="section" id="a11y">
+  <div class="wrap">
+    <div class="section-num">11 — Dostępność</div>
+    <h2>WCAG 2.2 AA <em>jako default</em>.</h2>
+    <p class="lede" style="margin-bottom:60px">W Polsce od czerwca 2025 — Ustawa o zapewnianiu dostępności. W UE — European Accessibility Act. Każdy nowy komponent VRS przechodzi przez bramkę: kontrast, fokus, klawiatura, reduced motion. To nie jest feature — to fundament systemu, który sprzedamy globalnie.</p>
+
+    <div class="a11y-grid">
+      <div class="a11y-card">
+        <div class="eyebrow" style="margin-bottom:20px">Kontrast — WCAG 2.2 (wyliczone)</div>
+        <div class="a11y-row">
+          <div class="a11y-swatch" style="background:var(--red)"></div>
+          <div class="a11y-pair"><span>White na VRS Red</span><span>#FFFFFF / #DC2626</span></div>
+          <div class="a11y-ratio">5.94</div>
+          <span class="a11y-badge aa">AA</span>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-swatch" style="background:var(--ink)"></div>
+          <div class="a11y-pair"><span>White na Ink</span><span>#F4F4F5 / #1D1D1B</span></div>
+          <div class="a11y-ratio">16.85</div>
+          <span class="a11y-badge aaa">AAA</span>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-swatch" style="background:#FFFFFF"></div>
+          <div class="a11y-pair"><span>Ink na White</span><span>#1D1D1B / #FFFFFF</span></div>
+          <div class="a11y-ratio">17.34</div>
+          <span class="a11y-badge aaa">AAA</span>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-swatch" style="background:#FFFFFF"></div>
+          <div class="a11y-pair"><span>VRS Red na White</span><span>#DC2626 / #FFFFFF</span></div>
+          <div class="a11y-ratio">5.94</div>
+          <span class="a11y-badge aa">AA</span>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-swatch" style="background:#FFFFFF"></div>
+          <div class="a11y-pair"><span>Mute na White (body small)</span><span>#555555 / #FFFFFF</span></div>
+          <div class="a11y-ratio">7.46</div>
+          <span class="a11y-badge aaa">AAA</span>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-swatch" style="background:var(--ink-dark)"></div>
+          <div class="a11y-pair"><span>White na Night (dark mode)</span><span>#F4F4F5 / #0F1011</span></div>
+          <div class="a11y-ratio">18.21</div>
+          <span class="a11y-badge aaa">AAA</span>
+        </div>
+        <div class="a11y-row">
+          <div class="a11y-swatch" style="background:var(--ink-dark)"></div>
+          <div class="a11y-pair"><span>Dim na Night (meta, min)</span><span>#A1A1AA / #0F1011</span></div>
+          <div class="a11y-ratio">9.12</div>
+          <span class="a11y-badge aaa">AAA</span>
+        </div>
+      </div>
+
+      <div class="a11y-card">
+        <div class="eyebrow" style="margin-bottom:20px">Focus — zawsze widoczny</div>
+        <p style="font-size:13px;color:var(--mute);max-width:none;margin:0 0 12px">Każdy interaktywny element ma ring na fokus klawiatury. Nigdy <code style="font-family:var(--font-mono);background:var(--paper-2);padding:1px 6px;border-radius:4px;font-size:11px">outline:none</code> bez zastępnika.</p>
+        <div class="focus-demo">
+          <button class="focus-btn focused">+ Nowy wpis · :focus</button>
+          <input class="focus-input focused" value="Aktywne pole tekstowe" readonly />
+          <button class="focus-btn sec">Drugorzędny · :blur</button>
+        </div>
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--line-2);font-family:var(--font-mono);font-size:10px;color:var(--mute);letter-spacing:0.08em;line-height:1.8">
+          :focus-visible {<br>
+          &nbsp;&nbsp;outline: none;<br>
+          &nbsp;&nbsp;box-shadow: 0 0 0 3px rgba(220,38,38,.3),<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 0 0 1px var(--ink);<br>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="a11y-rules">
+      <div class="a11y-rule has-ghost">
+        <span class="ghost sm">⌨️</span>
+        <span class="icn">⌨️</span>
+        <h4>Keyboard first</h4>
+        <p>Tab / Shift+Tab / Enter / Esc / ← → ↑ ↓ na wszystkim. Skok do głównej treści na górze każdego widoku. Zero pułapek fokusowych.</p>
+        <div class="meta">WCAG 2.1.1 · 2.1.2</div>
+      </div>
+      <div class="a11y-rule has-ghost">
+        <span class="ghost sm">🎯</span>
+        <span class="icn">🎯</span>
+        <h4>Target 44×44 px</h4>
+        <p>Minimum touch target 44×44 px (iOS) / 48×48 dp (Android). Przyciski i linki nigdy mniejsze niż 44 px w każdą stronę.</p>
+        <div class="meta">WCAG 2.5.5 AAA</div>
+      </div>
+      <div class="a11y-rule has-ghost">
+        <span class="ghost sm">🌀</span>
+        <span class="icn">🌀</span>
+        <h4>Reduced motion</h4>
+        <p>prefers-reduced-motion: reduce — wszystkie animacje skracają się do 0.01 s. Obowiązkowe @media query w app.css.</p>
+        <div class="meta">WCAG 2.3.3</div>
+      </div>
+      <div class="a11y-rule has-ghost">
+        <span class="ghost sm">🔊</span>
+        <span class="icn">🔊</span>
+        <h4>Screen readers</h4>
+        <p>aria-label na ikonach, aria-live na notyfikacjach, semantyczny HTML przede wszystkim. Nigdy div-as-button. Ikony emoji mają zapasowy opis tekstowy.</p>
+        <div class="meta">WCAG 4.1.2</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <h3>Od jednego oddziału do <em>całej sieci</em> — ten sam język.</h3>
+      <div class="footer-meta">
+        <div>VRS Brand System · v1.1</div>
+        <div>Dokument · 19 · 04 · 2026</div>
+        <div>© Vapemaniacy Retail System</div>
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <div class="footer-col">
+        <span class="eyebrow">Produkt</span>
+        <a href="/">VRS Home</a>
+        <a href="/graphics">Grafiki</a>
+        <a href="/design-system">Design System · Live</a>
+        <a href="/brand-system">Brand System · ten dokument</a>
+      </div>
+      <div class="footer-col">
+        <span class="eyebrow">Platform</span>
+        <span>@vrs/ui · npm (Q2 2026)</span>
+        <span>vrs-design.md · AI spec (Q3 2026)</span>
+        <span>Storybook · docs</span>
+      </div>
+      <div class="footer-col">
+        <span class="eyebrow">Made by</span>
+        <span>Karol Zamarlik · 2026</span>
+        <span>Wrocław · Kraków</span>
+        <span>MIT License · open source</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Smooth scroll for anchor nav
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const id = a.getAttribute('href');
+      const el = document.querySelector(id);
+      if (el) {
+        e.preventDefault();
+        window.scrollTo({top: el.offsetTop - 20, behavior: 'smooth'});
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
