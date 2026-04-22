@@ -1,0 +1,73 @@
+{
+	"realm": "wn-panel",
+	"displayName": "Wolny Namiot · panel",
+	"enabled": true,
+	"sslRequired": "external",
+	"registrationAllowed": false,
+	"loginWithEmailAllowed": true,
+	"duplicateEmailsAllowed": false,
+	"resetPasswordAllowed": true,
+	"editUsernameAllowed": false,
+	"bruteForceProtected": true,
+	"permanentLockout": false,
+	"maxFailureWaitSeconds": 900,
+	"failureFactor": 5,
+	"clients": [
+		{
+			"clientId": "wn-panel-app",
+			"name": "Wolny Namiot Panel",
+			"enabled": true,
+			"publicClient": false,
+			"secret": "wn-panel-dev-secret-change-in-prod",
+			"standardFlowEnabled": true,
+			"implicitFlowEnabled": false,
+			"directAccessGrantsEnabled": false,
+			"serviceAccountsEnabled": false,
+			"redirectUris": [
+				"http://localhost:5173/auth/callback",
+				"http://localhost:5173/*"
+			],
+			"webOrigins": ["http://localhost:5173"],
+			"protocol": "openid-connect",
+			"attributes": {
+				"post.logout.redirect.uris": "http://localhost:5173/*"
+			},
+			"defaultClientScopes": ["web-origins", "profile", "roles", "email"],
+			"optionalClientScopes": ["address", "phone", "offline_access"]
+		}
+	],
+	"roles": {
+		"realm": [
+			{
+				"name": "admin",
+				"description": "Pełny dostęp do panelu WN"
+			},
+			{
+				"name": "employee",
+				"description": "Pracownik — edycja inventory, rezerwacji, klientów"
+			},
+			{
+				"name": "viewer",
+				"description": "Tylko do odczytu"
+			}
+		]
+	},
+	"users": [
+		{
+			"username": "denis",
+			"email": "denis@wolnynamiot.pl",
+			"firstName": "Denis",
+			"lastName": "Górski",
+			"enabled": true,
+			"emailVerified": true,
+			"credentials": [
+				{
+					"type": "password",
+					"value": "denis1234",
+					"temporary": false
+				}
+			],
+			"realmRoles": ["admin"]
+		}
+	]
+}

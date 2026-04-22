@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: wn_dev_local
       POSTGRES_DB: wn_panel
     ports:
-      - "5432:5432"
+      - "5434:5432"  # Karol ma Postgres.app na :5432, VRS v2 na :5433
     volumes:
       - wn_panel_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -17,6 +17,47 @@ services:
       timeout: 3s
       retries: 10
 
+  keycloak-db:
+    image: postgres:16-alpine
+    container_name: wn-panel-keycloak-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak_dev_change_me
+      POSTGRES_DB: keycloak
+    volumes:
+      - wn_panel_keycloak_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: wn-panel-keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak_dev_change_me
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin_dev_change_me
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8089
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8089:8080"  # :8088 zajęty przez VRS v2 Keycloak
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    volumes:
+      - ./keycloak/realm-export:/opt/keycloak/data/import:ro
+
 volumes:
   wn_panel_pgdata:
     name: wn_panel_pgdata
+  wn_panel_keycloak_db:
+    name: wn_panel_keycloak_db

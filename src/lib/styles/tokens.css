@@ -72,15 +72,17 @@
 	--r-xl: 24px;
 
 	/* ─────────────────────────────────────────────────────────────
-	 * Typography — WN brand fonts
-	 * display: Instrument Serif (italic accents), sans: Inter, mono: JetBrains Mono
-	 * Archivo Black do hero / nagłówków punktowych
+	 * Typography — sans-only (serif out per user 2026-04-22 19:50)
 	 * ───────────────────────────────────────────────────────────── */
-	--font-display: 'Instrument Serif', Georgia, serif;
-	--font-hero: 'Archivo Black', 'Inter', -apple-system, sans-serif;
+	--font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+	--font-hero: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 	--font-sans:
 		'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+	/* Sidebar (VRS-style icon rail) */
+	--nav-width: 76px;
+	--nav-bg: #0f1019;
 
 	/* ─────────────────────────────────────────────────────────────
 	 * Shadows + transitions
@@ -89,6 +91,53 @@
 	--shadow-md: 0 4px 8px rgba(26, 29, 46, 0.08);
 	--shadow-lg: 0 10px 25px rgba(26, 29, 46, 0.12);
 	--transition: 150ms ease;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * DARK MODE — canvas → ink, text → plotno
+ * Activated by [data-theme='dark'] on <html>
+ * ───────────────────────────────────────────────────────────── */
+:root[data-theme='dark'] {
+	--paper: #14151f;
+	--paper-2: #1a1c28;
+	--ink: #f0ece0;
+	--ink-2: #d8d3c4;
+	--ink-dark: #f5f1e8;
+	--mute: #8e8b80;
+	--dim: #66645a;
+	--line: rgba(245, 241, 232, 0.08);
+	--line-2: rgba(245, 241, 232, 0.04);
+	--card: #1e202c;
+
+	/* WN palette swap — dla komponentów używających wn-atrament/wn-plotno bezpośrednio */
+	--wn-plotno: #14151f;
+	--wn-plotno-2: #1a1c28;
+	--wn-atrament: #f0ece0;
+	--wn-atrament-2: #d8d3c4;
+	--wn-granat-soft: rgba(74, 123, 192, 0.25);
+
+	/* Primary accent jaśniejszy w dark */
+	--red: #4a7bc0;
+	--red-soft: rgba(30, 58, 95, 0.4);
+	--red-ink: #a8c4e8;
+
+	/* Status */
+	--ok: #4fcca0;
+	--warn: #f5d35c;
+	--danger: #ff6660;
+
+	/* Popy */
+	--color-pop-green: #4fcca0;
+	--color-pop-green-soft: rgba(79, 204, 160, 0.22);
+	--color-pop-green-ink: #a0e5cc;
+
+	/* Ink variants */
+	--wn-granat-ink: #a8c4e8;
+	--wn-zielony-ink: #a0e5cc;
+
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+	--shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+	--shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 /* Base reset + body */
