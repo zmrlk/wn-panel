@@ -228,6 +228,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 };
 
 export const actions: Actions = {
+	updateStatus: async ({ request, params }) => {
+		const form = await request.formData();
+		const status = form.get('status')?.toString();
+		if (!status) return fail(400);
+
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx) as 'lead' | 'offer' | 'booking';
+		const id = compound.slice(dashIdx + 1);
+
+		const table = type === 'lead' ? lead : type === 'offer' ? offer : booking;
+		await db.update(table).set({ status, updatedAt: new Date() }).where(eq(table.id, id));
+		return { success: true };
+	},
+
 	addNote: async ({ request, params, locals }) => {
 		const form = await request.formData();
 		const content = form.get('content')?.toString().trim() ?? '';

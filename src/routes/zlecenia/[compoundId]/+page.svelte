@@ -8,6 +8,35 @@
 	let newNote = $state('');
 	let addingNote = $state(false);
 
+	// Status transitions per type
+	const STATUS_OPTIONS: Record<string, Array<{ id: string; label: string; emoji: string }>> = {
+		lead: [
+			{ id: 'new', label: 'Nowy', emoji: '🆕' },
+			{ id: 'contacted', label: 'Skontaktowany', emoji: '📞' },
+			{ id: 'qualified', label: 'Kwalifikowany', emoji: '🎯' },
+			{ id: 'quoted', label: 'Oferta wysłana', emoji: '✉️' },
+			{ id: 'won', label: 'Wygrany', emoji: '✅' },
+			{ id: 'lost', label: 'Przegrany', emoji: '✕' },
+			{ id: 'archived', label: 'Archiwum', emoji: '📦' }
+		],
+		offer: [
+			{ id: 'draft', label: 'Szkic', emoji: '✏️' },
+			{ id: 'sent', label: 'Wysłana', emoji: '✉️' },
+			{ id: 'viewed', label: 'Klient zobaczył', emoji: '👀' },
+			{ id: 'accepted', label: 'Zaakceptowana', emoji: '✅' },
+			{ id: 'rejected', label: 'Odrzucona', emoji: '✕' },
+			{ id: 'expired', label: 'Wygasła', emoji: '⏰' }
+		],
+		booking: [
+			{ id: 'draft', label: 'Szkic', emoji: '📝' },
+			{ id: 'confirmed', label: 'Potwierdzona', emoji: '✅' },
+			{ id: 'in-progress', label: 'W trakcie', emoji: '🚚' },
+			{ id: 'done', label: 'Zakończona', emoji: '🎉' },
+			{ id: 'cancelled', label: 'Anulowana', emoji: '✕' }
+		]
+	};
+	const statusList = $derived(STATUS_OPTIONS[z.type] ?? []);
+
 	const ICONS: Record<string, string> = {
 		dashboard: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9ZM9 22V12h6v10',
 		zlecenia: 'M22 12h-4l-3 9L9 3l-3 9H2',
@@ -248,7 +277,36 @@
 				</div>
 			</section>
 
-			<!-- 6. TIMELINE -->
+			<!-- 6. ZMIANA STATUSU -->
+			<section class="card">
+				<h2>Status</h2>
+				<form
+					method="POST"
+					action="?/updateStatus"
+					use:enhance={() => async ({ update }) => {
+						await update();
+						await invalidateAll();
+					}}
+					class="status-form"
+				>
+					<div class="status-chips">
+						{#each statusList as s}
+							<button
+								type="submit"
+								name="status"
+								value={s.id}
+								class="status-chip-btn"
+								class:active={z.status === s.id}
+							>
+								<span>{s.emoji}</span>
+								<span>{s.label}</span>
+							</button>
+						{/each}
+					</div>
+				</form>
+			</section>
+
+			<!-- 7. TIMELINE -->
 			<section class="card">
 				<h2>Przebieg</h2>
 				<ul class="timeline">
@@ -667,6 +725,37 @@
 	.empty-note {
 		color: var(--dim);
 		font-style: italic;
+	}
+
+	/* STATUS buttons */
+	.status-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.status-chip-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.45rem 0.8rem;
+		background: var(--paper-2);
+		border: 1px solid var(--line);
+		border-radius: 20px;
+		font-size: 0.82rem;
+		color: var(--ink-2);
+		cursor: pointer;
+		font-family: var(--font-sans);
+		transition: all 120ms ease;
+	}
+	.status-chip-btn:hover {
+		border-color: var(--wn-zielony);
+		color: var(--wn-zielony-ink);
+	}
+	.status-chip-btn.active {
+		background: var(--wn-atrament);
+		color: var(--wn-plotno);
+		border-color: var(--wn-atrament);
+		font-weight: 500;
 	}
 
 	.timeline {
