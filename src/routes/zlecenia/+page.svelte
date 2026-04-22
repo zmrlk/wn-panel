@@ -58,9 +58,8 @@
 	}
 
 	function detailHref(z: { type: string; id: string }) {
-		if (z.type === 'offer') return `/offers/${z.id}`;
-		if (z.type === 'booking') return `/bookings/${z.id}`;
-		return `/leads`; // leads nie ma jeszcze detail page, link do listy
+		// Unified detail — ten sam widok dla lead/offer/booking
+		return `/zlecenia/${z.type}-${z.id}`;
 	}
 
 	function applyTab(tab: string) {
@@ -184,12 +183,16 @@
 									<a href={detailHref(z)} class="row-link">Otwórz →</a>
 								</td>
 							</tr>
-							{#if z.notes}
-								<tr class="notes-row type-{z.type}">
-									<td></td>
-									<td colspan="5" class="notes-cell">📝 {z.notes}</td>
-								</tr>
-							{/if}
+							<tr class="notes-row type-{z.type}">
+								<td></td>
+								<td colspan="5" class="notes-cell">
+									{#if z.notes}
+										📝 {z.notes}
+									{:else}
+										<span class="empty-note">— brak notatki —</span>
+									{/if}
+								</td>
+							</tr>
 						{/each}
 
 						{#if data.zlecenia.length === 0}
@@ -617,6 +620,11 @@
 	.notes-row.type-offer td,
 	.notes-row.type-booking td {
 		border-bottom: 1px solid var(--line-2);
+	}
+	.empty-note {
+		color: var(--dim);
+		font-style: italic;
+		font-size: 0.75rem;
 	}
 
 	.empty-state {

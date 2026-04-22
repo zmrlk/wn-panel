@@ -1,7 +1,14 @@
-import { createAuthClient } from 'better-auth/svelte';
+// STUB — Better Auth wyrzucony, Keycloak pending.
+// Placeholder żeby nie wysypać importów które jeszcze gdzieś zostały.
+export const authClient = {
+	signIn: { email: async () => ({ error: { message: 'Auth not configured' } }) },
+	signUp: { email: async () => ({ error: { message: 'Auth not configured' } }) },
+	signOut: async () => undefined,
+	getSession: async () => null
+};
 
-export const authClient = createAuthClient({
-	baseURL: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'
-});
-
-export const { signIn, signUp, signOut, useSession, getSession } = authClient;
+export const signIn = authClient.signIn;
+export const signUp = authClient.signUp;
+export const signOut = authClient.signOut;
+export const getSession = authClient.getSession;
+export const useSession = () => ({ subscribe: () => () => undefined });
