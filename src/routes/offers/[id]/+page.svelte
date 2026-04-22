@@ -92,17 +92,38 @@
 	<section class="section section-intro">
 		<div class="container">
 			<p class="intro-text">
-				cieszymy się, że pomyślałeś o nas. <span class="italic">poniżej</span> znajdziesz kompletną wycenę. wszystko brutto, bez gwiazdek i niespodzianek. <span class="italic">zadzwoń</span>, jeśli coś zmienić — w <em>24h</em> odezwiemy się z nową wersją.
+				cieszymy się, że pomyślałeś o nas. <span class="italic">poniżej</span> znajdziesz kompletną wycenę razem z tym <em>jak to wygląda u nas</em> — zdjęcia z realizacji, co dostajesz w pakiecie i warunki.
+			</p>
+			<p class="intro-text intro-small italic">
+				najpierw sprawdź czy to dla ciebie. <em>cena na końcu.</em>
 			</p>
 		</div>
 	</section>
 
-	<!-- POZYCJE — pakiet-item style z Pepe -->
+	<!-- GALERIA — zdjęcia z realizacji (Pepe) -->
+	<section class="section section-gallery">
+		<div class="container">
+			<header class="section-head">
+				<span class="eyebrow">jak to wygląda u nas</span>
+				<h2 class="display">zdjęcia <em class="italic">z realizacji</em></h2>
+			</header>
+			<div class="gallery-grid">
+				<figure class="photo-1"><img src="/photos/namiot-1.webp" alt="Namiot u klienta" loading="lazy" /></figure>
+				<figure class="photo-2"><img src="/photos/namiot-2.webp" alt="Eventowy setup" loading="lazy" /></figure>
+				<figure class="photo-3"><img src="/photos/namiot-3.webp" alt="Wesele plenerowe" loading="lazy" /></figure>
+				<figure class="photo-4"><img src="/photos/namiot-4.webp" alt="Wnętrze namiotu" loading="lazy" /></figure>
+				<figure class="photo-5"><img src="/photos/namiot-5.webp" alt="Oświetlenie girlandy" loading="lazy" /></figure>
+				<figure class="photo-6"><img src="/photos/namiot-6.webp" alt="Montaż namiotu" loading="lazy" /></figure>
+			</div>
+		</div>
+	</section>
+
+	<!-- POZYCJE — bez cen per-item, tylko co dostaje klient -->
 	<section class="section section-items">
 		<div class="container">
 			<header class="section-head">
-				<span class="eyebrow">co jest w ofercie</span>
-				<h2 class="display">pakiet dla <em class="italic">twojego eventu</em></h2>
+				<span class="eyebrow">co jest w pakiecie</span>
+				<h2 class="display">dla <em class="italic">twojego eventu</em></h2>
 			</header>
 
 			{#if data.items.length === 0}
@@ -112,31 +133,16 @@
 					{#each data.items as it, i}
 						<article class="pakiet-item">
 							<div class="pakiet-num mono">{String(i + 1).padStart(2, '0')}</div>
-							<div class="pakiet-body">
+							<div class="pakiet-body pakiet-body-full">
 								<h3 class="display pakiet-name">{it.description.toLowerCase()}</h3>
 								{#if it.quantity > 1}
 									<p class="mono pakiet-qty">{it.quantity} szt.</p>
 								{/if}
 							</div>
-							<div class="pakiet-price display">{fmtZl(it.lineTotalCents)}</div>
 						</article>
 					{/each}
 				</div>
 			{/if}
-		</div>
-	</section>
-
-	<!-- TOTAL BLOCK (atrament bg + zarowka duża liczba — flagship z Pepe) -->
-	<section class="section section-total">
-		<div class="container">
-			<div class="total-block">
-				<div class="total-label">
-					<span class="eyebrow">do zapłaty</span>
-					<span class="italic total-sub">razem brutto, <em>wszystko wliczone</em></span>
-				</div>
-				<div class="total-big display">{fmtZl(data.offer.totalCents)}</div>
-			</div>
-			<p class="total-note mono">VAT 23% wliczony · bez gwiazdek</p>
 		</div>
 	</section>
 
@@ -153,6 +159,20 @@
 					<li><strong>oferta ważna do:</strong> {fmtDate(data.offer.validUntil)}</li>
 				{/if}
 			</ul>
+		</div>
+	</section>
+
+	<!-- TOTAL BLOCK — DOPIERO po warunkach, ostatnia strona (hidden price) -->
+	<section class="section section-total">
+		<div class="container">
+			<span class="eyebrow">i teraz cena</span>
+			<div class="total-block">
+				<div class="total-label">
+					<span class="italic total-sub">razem brutto, <em>wszystko wliczone</em></span>
+				</div>
+				<div class="total-big display">{fmtZl(data.offer.totalCents)}</div>
+			</div>
+			<p class="total-note mono">VAT 23% wliczony · bez gwiazdek · ważna do {data.offer.validUntil ? fmtDate(data.offer.validUntil) : '7 dni'}</p>
 		</div>
 	</section>
 
@@ -458,6 +478,64 @@
 		font-style: italic;
 		font-weight: 500;
 	}
+	.intro-small {
+		font-size: 16px;
+		margin-top: 12px;
+		color: var(--atrament-500);
+	}
+
+	/* GALERIA */
+	.section-gallery {
+		background: var(--plotno);
+		padding: 80px 0;
+	}
+	.gallery-grid {
+		display: grid;
+		grid-template-columns: 2fr 1fr 1fr;
+		grid-template-rows: 280px 280px;
+		gap: 12px;
+		margin-top: 32px;
+	}
+	.gallery-grid figure {
+		margin: 0;
+		overflow: hidden;
+		border: 2px solid var(--atrament);
+		box-shadow: var(--shadow-sticker);
+	}
+	.gallery-grid figure img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+	.photo-1 {
+		grid-column: 1;
+		grid-row: 1 / 3;
+	}
+	.photo-2 {
+		grid-column: 2;
+		grid-row: 1;
+	}
+	.photo-3 {
+		grid-column: 3;
+		grid-row: 1;
+	}
+	.photo-4 {
+		grid-column: 2;
+		grid-row: 2;
+	}
+	.photo-5 {
+		grid-column: 3;
+		grid-row: 2;
+	}
+	.photo-6 {
+		display: none; /* 6th reserved for desktop-wide */
+	}
+
+	/* Pakiet-body full (no price per item) */
+	.pakiet-body-full {
+		grid-column: 2 / -1;
+	}
 
 	/* ITEMS — pakiet-item style */
 	.section-items {
@@ -506,10 +584,15 @@
 		padding: 40px;
 	}
 
-	/* TOTAL BLOCK — flagship */
+	/* TOTAL BLOCK — flagship, last reveal po warunkach */
 	.section-total {
 		background: var(--plotno);
-		padding: 64px 0 40px;
+		padding: 80px 0 40px;
+	}
+	.section-total .eyebrow {
+		display: block;
+		margin-bottom: 16px;
+		color: var(--pomidor);
 	}
 	.total-block {
 		background: var(--atrament);
@@ -673,6 +756,31 @@
 	@media (max-width: 720px) {
 		.section {
 			padding: 48px 0;
+		}
+		.gallery-grid {
+			grid-template-columns: 1fr 1fr;
+			grid-template-rows: 180px 180px 180px;
+			gap: 8px;
+		}
+		.photo-1 {
+			grid-column: 1 / -1;
+			grid-row: 1;
+		}
+		.photo-2 {
+			grid-column: 1;
+			grid-row: 2;
+		}
+		.photo-3 {
+			grid-column: 2;
+			grid-row: 2;
+		}
+		.photo-4 {
+			grid-column: 1;
+			grid-row: 3;
+		}
+		.photo-5 {
+			grid-column: 2;
+			grid-row: 3;
 		}
 		.contact-grid {
 			grid-template-columns: 1fr;
