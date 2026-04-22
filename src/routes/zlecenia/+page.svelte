@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	// row click whole row
 
 	let { data } = $props();
 
@@ -147,13 +148,12 @@
 							<th>Termin</th>
 							<th>Kiedy</th>
 							<th class="num">Wartość</th>
-							<th></th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each data.zlecenia as z}
 							{@const until = daysUntil(z.eventDate)}
-							<tr class="row type-{z.type}" class:lost={z.isLost}>
+							<tr class="row clickable type-{z.type}" class:lost={z.isLost} onclick={() => goto(detailHref(z))}>
 								<td>
 									<div class="ev-cell">
 										<span class="ev-name">{z.eventName}</span>
@@ -179,13 +179,10 @@
 									<span class="until {until.cls}">{until.label}</span>
 								</td>
 								<td class="num price">{fmtZl(z.valueCents)}</td>
-								<td class="actions">
-									<a href={detailHref(z)} class="row-link">Otwórz →</a>
-								</td>
 							</tr>
-							<tr class="notes-row type-{z.type}">
+							<tr class="notes-row clickable type-{z.type}" onclick={() => goto(detailHref(z))}>
 								<td></td>
-								<td colspan="5" class="notes-cell">
+								<td colspan="4" class="notes-cell">
 									{#if z.notes}
 										📝 {z.notes}
 									{:else}
@@ -197,7 +194,7 @@
 
 						{#if data.zlecenia.length === 0}
 							<tr class="empty">
-								<td colspan="6">
+								<td colspan="5">
 									<div class="empty-state">
 										<div class="empty-emoji">📭</div>
 										<p>Brak zleceń w tej kategorii.</p>
@@ -475,8 +472,13 @@
 		font-family: var(--font-mono);
 	}
 
-	.row:hover td {
-		background: color-mix(in srgb, var(--wn-zielony) 3%, transparent);
+	.row:hover td,
+	.notes-row.clickable:hover td {
+		background: color-mix(in srgb, var(--wn-zielony) 5%, transparent);
+	}
+	.row.clickable,
+	.notes-row.clickable {
+		cursor: pointer;
 	}
 	.row.lost {
 		opacity: 0.55;

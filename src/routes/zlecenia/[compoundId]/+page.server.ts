@@ -1,8 +1,8 @@
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { lead, offer, offerItem, booking, bookingTent, client, item } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 
 /**
  * Unified detail page dla zlecenia.
@@ -225,4 +225,34 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	}
 
 	return { user, zlecenie };
+};
+
+export const actions: Actions = {
+	addNote: async ({ request, params, locals }) => {
+		const form = await request.formData();
+		const content = form.get('content')?.toString().trim() ?? '';
+		if (!content) return fail(400, { error: 'empty' });
+
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx) as 'lead' | 'offer' | 'booking';
+		const id = compound.slice(dashIdx + 1);
+
+		const author = locals.user?.name ?? 'Denis';
+		const ts = new Date().toLocaleString('pl-PL', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+		const entry = `[${ts} · ${author}] ${content}`;
+
+		// Append to existing notes (newest first)
+		const table = type === 'lead' ? lead : type === 'offer' ? offer : booking;
+		const [existing] = await db.select({ notes: table.notes }).from(table).where(eq(table.id, id));
+		const combined = existing?.notes ? `${entry}\n\n${existing.notes}` : entry;
+		await db.update(table).set({ notes: combined, updatedAt: new Date() }).where(eq(table.id, id));
+		return { success: true };
+	}
 };
