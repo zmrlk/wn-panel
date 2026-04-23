@@ -140,12 +140,26 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	// Deduplikacja:
 	// - lead skipowany TYLKO jeśli ma zarejestrowany offer (z leadId) — inaczej pokazuj
-	// - offer skipowany gdy ma convertedToBookingId — booking reprezentuje
+	// - offer skipowany gdy ma convertedToBookingId ALBO matching booking (retroactive)
 	const leadsWithOffer = new Set<string>(
 		offers.map((o) => o.leadId).filter((id): id is string => id != null)
 	);
+
+	// Retroactive match: offer.accepted bez convertedToBookingId ale z matching booking
+	// (stary seed sprzed v5.17 auto-konwersji albo ręczne tworzenie bookingu)
+	const bookingKeys = new Set(
+		bookings.map((b) => `${b.clientId}::${b.eventName}::${b.startDate}`)
+	);
 	const skipOffers = new Set<string>(
-		offers.filter((o) => o.convertedToBookingId).map((o) => o.id)
+		offers
+			.filter(
+				(o) =>
+					o.convertedToBookingId ||
+					(o.status === 'accepted' &&
+						o.clientId &&
+						bookingKeys.has(`${o.clientId}::${o.eventName}::${o.eventStartDate}`))
+			)
+			.map((o) => o.id)
 	);
 
 	for (const l of leads) {

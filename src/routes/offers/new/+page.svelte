@@ -35,7 +35,7 @@
 	const p = data.prefill;
 
 	let clientMode = $state<'existing' | 'new'>(p ? 'new' : 'existing');
-	let selectedClientId = $state<string>(data.clients[0]?.id ?? '');
+	let selectedClientId = $state<string>('');
 	let newClientName = $state(p?.clientName ?? '');
 	let newClientPhone = $state(p?.clientPhone ?? '');
 	let newClientEmail = $state(p?.clientEmail ?? '');

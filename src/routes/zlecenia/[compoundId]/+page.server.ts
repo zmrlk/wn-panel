@@ -26,7 +26,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
  * Fetches data per type + normalizes do wspólnego shape'u.
  */
 export const load: PageServerLoad = async ({ params, locals }) => {
-	const user = locals.user ?? {
+	const me = locals.user ?? {
 		id: 'preview',
 		name: 'Denis',
 		email: 'denis@wolnynamiot.pl',
@@ -227,7 +227,23 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		};
 	} else if (type === 'booking') {
 		const [b] = await db
-			.select({ booking: booking, client: client })
+			.select({
+				bookingId: booking.id,
+				eventName: booking.eventName,
+				startDate: booking.startDate,
+				endDate: booking.endDate,
+				venue: booking.venue,
+				priceCents: booking.priceCents,
+				status: booking.status,
+				notes: booking.notes,
+				createdAt: booking.createdAt,
+				clientId: booking.clientId,
+				clientName: client.name,
+				clientCompany: client.company,
+				clientPhone: client.phone,
+				clientEmail: client.email,
+				clientAddress: client.address
+			})
 			.from(booking)
 			.leftJoin(client, eq(booking.clientId, client.id))
 			.where(eq(booking.id, id))
@@ -236,7 +252,12 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		// Fetch items via booking_tent join + payments + assignments + photos
 		const [bookedItems, payments, assignmentsRaw, photosRaw] = await Promise.all([
 			db
-				.select({ bookingTent: bookingTent, item: item })
+				.select({
+					tentId: bookingTent.tentId,
+					quantity: bookingTent.quantity,
+					itemName: item.name,
+					itemPriceCents: item.pricePerDayCents
+				})
 				.from(bookingTent)
 				.leftJoin(item, eq(bookingTent.tentId, item.id))
 				.where(eq(bookingTent.bookingId, id)),
@@ -273,44 +294,44 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				.orderBy(desc(photo.uploadedAt))
 		]);
 		const paidCentsTotal = payments.reduce((s, p) => s + p.amountCents, 0);
-		const s = STAGES[`booking:${b.booking.status}`] ?? STAGES['booking:confirmed'];
+		const s = STAGES[`booking:${b.status}`] ?? STAGES['booking:confirmed'];
 		zlecenie = {
 			type: 'booking',
-			id: b.booking.id,
+			id: b.bookingId,
 			number: null,
-			status: b.booking.status,
+			status: b.status,
 			stageLabel: s.label,
 			stageEmoji: s.emoji,
-			client: b.client
+			client: b.clientId
 				? {
-						id: b.client.id,
-						name: b.client.name,
-						company: b.client.company,
-						phone: b.client.phone,
-						email: b.client.email,
-						address: b.client.address
+						id: b.clientId,
+						name: b.clientName ?? '—',
+						company: b.clientCompany,
+						phone: b.clientPhone,
+						email: b.clientEmail,
+						address: b.clientAddress
 					}
 				: null,
 			event: {
-				name: b.booking.eventName,
-				startDate: b.booking.startDate,
-				endDate: b.booking.endDate,
-				venue: b.booking.venue,
+				name: b.eventName,
+				startDate: b.startDate,
+				endDate: b.endDate,
+				venue: b.venue,
 				guestsCount: null
 			},
-			totalCents: b.booking.priceCents,
+			totalCents: b.priceCents,
 			items: bookedItems.map((bi) => ({
-				description: bi.item?.name ?? 'Pozycja',
-				quantity: bi.bookingTent.quantity,
-				unitPriceCents: bi.item?.pricePerDayCents ?? 0,
-				lineTotalCents: (bi.item?.pricePerDayCents ?? 0) * bi.bookingTent.quantity
+				description: bi.itemName ?? 'Pozycja',
+				quantity: bi.quantity,
+				unitPriceCents: bi.itemPriceCents ?? 0,
+				lineTotalCents: (bi.itemPriceCents ?? 0) * bi.quantity
 			})),
 			bookingTents: bookedItems
-				.filter((bi) => bi.item)
+				.filter((bi) => bi.itemName)
 				.map((bi) => ({
-					tentId: bi.bookingTent.tentId,
-					itemName: bi.item?.name ?? 'Pozycja',
-					quantity: bi.bookingTent.quantity
+					tentId: bi.tentId,
+					itemName: bi.itemName ?? 'Pozycja',
+					quantity: bi.quantity
 				})),
 			payments: payments.map((p) => ({
 				id: p.id,
@@ -338,10 +359,10 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				takenByName: p.takenByName,
 				uploadedAt: p.uploadedAt
 			})),
-			notes: b.booking.notes,
+			notes: b.notes,
 			message: null,
 			source: null,
-			createdAt: b.booking.createdAt,
+			createdAt: b.createdAt,
 			sentAt: null,
 			viewedAt: null,
 			acceptedAt: null
@@ -360,7 +381,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		availableUsers = rows.map((r) => ({ id: r.id, name: r.name, skills: r.skills ?? [] }));
 	}
 
-	return { user, zlecenie, availableUsers };
+	return { user: me, zlecenie, availableUsers };
 };
 
 export const actions: Actions = {
