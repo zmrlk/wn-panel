@@ -31,3 +31,14 @@ export const NAV_ITEMS: Array<{
 export const ADMIN_NAV_ITEMS: Array<{ id: NavIconKey; label: string; href: string }> = [
 	{ id: 'settings', label: 'Ustaw.', href: '/settings' }
 ];
+
+/**
+ * Filter NAV_ITEMS po roli: admin widzi wszystko, employee tylko non-adminOnly.
+ * Pure function — łatwo testowalna.
+ */
+export function filterNavForRole<T extends { adminOnly?: boolean }>(
+	items: T[],
+	isAdmin: boolean
+): T[] {
+	return items.filter((item) => isAdmin || !item.adminOnly);
+}

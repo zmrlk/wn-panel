@@ -13,14 +13,14 @@ import {
 } from '$lib/server/db/schema';
 import { and, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm';
 import { getTemplate, renderTemplate, sendEmail } from '$lib/server/email';
-
-/**
- * Markup dla premium tier:
- * AI-driven booking bez human touch → 20% convenience fee
- * (pokrywa risk auto-rezerwacji + wartość natychmiastowej dostępności)
- */
-const MCP_PREMIUM_MARKUP = 1.2;
-const MCP_NORMAL_MARKUP = 1.0;
+import {
+	calcDays,
+	calcTotalCents,
+	applyMarkup,
+	markupForTier,
+	type McpTier,
+	type McpItemPrice
+} from '$lib/mcp-pricing';
 
 const CORS = {
 	'Access-Control-Allow-Origin': '*',
@@ -50,7 +50,20 @@ export const OPTIONS: RequestHandler = async () =>
  * 5. Send booking_confirmed email
  * 6. Return { ok, bookingId, offerNumber, totalCents, tier }
  */
-export const POST: RequestHandler = async ({ request, url }) => {
+export const POST: RequestHandler = async (event) => {
+	try {
+		return await handleReservation(event);
+	} catch (err) {
+		// Nigdy nie leakuj stacktrace'u klientom MCP — log + generic 500
+		console.error('[MCP /reservation] Uncaught:', err);
+		return json(
+			{ ok: false, error: 'Internal server error — skontaktuj się z biurem' },
+			{ status: 500, headers: CORS }
+		);
+	}
+};
+
+async function handleReservation({ request, url }: Parameters<RequestHandler>[0]) {
 	const data = await request.json().catch(() => null);
 	if (!data) return json({ ok: false, error: 'Invalid JSON' }, { status: 400, headers: CORS });
 
@@ -83,6 +96,17 @@ export const POST: RequestHandler = async ({ request, url }) => {
 
 	// Fetch items + check availability
 	const itemIds = requestedItems.map((i: { itemId: string }) => i.itemId);
+
+	// Walidacja formatu UUID PRZED query — bez tego pg rzuca 22P02 i dostajemy 500
+	const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+	const invalidIds = itemIds.filter((id) => typeof id !== 'string' || !UUID_RE.test(id));
+	if (invalidIds.length > 0) {
+		return json(
+			{ ok: false, error: `Nieprawidłowy format itemId (oczekuję UUID): ${invalidIds.join(', ')}` },
+			{ status: 400, headers: CORS }
+		);
+	}
+
 	const dbItems = await db
 		.select()
 		.from(item)
@@ -129,21 +153,18 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		);
 	}
 
-	// Compute total (per day × days)
-	const days = Math.max(
-		1,
-		Math.ceil((new Date(eventEndDate).getTime() - new Date(eventStartDate).getTime()) / 86400000) + 1
+	// Compute total — pure logic w $lib/mcp-pricing (testowalne bez DB)
+	const days = calcDays(eventStartDate, eventEndDate);
+	const priceMap: Map<string, McpItemPrice> = new Map(
+		dbItems.map((i) => [i.id, { id: i.id, pricePerDayCents: i.pricePerDayCents }])
 	);
-	let totalCents = 0;
-	for (const req of requestedItems as { itemId: string; quantity: number }[]) {
-		const it = itemMap.get(req.itemId)!;
-		const unitPrice = it.pricePerDayCents ?? 0;
-		totalCents += unitPrice * req.quantity * days;
-	}
-
-	// Premium tier = +20% markup (patrz MCP_PREMIUM_MARKUP na górze)
-	const markup = tier === 'premium' ? MCP_PREMIUM_MARKUP : MCP_NORMAL_MARKUP;
-	totalCents = Math.round(totalCents * markup);
+	const totalCents = calcTotalCents(
+		requestedItems as { itemId: string; quantity: number }[],
+		priceMap,
+		days,
+		tier as McpTier
+	);
+	const markup = markupForTier(tier as McpTier);
 
 	// Find or create client
 	const clientEmailLower = String(clientEmail).toLowerCase();
@@ -225,11 +246,11 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		})
 		.returning();
 
-	// Insert offer items
+	// Insert offer items (per-item unit price po markup → trafia do DB jako int cents)
 	await db.insert(offerItem).values(
 		(requestedItems as { itemId: string; quantity: number }[]).map((req) => {
 			const it = itemMap.get(req.itemId)!;
-			const unitPrice = Math.round((it.pricePerDayCents ?? 0) * markup);
+			const unitPrice = applyMarkup(it.pricePerDayCents, tier as McpTier);
 			return {
 				offerId: newOffer.id,
 				tentId: it.id,
@@ -288,4 +309,4 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		},
 		{ status: 201, headers: CORS }
 	);
-};
+}

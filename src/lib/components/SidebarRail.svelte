@@ -7,7 +7,13 @@
 	 *
 	 * Przedtem: 7 plików duplikat ~40 linii. Po: 1 źródło prawdy.
 	 */
-	import { NAV_ICONS, NAV_ITEMS, ADMIN_NAV_ITEMS, type NavIconKey } from '$lib/constants/icons';
+	import {
+		NAV_ICONS,
+		NAV_ITEMS,
+		ADMIN_NAV_ITEMS,
+		filterNavForRole,
+		type NavIconKey
+	} from '$lib/constants/icons';
 
 	interface Props {
 		/** Aktywna pozycja — pokolorowana + indicator */
@@ -21,6 +27,9 @@
 
 	let { activeId, isAdmin, userName = '?', userEmail }: Props = $props();
 
+	// Filter per-role — pure logic w constants/icons.ts (testable)
+	const visibleItems = $derived(filterNavForRole(NAV_ITEMS, isAdmin));
+
 	function toggleTheme() {
 		const w = window as typeof window & { toggleTheme?: () => void };
 		w.toggleTheme?.();
@@ -33,16 +42,14 @@
 	</a>
 
 	<nav class="rail-nav">
-		{#each NAV_ITEMS as item}
-			{#if isAdmin || !item.adminOnly}
-				<a href={item.href} class="rail-item" class:active={item.id === activeId}>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-						<path d={NAV_ICONS[item.id]} />
-					</svg>
-					<span class="rail-label">{item.label}</span>
-					{#if item.id === activeId}<div class="rail-indicator"></div>{/if}
-				</a>
-			{/if}
+		{#each visibleItems as item}
+			<a href={item.href} class="rail-item" class:active={item.id === activeId}>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+					<path d={NAV_ICONS[item.id]} />
+				</svg>
+				<span class="rail-label">{item.label}</span>
+				{#if item.id === activeId}<div class="rail-indicator"></div>{/if}
+			</a>
 		{/each}
 
 		{#if isAdmin}

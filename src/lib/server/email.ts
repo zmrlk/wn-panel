@@ -10,6 +10,9 @@ import { db } from './db';
 import { appSetting, emailLog } from './db/schema';
 import { eq } from 'drizzle-orm';
 
+// Re-export dla backward compat (wcześniej renderTemplate był zdefiniowany tutaj)
+export { renderTemplate } from '$lib/template';
+
 export type EmailTemplateKey =
 	| 'thank_you'
 	| 'offer_sent'
@@ -34,16 +37,6 @@ export async function getTemplate(key: EmailTemplateKey): Promise<EmailTemplate 
 	if (!row) return null;
 	const templates = row.value as Record<EmailTemplateKey, EmailTemplate>;
 	return templates[key] ?? null;
-}
-
-/**
- * Zastąp placeholders {{key}} wartościami z context
- */
-export function renderTemplate(template: string, context: Record<string, string | number | null | undefined>): string {
-	return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-		const val = context[key];
-		return val == null ? '' : String(val);
-	});
 }
 
 /**
