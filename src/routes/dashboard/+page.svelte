@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import SidebarRail from '$lib/components/SidebarRail.svelte';
 	let { data } = $props();
 
 	// Dynamiczna data w nagłówku
@@ -116,52 +117,7 @@
 </svelte:head>
 
 <div class="app">
-	<!-- ─── SIDEBAR (VRS-style icon rail) ─────────────────────── -->
-	<aside class="rail">
-		<a href="/" class="logo">
-			<span class="logo-mark">wn</span>
-		</a>
-
-		<nav class="rail-nav">
-			{#each MAIN as item, i}
-				{#if (item.id !== 'tents' || data.isAdmin) && (item.id !== 'zlecenia' || data.isAdmin) && (item.id !== 'team' || data.isAdmin)}
-					<a href="/{item.id === 'dashboard' ? 'dashboard' : item.id === 'tents' ? 'magazyn' : item.id}" class="rail-item" class:active={item.active}>
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-							<path d={ICONS[item.id]} />
-						</svg>
-						<span class="rail-label">{item.label}</span>
-						{#if item.active}<div class="rail-indicator"></div>{/if}
-					</a>
-				{/if}
-			{/each}
-
-			{#if data.isAdmin}
-				<div class="rail-sep"></div>
-
-				{#each ADMIN as item}
-					<a href="/{item.id}" class="rail-item">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-							<path d={ICONS[item.id]} />
-						</svg>
-						<span class="rail-label">{item.label}</span>
-					</a>
-				{/each}
-			{/if}
-		</nav>
-
-		<div class="rail-foot">
-			<button class="theme-btn" type="button" aria-label="Przełącz motyw" onclick={() => (window as typeof window & { toggleTheme?: () => void }).toggleTheme?.()}>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-				</svg>
-			</button>
-			<a href="/profile" class="avatar-link" title={data.user.email}>
-				<span class="avatar">{data.user.name.charAt(0)}</span>
-				<span class="avatar-dot"></span>
-			</a>
-			<a href="/auth/logout" class="logout-link">Wyloguj</a>
-		</div>
-	</aside>
+	<SidebarRail activeId="dashboard" isAdmin={data.isAdmin} userName={data.user.name} userEmail={data.user.email} />
 
 	<!-- ─── MAIN ────────────────────────────────────────────── -->
 	<main class="main">

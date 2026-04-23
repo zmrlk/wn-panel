@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import SidebarRail from '$lib/components/SidebarRail.svelte';
 
 	let { data } = $props();
 	const z = $derived(data.zlecenie);
@@ -127,42 +128,7 @@
 </svelte:head>
 
 <div class="app">
-	<aside class="rail">
-		<a href="/" class="logo"><span class="logo-mark">wn</span></a>
-		<nav class="rail-nav">
-			{#each NAV as nav}
-				{#if data.isAdmin || (nav.id !== 'tents' && nav.id !== 'zlecenia' && nav.id !== 'team')}
-					<a href={nav.href} class="rail-item" class:active={nav.active}>
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-							<path d={ICONS[nav.id]} />
-						</svg>
-						<span class="rail-label">{nav.label}</span>
-						{#if nav.active}<div class="rail-indicator"></div>{/if}
-					</a>
-				{/if}
-			{/each}
-			{#if data.isAdmin}
-				<div class="rail-sep"></div>
-				<a href="/settings" class="rail-item">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-						<path d={ICONS.settings} />
-					</svg>
-					<span class="rail-label">Ustaw.</span>
-				</a>
-			{/if}
-		</nav>
-		<div class="rail-foot">
-			<button class="theme-btn" type="button" aria-label="Motyw" onclick={() => (window as typeof window & { toggleTheme?: () => void }).toggleTheme?.()}>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-					<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-				</svg>
-			</button>
-			<a href="/profile" class="avatar-link">
-				<span class="avatar">{data.user.name.charAt(0)}</span>
-			</a>
-			<a href="/auth/logout" class="logout-link">Wyloguj</a>
-		</div>
-	</aside>
+	<SidebarRail activeId="zlecenia" isAdmin={data.isAdmin} userName={data.user.name} userEmail={data.user.email} />
 
 	<main class="main">
 		<header class="topbar">

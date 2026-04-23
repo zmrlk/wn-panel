@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SidebarRail from '$lib/components/SidebarRail.svelte';
 	let { data, form } = $props();
 
 	let activeTab = $state<'company' | 'contacts' | 'offers' | 'templates' | 'users'>('company');
@@ -72,32 +73,7 @@
 </svelte:head>
 
 <div class="app">
-	<aside class="rail">
-		<a href="/" class="logo"><span class="logo-mark">wn</span></a>
-		<nav class="rail-nav">
-			<a href="/dashboard" class="rail-item">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS.dashboard} /></svg>
-				<span class="rail-label">Home</span>
-			</a>
-			<a href="/zlecenia" class="rail-item">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS.zlecenia} /></svg>
-				<span class="rail-label">Zlecenia</span>
-			</a>
-			<a href="/magazyn" class="rail-item">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS.tents} /></svg>
-				<span class="rail-label">Magazyn</span>
-			</a>
-			<a href="/team" class="rail-item">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS.team} /></svg>
-				<span class="rail-label">Zespół</span>
-			</a>
-			<div class="rail-sep"></div>
-			<a href="/settings" class="rail-item active">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS.settings} /></svg>
-				<span class="rail-label">Ustaw.</span>
-			</a>
-		</nav>
-	</aside>
+	<SidebarRail activeId="settings" isAdmin={data.isAdmin} userName={data.user.name} userEmail={data.user.email} />
 
 	<main class="main">
 		<header class="topbar">

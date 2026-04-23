@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SidebarRail from '$lib/components/SidebarRail.svelte';
 	let { data } = $props();
 
 	const groupOrder = ['Namioty', 'Stoły', 'Krzesła', 'Ławki', 'Oświetlenie', 'Akcesoria'];
@@ -27,27 +28,7 @@
 </svelte:head>
 
 <div class="app">
-	<aside class="rail">
-		<a href="/" class="logo"><span class="logo-mark">wn</span></a>
-		<nav class="rail-nav">
-			<a href="/dashboard" class="rail-item">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9ZM9 22V12h6v10" /></svg>
-				<span class="rail-label">Home</span>
-			</a>
-			<a href="/zlecenia" class="rail-item">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-				<span class="rail-label">Zlecenia</span>
-			</a>
-			<a href="/magazyn" class="rail-item active">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 L12 4 L21 20 Z M8 20 L12 13 L16 20" /></svg>
-				<span class="rail-label">Magazyn</span>
-			</a>
-			<a href="/team" class="rail-item">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-				<span class="rail-label">Zespół</span>
-			</a>
-		</nav>
-	</aside>
+	<SidebarRail activeId="tents" isAdmin={data.isAdmin} userName={data.user.name} userEmail={data.user.email} />
 
 	<main class="main">
 		<header class="topbar">
