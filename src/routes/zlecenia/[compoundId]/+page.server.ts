@@ -11,8 +11,12 @@ import {
 	stockMovement,
 	payment,
 	user,
-	bookingAssignment
+	bookingAssignment,
+	photo
 } from '$lib/server/db/schema';
+import { desc } from 'drizzle-orm';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { asc, eq, sql } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
 
@@ -81,6 +85,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			task: string;
 			notes: string | null;
 		}>;
+		photos: Array<{
+			id: string;
+			url: string;
+			kind: string;
+			caption: string | null;
+			takenBy: string | null;
+			takenByName: string | null;
+			uploadedAt: Date;
+		}>;
 		notes: string | null;
 		message: string | null;
 		source: string | null;
@@ -146,6 +159,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			payments: [],
 			paidCents: 0,
 			assignments: [],
+			photos: [],
 			notes: l.notes,
 			message: l.message,
 			source: l.source,
@@ -202,6 +216,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			payments: [],
 			paidCents: 0,
 			assignments: [],
+			photos: [],
 			notes: o.offer.notes,
 			message: null,
 			source: null,
@@ -218,8 +233,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.where(eq(booking.id, id))
 			.limit(1);
 		if (!b) throw error(404, 'Rezerwacja nie istnieje');
-		// Fetch items via booking_tent join + payments + assignments
-		const [bookedItems, payments, assignmentsRaw] = await Promise.all([
+		// Fetch items via booking_tent join + payments + assignments + photos
+		const [bookedItems, payments, assignmentsRaw, photosRaw] = await Promise.all([
 			db
 				.select({ bookingTent: bookingTent, item: item })
 				.from(bookingTent)
@@ -241,7 +256,21 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				.from(bookingAssignment)
 				.leftJoin(user, eq(bookingAssignment.userId, user.id))
 				.where(eq(bookingAssignment.bookingId, id))
-				.orderBy(asc(bookingAssignment.createdAt))
+				.orderBy(asc(bookingAssignment.createdAt)),
+			db
+				.select({
+					id: photo.id,
+					url: photo.url,
+					kind: photo.kind,
+					caption: photo.caption,
+					takenBy: photo.takenBy,
+					takenByName: user.name,
+					uploadedAt: photo.uploadedAt
+				})
+				.from(photo)
+				.leftJoin(user, eq(photo.takenBy, user.id))
+				.where(eq(photo.bookingId, id))
+				.orderBy(desc(photo.uploadedAt))
 		]);
 		const paidCentsTotal = payments.reduce((s, p) => s + p.amountCents, 0);
 		const s = STAGES[`booking:${b.booking.status}`] ?? STAGES['booking:confirmed'];
@@ -299,6 +328,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				userName: a.userName ?? '—',
 				task: a.task,
 				notes: a.notes
+			})),
+			photos: photosRaw.map((p) => ({
+				id: p.id,
+				url: p.url,
+				kind: p.kind,
+				caption: p.caption,
+				takenBy: p.takenBy,
+				takenByName: p.takenByName,
+				uploadedAt: p.uploadedAt
 			})),
 			notes: b.booking.notes,
 			message: null,
@@ -513,6 +551,64 @@ export const actions: Actions = {
 		const assignmentId = form.get('assignmentId')?.toString();
 		if (!assignmentId) return fail(400);
 		await db.delete(bookingAssignment).where(eq(bookingAssignment.id, assignmentId));
+		return { success: true };
+	},
+
+	// ═══ Zdjęcia (v5.24) — upload + delete ═══
+	uploadPhoto: async ({ request, params, locals }) => {
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx);
+		const id = compound.slice(dashIdx + 1);
+		if (type !== 'booking') return fail(400, { error: 'Zdjęcia tylko do bookingu' });
+
+		const form = await request.formData();
+		const file = form.get('file');
+		const kind = (form.get('kind')?.toString() ?? 'general').trim();
+		const caption = form.get('caption')?.toString()?.trim() || null;
+
+		if (!(file instanceof File) || file.size === 0) {
+			return fail(400, { error: 'Brak pliku' });
+		}
+		if (file.size > 10 * 1024 * 1024) {
+			return fail(400, { error: 'Plik za duży (max 10 MB)' });
+		}
+		if (!['delivery', 'return', 'damage', 'general'].includes(kind)) {
+			return fail(400, { error: 'Nieprawidłowy typ' });
+		}
+		if (!file.type.startsWith('image/')) {
+			return fail(400, { error: 'Tylko obrazy' });
+		}
+
+		// Path: static/uploads/bookings/{bookingId}/{timestamp}-{safename}
+		const ts = Date.now();
+		const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+		const safeExt = ext.slice(0, 5) || 'jpg';
+		const filename = `${ts}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+		const dir = join(process.cwd(), 'static', 'uploads', 'bookings', id);
+		await mkdir(dir, { recursive: true });
+		const filepath = join(dir, filename);
+		const buffer = Buffer.from(await file.arrayBuffer());
+		await writeFile(filepath, buffer);
+
+		const publicUrl = `/uploads/bookings/${id}/${filename}`;
+
+		await db.insert(photo).values({
+			bookingId: id,
+			url: publicUrl,
+			kind,
+			caption,
+			takenBy: locals.user?.id ?? null
+		});
+		return { success: true };
+	},
+
+	deletePhoto: async ({ request }) => {
+		const form = await request.formData();
+		const photoId = form.get('photoId')?.toString();
+		if (!photoId) return fail(400);
+		// TODO: usuń też plik z disku (na razie tylko DB row — disk-level cleanup w background job)
+		await db.delete(photo).where(eq(photo.id, photoId));
 		return { success: true };
 	},
 

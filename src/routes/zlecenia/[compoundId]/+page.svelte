@@ -380,6 +380,65 @@
 						</form>
 					</div>
 
+					<!-- ═══ ZDJĘCIA ═══ -->
+					<div class="photos-block">
+						<div class="photos-header">
+							<h3>📸 Zdjęcia ({z.photos.length})</h3>
+							<span class="photos-hint-inline">dostawa · montaż · odbiór · uszkodzenia</span>
+						</div>
+
+						{#if z.photos.length > 0}
+							<div class="photos-grid">
+								{#each z.photos as p}
+									<div class="photo-tile kind-{p.kind}">
+										<a href={p.url} target="_blank" rel="noopener" class="photo-link">
+											<img src={p.url} alt={p.caption ?? p.kind} loading="lazy" />
+										</a>
+										<div class="photo-meta">
+											<span class="photo-kind">
+												{#if p.kind === 'delivery'}🚚 dostawa
+												{:else if p.kind === 'return'}📦 odbiór
+												{:else if p.kind === 'damage'}⚠️ uszkodzenie
+												{:else}📷 zdjęcie{/if}
+											</span>
+											{#if p.caption}<span class="photo-caption">{p.caption}</span>{/if}
+											{#if p.takenByName}<span class="photo-by">· {p.takenByName}</span>{/if}
+										</div>
+										<form method="POST" action="?/deletePhoto" class="photo-del-form">
+											<input type="hidden" name="photoId" value={p.id} />
+											<button type="submit" class="btn-photo-del" aria-label="Usuń" onclick={(e) => { if (!confirm('Usunąć to zdjęcie?')) e.preventDefault(); }}>✕</button>
+										</form>
+									</div>
+								{/each}
+							</div>
+						{:else}
+							<p class="photos-empty">Brak zdjęć. Dodaj foto z telefonu ↓ (kamera włączy się od razu).</p>
+						{/if}
+
+						<form method="POST" action="?/uploadPhoto" enctype="multipart/form-data" class="photo-form">
+							<div class="photo-form-row">
+								<label class="photo-field photo-file-field">
+									<span>Zdjęcie</span>
+									<input type="file" name="file" accept="image/*" capture="environment" required />
+								</label>
+								<label class="photo-field">
+									<span>Typ</span>
+									<select name="kind">
+										<option value="delivery">🚚 Dostawa</option>
+										<option value="general" selected>📷 Inne</option>
+										<option value="return">📦 Odbiór</option>
+										<option value="damage">⚠️ Uszkodzenie</option>
+									</select>
+								</label>
+							</div>
+							<label class="photo-field wide">
+								<span>Opis (opcjonalnie)</span>
+								<input name="caption" type="text" placeholder="np. namiot ustawiony 14:30" />
+							</label>
+							<button type="submit" class="btn-photo-upload">📤 Wyślij</button>
+						</form>
+					</div>
+
 					<!-- ═══ PŁATNOŚCI ═══ -->
 					{@const totalZl = (z.totalCents ?? 0) / 100}
 					{@const paidZl = z.paidCents / 100}
@@ -1154,6 +1213,151 @@
 		box-shadow: 4px 4px 0 var(--wn-atrament);
 	}
 
+	/* ─── ZDJĘCIA ─────────────────────────────── */
+	.photos-block {
+		margin-top: 1.25rem;
+		padding-top: 1.25rem;
+		border-top: 2px solid var(--line);
+	}
+	.photos-header {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		margin-bottom: 0.85rem;
+		flex-wrap: wrap;
+	}
+	.photos-header h3 {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 700;
+	}
+	.photos-hint-inline {
+		color: var(--mute);
+		font-size: 0.78rem;
+	}
+	.photos-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+	.photo-tile {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		background: var(--paper-2);
+		border: 1px solid var(--line);
+	}
+	.photo-tile.kind-damage { border-color: var(--wn-pomidor); }
+	.photo-tile.kind-delivery { border-color: var(--wn-zielony); }
+	.photo-tile.kind-return { border-color: var(--wn-granat); }
+	.photo-link {
+		display: block;
+		aspect-ratio: 4 / 3;
+		overflow: hidden;
+		background: var(--wn-atrament);
+	}
+	.photo-link img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+	.photo-meta {
+		padding: 0.45rem 0.55rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		font-size: 0.75rem;
+	}
+	.photo-kind {
+		font-weight: 600;
+	}
+	.photo-caption {
+		color: var(--ink-2);
+	}
+	.photo-by {
+		color: var(--mute);
+		font-size: 0.7rem;
+	}
+	.photo-del-form {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+	}
+	.btn-photo-del {
+		width: 26px;
+		height: 26px;
+		border: none;
+		background: rgba(0, 0, 0, 0.55);
+		color: white;
+		cursor: pointer;
+		font-size: 0.85rem;
+		line-height: 1;
+	}
+	.btn-photo-del:hover { background: var(--wn-pomidor); }
+	.photos-empty {
+		color: var(--mute);
+		font-style: italic;
+		font-size: 0.88rem;
+		padding: 0.5rem 0;
+		margin: 0 0 1rem;
+	}
+	.photo-form {
+		padding: 0.85rem;
+		background: var(--paper-2);
+		border: 1px dashed var(--line);
+		display: flex;
+		flex-direction: column;
+		gap: 0.7rem;
+	}
+	.photo-form-row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.7rem;
+	}
+	.photo-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+	.photo-field > span {
+		font-size: 0.7rem;
+		color: var(--mute);
+		font-weight: 500;
+	}
+	.photo-field.wide { width: 100%; }
+	.photo-field input[type='text'],
+	.photo-field select {
+		border: 1px solid var(--line);
+		padding: 0.4rem 0.55rem;
+		background: var(--paper);
+		font-family: inherit;
+		font-size: 0.85rem;
+		border-radius: 0;
+	}
+	.photo-file-field input[type='file'] {
+		padding: 0.35rem;
+		font-size: 0.85rem;
+	}
+	.btn-photo-upload {
+		align-self: flex-end;
+		padding: 0.6rem 1.3rem;
+		background: var(--wn-zielony);
+		color: var(--wn-atrament);
+		border: 2px solid var(--wn-atrament);
+		border-radius: 0;
+		font-weight: 700;
+		cursor: pointer;
+		font-family: inherit;
+		font-size: 0.92rem;
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+	}
+	.btn-photo-upload:hover {
+		transform: translate(-1px, -1px);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
+	}
+
 	/* ─── PŁATNOŚCI ─────────────────────────────── */
 	.payments-block {
 		margin-top: 1.25rem;
@@ -1487,6 +1691,30 @@
 		.rail-sep,
 		.rail-foot {
 			display: none;
+		}
+
+		/* Mobile — większe CTA dla field worka (kierowcy w ruchu) */
+		.btn-op {
+			width: 100%;
+			padding: 0.95rem 1rem;
+			font-size: 1.05rem;
+		}
+		.btn-assign,
+		.btn-add-pay,
+		.btn-photo-upload {
+			width: 100%;
+			padding: 0.85rem 1rem;
+			font-size: 1rem;
+		}
+		.photo-form-row {
+			grid-template-columns: 1fr;
+		}
+		.photos-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+		.status-chip-btn {
+			padding: 0.7rem 0.95rem;
+			font-size: 0.95rem;
 		}
 	}
 </style>

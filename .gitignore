@@ -22,3 +22,6 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .env
+
+# Uploads (user-generated, nie trafia do git)
+/static/uploads/bookings/

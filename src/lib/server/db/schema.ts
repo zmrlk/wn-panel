@@ -201,7 +201,7 @@ export const bookingTent = pgTable(
 	})
 );
 
-// Galeria zdjęć z eventów
+// Galeria zdjęć z eventów (v5.24 rozszerzone o kind + taken_by)
 export const photo = pgTable('photo', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	bookingId: uuid('booking_id').references(() => booking.id, { onDelete: 'cascade' }),
@@ -209,6 +209,8 @@ export const photo = pgTable('photo', {
 	url: text('url').notNull(), // ścieżka lokalna `/uploads/…` lub zewnętrzny URL
 	tags: jsonb('tags').$type<string[]>().default([]),
 	caption: text('caption'),
+	kind: text('kind').notNull().default('general'), // 'delivery' | 'return' | 'damage' | 'general'
+	takenBy: text('taken_by').references(() => user.id),
 	uploadedAt: timestamp('uploaded_at').notNull().defaultNow()
 });
 
