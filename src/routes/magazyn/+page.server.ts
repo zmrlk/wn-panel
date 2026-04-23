@@ -84,7 +84,7 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	updateItem: async ({ request }) => {
+	updateItem: async ({ request, locals }) => {
 		const form = await request.formData();
 		const id = form.get('id')?.toString();
 		if (!id) return fail(400, { error: 'missing id' });
@@ -94,6 +94,12 @@ export const actions: Actions = {
 		const color = form.get('color')?.toString() || null;
 		const minQty = Number(form.get('minQty') ?? '0');
 		const priceZl = Number(form.get('priceZl') ?? '0');
+
+		// Stan magazynowy: oldQty + newQty → różnica idzie jako korekta stockMovement
+		const oldQty = Number(form.get('oldQty') ?? '0');
+		const newQty = Number(form.get('totalQty') ?? oldQty);
+		const qtyDiff = newQty - oldQty;
+
 		await db
 			.update(item)
 			.set({
@@ -106,6 +112,19 @@ export const actions: Actions = {
 				updatedAt: new Date()
 			})
 			.where(eq(item.id, id));
+
+		// Jeśli user zmienił stan magazynowy ręcznie — wystaw korektę stockMovement
+		// (trigger w DB zaktualizuje tent.total_qty)
+		if (qtyDiff !== 0) {
+			await db.insert(stockMovement).values({
+				itemId: id,
+				direction: qtyDiff > 0 ? 'IN' : 'OUT',
+				kind: qtyDiff > 0 ? 'korekta_plus' : 'korekta_minus',
+				qty: Math.abs(qtyDiff),
+				reason: `Korekta ręczna z magazynu: ${oldQty} → ${newQty}`,
+				createdBy: locals.user?.id ?? null
+			});
+		}
 		return { success: true };
 	},
 

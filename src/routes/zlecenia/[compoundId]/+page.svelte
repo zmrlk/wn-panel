@@ -435,7 +435,24 @@
 								<button type="submit" class="btn-op dispatch">🚚 Wydaj na event</button>
 							</form>
 						{:else if z.status === 'in-progress'}
-							<form method="POST" action="?/returnBooking" class="op-form">
+							<form
+								method="POST"
+								action="?/returnBooking"
+								class="op-form"
+								onsubmit={(e) => {
+									const fd = new FormData(e.currentTarget as HTMLFormElement);
+									const losses: string[] = [];
+									for (const bt of z.bookingTents) {
+										const r = Number(fd.get(`return_${bt.tentId}`) ?? bt.quantity);
+										const lost = bt.quantity - r;
+										if (lost > 0) losses.push(`${lost}× ${bt.itemName} (wydane ${bt.quantity}, wróciło ${r})`);
+									}
+									if (losses.length > 0) {
+										const msg = '⚠️ WYKRYTE STRATY:\n\n' + losses.join('\n') + '\n\nNa pewno zapisujesz? Ta strata zostanie zapisana i możesz ją wykorzystać do obciążenia klienta.';
+										if (!confirm(msg)) e.preventDefault();
+									}
+								}}
+							>
 								<p class="op-hint">
 									Event w trakcie. <strong>Zakończ + zwróć na magazyn</strong> — wpisz ile sztuk faktycznie wróciło (default = ile wydane). Różnica = strata.
 								</p>
@@ -546,6 +563,20 @@
 									{/each}
 								</tbody>
 							</table>
+						{/if}
+
+						{#if leftZl > 0}
+							<!-- 1-click: pełna kwota gotówka, dziś -->
+							<form method="POST" action="?/addPayment" class="pay-quick">
+								<input type="hidden" name="amountZl" value={leftZl.toFixed(2)} />
+								<input type="hidden" name="method" value="gotówka" />
+								<input type="hidden" name="kind" value="pełna" />
+								<input type="hidden" name="paidAt" value={new Date().toISOString().slice(0, 10)} />
+								<button type="submit" class="btn-quick-pay">
+									💵 Zapłacone w całości gotówką ({fmtZl(leftZl * 100)})
+								</button>
+								<span class="pay-quick-hint">lub wpisz szczegóły ↓</span>
+							</form>
 						{/if}
 
 						{#if leftZl > 0 || totalZl === 0 || z.payments.length === 0}
@@ -1544,6 +1575,36 @@
 	}
 	.btn-del-pay:hover { border-color: var(--wn-pomidor); }
 
+	.pay-quick {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.85rem 1rem;
+		background: color-mix(in srgb, var(--wn-zielony) 15%, var(--paper));
+		border: 2px dashed var(--wn-zielony);
+		margin-bottom: 0.85rem;
+	}
+	.btn-quick-pay {
+		padding: 0.65rem 1.1rem;
+		background: var(--wn-zielony);
+		color: var(--wn-atrament);
+		border: 2px solid var(--wn-atrament);
+		font-family: inherit;
+		font-size: 0.95rem;
+		font-weight: 700;
+		cursor: pointer;
+		border-radius: 0;
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+	}
+	.btn-quick-pay:hover {
+		transform: translate(-1px, -1px);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
+	}
+	.pay-quick-hint {
+		color: var(--mute);
+		font-size: 0.8rem;
+		font-style: italic;
+	}
 	.pay-form {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

@@ -223,10 +223,12 @@
 														class="inline-form"
 													>
 														<input type="hidden" name="id" value={it.id} />
+														<input type="hidden" name="oldQty" value={it.totalQty} />
 														<input name="sku" type="text" value={it.sku ?? ''} placeholder="SKU" class="f-sku" />
 														<input name="name" type="text" value={it.name} placeholder="Nazwa" class="f-name" required />
 														<input name="sizeLabel" type="text" value={it.sizeLabel ?? ''} placeholder="Rozmiar" class="f-size" />
 														<input name="color" type="text" value={it.color ?? ''} placeholder="Kolor" class="f-color" />
+														<input name="totalQty" type="number" value={it.totalQty} placeholder="Stan" class="f-num" title="Stan magazynowy" />
 														<input name="minQty" type="number" value={it.minQty} placeholder="Min" class="f-num" />
 														<input name="priceZl" type="number" step="0.01" value={it.pricePerDayCents ? it.pricePerDayCents / 100 : ''} placeholder="zł/dzień" class="f-num" />
 														<button type="submit" class="btn-save">Zapisz</button>
