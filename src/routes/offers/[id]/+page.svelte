@@ -54,8 +54,8 @@
 				<p class="cover-sub">— dach plus reszta w cenie. twoja oferta na <em>{(data.offer.eventName ?? '').toLowerCase()}</em>, {eventRange(data.offer.eventStartDate, data.offer.eventEndDate).toLowerCase()}{data.offer.venue ? `, ${data.offer.venue.toLowerCase()}` : ''}.</p>
 				<div class="cover-meta">
 					<div class="cover-meta-item">
-						<div class="label">kontakt · patryk</div>
-						<div class="value">796 <em>886 222</em></div>
+						<div class="label">kontakt{data.company?.tradeName ? '' : ' · patryk'}</div>
+						<div class="value">{data.company?.phone ?? '796 886 222'}</div>
 					</div>
 					<div class="cover-meta-item">
 						<div class="label">zasięg</div>
@@ -63,12 +63,52 @@
 					</div>
 					<div class="cover-meta-item">
 						<div class="label">www</div>
-						<div class="value">wolnynamiot<em>.pl</em></div>
+						<div class="value">{(data.company?.www ?? 'wolnynamiot.pl').replace(/^https?:\/\//, '').replace(/^([^.]+)/, '$1')}<em></em></div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<!-- PAGE 1b: PRIMARY TENT — hero "to bierzemy dla ciebie" -->
+	{#if data.primaryTent}
+		<div class="page hero-tent">
+			<div class="page-header">
+				<div class="logo">wolny <em>namiot.</em></div>
+				<div class="page-num">01½ · twój namiot</div>
+			</div>
+			<div class="ht-body">
+				<div class="ht-eyebrow">↯ dla ciebie wybieramy</div>
+				<h2 class="ht-name">{data.primaryTent.name.toLowerCase()}</h2>
+				<div class="ht-size">
+					{#if data.primaryTent.widthM && data.primaryTent.lengthM}
+						<span class="ht-dim">{data.primaryTent.widthM} × {data.primaryTent.lengthM} m</span>
+						<span class="ht-dot">·</span>
+						<span class="ht-area">{data.primaryTent.widthM * data.primaryTent.lengthM} m²</span>
+						{#if data.primaryTent.qty > 1}
+							<span class="ht-dot">·</span>
+							<span class="ht-qty"><em>{data.primaryTent.qty}</em> szt.</span>
+						{/if}
+					{:else if data.primaryTent.sizeLabel}
+						<span class="ht-dim">{data.primaryTent.sizeLabel}</span>
+					{/if}
+				</div>
+				<div class="ht-photo-wrap">
+					{#if data.primaryTent.mainPhotoUrl}
+						<img src={data.primaryTent.mainPhotoUrl} alt={data.primaryTent.name} class="ht-photo" />
+					{:else}
+						<div class="ht-photo-placeholder">zdjęcie do wrzucenia</div>
+					{/if}
+				</div>
+				<p class="ht-desc">
+					— stawiamy na <em>{(data.offer.eventName ?? '').toLowerCase()}</em>{data.offer.venue ? `, w miejscu: ${data.offer.venue.toLowerCase()}` : ''}.
+					Namiot jest wodoodporny, wytrzymuje wiatr, pasuje na równe i nierówne podłoże.
+					Ze sobą bierzemy: kotwy / obciążniki, boki (jeśli potrzeba), oświetlenie.
+					Stawiamy i składamy my — tobie zostaje event.
+				</p>
+			</div>
+		</div>
+	{/if}
 
 	<!-- PAGE 2: OKAZJE MOSAIC -->
 	<div class="page okazje-page dark">
@@ -316,27 +356,35 @@
 			</div>
 		</div>
 
-		<!-- KONTAKT info -->
+		<!-- KONTAKT info + QR -->
 		<div class="kontakt-info">
 			<div class="kontakt-info-col">
-				<div class="label">telefon · patryk pełka</div>
-				<div class="value">796 <em>886 222</em></div>
+				<div class="label">telefon</div>
+				<div class="value">{data.company?.phone ?? '796 886 222'}</div>
 				<div class="sub">pon–ndz · 8:00–20:00</div>
 			</div>
 			<div class="kontakt-info-col">
 				<div class="label">e-mail</div>
-				<div class="value">kontakt<em>@wolnynamiot.pl</em></div>
+				<div class="value">{data.company?.email ?? 'kontakt@wolnynamiot.pl'}</div>
 				<div class="sub">odpisujemy w 2h w godz. 8–20</div>
 			</div>
 			<div class="kontakt-info-col">
 				<div class="label">siedziba · zasięg</div>
-				<div class="value">jędrzejów <em>· południe polski</em></div>
+				<div class="value">{(data.company?.address ?? 'Jędrzejów, południe Polski').toLowerCase()}</div>
 				<div class="sub">kielce · kraków · rzeszów · lublin · warszawa · łódź · sosnowiec · zakopane · busko-zdrój · wolbrom · zawiercie · 250 km</div>
 			</div>
 			<div class="kontakt-info-col">
 				<div class="label">www</div>
-				<div class="value">wolnynamiot<em>.pl</em></div>
+				<div class="value">{(data.company?.www ?? 'wolnynamiot.pl').replace(/^https?:\/\//, '')}</div>
 				<div class="sub">cennik · realizacje · zastosowania · faq</div>
+			</div>
+		</div>
+		<div class="kontakt-qr-wrap">
+			<div class="qr-svg">{@html data.qrSvg}</div>
+			<div class="qr-copy">
+				<div class="label">↯ zeskanuj</div>
+				<div class="value">zobacz więcej realizacji</div>
+				<div class="sub">{data.qrTargetUrl.replace(/^https?:\/\//, '')}</div>
 			</div>
 		</div>
 		<div class="kontakt-foot">
@@ -817,5 +865,129 @@
 		.tent-card.wide .tent-photo { width: 100%; aspect-ratio: 16/10; }
 		.proces-compact { grid-template-columns: 1fr 1fr; }
 		.kontakt-info { grid-template-columns: 1fr; }
+	}
+
+	/* ═══ PAGE 1b: PRIMARY TENT HERO ═══ */
+	.hero-tent {
+		background: var(--plotno, #f5f1e6);
+		padding: 48px 56px;
+		display: flex;
+		flex-direction: column;
+	}
+	.ht-body {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		margin-top: 8px;
+	}
+	.ht-eyebrow {
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 10px;
+		letter-spacing: 3px;
+		color: var(--pomidor, #c44d30);
+		font-weight: 700;
+		text-transform: lowercase;
+	}
+	.ht-name {
+		font-family: 'Archivo Black', sans-serif;
+		font-size: 56px;
+		line-height: 0.95;
+		letter-spacing: -0.04em;
+		color: var(--atrament, #1a1a1a);
+		text-transform: lowercase;
+		margin: 0;
+	}
+	.ht-size {
+		font-family: 'Instrument Serif', serif;
+		font-size: 24px;
+		color: var(--atrament-700, #333);
+	}
+	.ht-dim, .ht-area, .ht-qty, .ht-dot {
+		display: inline-block;
+	}
+	.ht-qty em {
+		font-family: 'Archivo Black', sans-serif;
+		font-style: normal;
+		color: var(--pomidor, #c44d30);
+	}
+	.ht-dot {
+		color: var(--atrament-500, #888);
+		margin: 0 6px;
+	}
+	.ht-photo-wrap {
+		margin: 12px 0;
+		width: 100%;
+		max-height: 520px;
+		overflow: hidden;
+		border: 3px solid var(--atrament, #1a1a1a);
+	}
+	.ht-photo {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+	.ht-photo-placeholder {
+		padding: 60px;
+		text-align: center;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 11px;
+		color: var(--atrament-500, #888);
+		background: color-mix(in srgb, var(--atrament, #1a1a1a) 5%, transparent);
+	}
+	.ht-desc {
+		font-family: 'Archivo', sans-serif;
+		font-size: 14px;
+		line-height: 1.55;
+		color: var(--atrament-700, #333);
+		max-width: 680px;
+	}
+	.ht-desc em {
+		font-family: 'Instrument Serif', serif;
+		font-style: italic;
+		color: var(--pomidor, #c44d30);
+	}
+
+	/* ═══ KONTAKT QR ═══ */
+	.kontakt-qr-wrap {
+		display: flex;
+		align-items: center;
+		gap: 20px;
+		margin-top: 20px;
+		padding: 18px 22px;
+		background: var(--plotno, #f5f1e6);
+		color: var(--atrament, #1a1a1a);
+	}
+	.qr-svg {
+		width: 120px;
+		height: 120px;
+		flex-shrink: 0;
+	}
+	.qr-svg :global(svg) {
+		width: 100%;
+		height: 100%;
+	}
+	.qr-copy .label {
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 9px;
+		letter-spacing: 2.5px;
+		color: var(--pomidor, #c44d30);
+		font-weight: 700;
+		text-transform: lowercase;
+		margin-bottom: 6px;
+	}
+	.qr-copy .value {
+		font-family: 'Archivo Black', sans-serif;
+		font-size: 20px;
+		color: var(--atrament, #1a1a1a);
+		text-transform: lowercase;
+		line-height: 1.1;
+	}
+	.qr-copy .sub {
+		margin-top: 6px;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 10px;
+		color: var(--atrament-500, #888);
+		word-break: break-all;
 	}
 </style>
