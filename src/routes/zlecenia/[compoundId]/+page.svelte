@@ -6,6 +6,9 @@
 	import ClientCard from '$lib/components/zlecenia/ClientCard.svelte';
 	import EventCard from '$lib/components/zlecenia/EventCard.svelte';
 	import StatusChips from '$lib/components/zlecenia/StatusChips.svelte';
+	import NotesSection from '$lib/components/zlecenia/NotesSection.svelte';
+	import TeamBlock from '$lib/components/zlecenia/TeamBlock.svelte';
+	import PaymentBlock from '$lib/components/zlecenia/PaymentBlock.svelte';
 	import {
 		dbStatusToUnified,
 		allowedStatusesForType,
@@ -16,8 +19,7 @@
 	let { data } = $props();
 	const z = $derived(data.zlecenie);
 
-	let newNote = $state('');
-	let addingNote = $state(false);
+	// State dla notes form → w NotesSection component (lokalny state)
 
 	// Status mapping + filter wyniesione do $lib/booking-stages (24 testów unit)
 	const currentUnified = $derived(dbStatusToUnified(z.type as ZlecenieType, z.status));
@@ -133,39 +135,7 @@
 			{/if}
 
 			<!-- 5. NOTATKI + ADD FORM -->
-			<section class="card">
-				<div class="notes-head">
-					<h2>Notatki wewnętrzne</h2>
-					{#if !addingNote}
-						<button class="btn-ghost-sm" onclick={() => (addingNote = true)}>+ Dodaj notatkę</button>
-					{/if}
-				</div>
-				{#if addingNote}
-					<form method="POST" action="?/addNote" class="note-form">
-						<textarea
-							name="content"
-							bind:value={newNote}
-							placeholder="Napisz notatkę... (kto dzwonił, o co pytał, co ustaliliście)"
-							rows="3"
-							required
-							autofocus
-						></textarea>
-						<div class="note-actions">
-							<button type="button" class="btn-ghost-sm" onclick={() => { addingNote = false; newNote = ''; }}>Anuluj</button>
-							<button type="submit" class="btn-primary-sm">Zapisz notatkę</button>
-						</div>
-					</form>
-				{/if}
-				<div class="notes-list">
-					{#if z.notes}
-						{#each z.notes.split('\n\n') as noteChunk}
-							<div class="note-entry">{noteChunk}</div>
-						{/each}
-					{:else}
-						<p class="empty-note">— brak notatek —</p>
-					{/if}
-				</div>
-			</section>
+			<NotesSection notes={z.notes} />
 
 			<!-- 6. ZMIANA STATUSU (admin only) -->
 			{#if data.isAdmin}
@@ -176,69 +146,12 @@
 				{@const totalZl = (z.totalCents ?? 0) / 100}
 				{@const paidZl = z.paidCents / 100}
 				{@const leftZl = Math.max(0, totalZl - paidZl)}
-				{@const paidPct = totalZl > 0 ? Math.round((paidZl / totalZl) * 100) : 0}
-				{@const payStatus = paidZl >= totalZl && totalZl > 0 ? 'paid' : paidZl > 0 ? 'partial' : 'none'}
+				<!-- paidPct + payStatus → zamknięte w PaymentBlock -->
+				<!-- totalZl/paidZl/leftZl używane przez cash-reminder w BookingOps (c4 extract) -->
+
 
 				<!-- 7. ZESPÓŁ REALIZUJĄCY -->
-				<section class="card">
-					<div class="team-block no-border">
-						<div class="team-header">
-							<h3>👥 Zespół realizujący ({z.assignments.length})</h3>
-						</div>
-						{#if z.assignments.length > 0}
-							<div class="team-list">
-								{#each z.assignments as a}
-									<div class="team-member">
-										<span class="member-avatar">{a.userName.charAt(0).toUpperCase()}</span>
-										<div class="member-info">
-											<strong>{a.userName}</strong>
-											<span class="member-task">
-												{#if a.task === 'driver'}🚚 kierowca
-												{:else if a.task === 'installer'}🔨 montażysta
-												{:else if a.task === 'lead'}👑 lider
-												{:else}{a.task}{/if}
-											</span>
-										</div>
-										<form method="POST" action="?/unassignUser" style="display:inline;">
-											<input type="hidden" name="assignmentId" value={a.id} />
-											<button type="submit" class="btn-unassign" onclick={(e) => { if (!confirm(`Usunąć ${a.userName} z zespołu?`)) e.preventDefault(); }}>✕</button>
-										</form>
-									</div>
-								{/each}
-							</div>
-						{:else}
-							<p class="team-empty">Jeszcze nikt nie przypisany. Dobierz zespół poniżej.</p>
-						{/if}
-
-						<form method="POST" action="?/assignUser" class="team-form">
-							<label class="team-field">
-								<span>Osoba</span>
-								<select name="userId" required>
-									<option value="">— wybierz —</option>
-									{#each data.availableUsers as u}
-										<option value={u.id}>
-											{u.name}{u.skills.length > 0 ? ` (${u.skills.map((s) => s === 'driver' ? '🚚' : s === 'installer' ? '🔨' : s === 'lead' ? '👑' : s).join(' ')})` : ''}
-										</option>
-									{/each}
-								</select>
-							</label>
-							<label class="team-field">
-								<span>Rola</span>
-								<select name="task">
-									<option value="driver">🚚 Kierowca</option>
-									<option value="installer">🔨 Montażysta</option>
-									<option value="lead">👑 Lider ekipy</option>
-									<option value="other">Inne</option>
-								</select>
-							</label>
-							<label class="team-field wide">
-								<span>Notatka (opcjonalnie)</span>
-								<input name="notes" type="text" placeholder="np. auto + przyczepa, wozi namiot 6×12" />
-							</label>
-							<button type="submit" class="btn-assign">+ Przypisz</button>
-						</form>
-					</div>
-				</section>
+				<TeamBlock assignments={z.assignments} availableUsers={data.availableUsers} />
 
 				<!-- 8. OPERACJE: Wydaj / Zakończ (dispatch/return) -->
 				{#if z.status === 'confirmed' || z.status === 'in-progress'}
@@ -360,102 +273,12 @@
 				{/if}
 
 				<!-- 9. PŁATNOŚĆ — admin pełna, pracownik: pill + quick-pay -->
-				<section class="card">
-					<div class="payments-block no-border">
-						<div class="pay-header">
-							<h3>💰 Płatność</h3>
-							<span class="pay-pill pay-{payStatus}">
-								{#if payStatus === 'paid'}✓ Opłacone{:else if payStatus === 'partial'}½ {paidPct}% ({fmtZl(paidZl * 100)}){:else}✕ Brak płatności{/if}
-							</span>
-						</div>
-						<div class="pay-summary">
-							<div class="pay-stat"><span class="pay-lbl">Total:</span> <strong>{fmtZl(totalZl * 100)}</strong></div>
-							<div class="pay-stat"><span class="pay-lbl">Zapłacone:</span> <strong class="pay-in">{fmtZl(paidZl * 100)}</strong></div>
-							<div class="pay-stat"><span class="pay-lbl">Zostało:</span> <strong class:pay-due={leftZl > 0}>{fmtZl(leftZl * 100)}</strong></div>
-						</div>
-
-						{#if leftZl > 0}
-							<!-- 1-click dla obu ról (kierowca zbiera gotówkę + admin szybko) -->
-							<form method="POST" action="?/addPayment" class="pay-quick">
-								<input type="hidden" name="amountZl" value={leftZl.toFixed(2)} />
-								<input type="hidden" name="method" value="gotówka" />
-								<input type="hidden" name="kind" value="pełna" />
-								<input type="hidden" name="paidAt" value={new Date().toISOString().slice(0, 10)} />
-								<button type="submit" class="btn-quick-pay">
-									💵 Zapłacił gotówką ({fmtZl(leftZl * 100)})
-								</button>
-								{#if data.isAdmin}
-									<span class="pay-quick-hint">lub pełne szczegóły ↓</span>
-								{/if}
-							</form>
-						{/if}
-
-						{#if data.isAdmin && z.payments.length > 0}
-							<table class="pay-table">
-								<thead>
-									<tr>
-										<th>Data</th>
-										<th class="num">Kwota</th>
-										<th>Metoda</th>
-										<th>Rodzaj</th>
-										<th>Notatka</th>
-										<th></th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each z.payments as p}
-										<tr>
-											<td class="mono">{p.paidAt}</td>
-											<td class="num pay-amount">{fmtZl(p.amountCents)}</td>
-											<td><span class="pay-method">{p.method}</span></td>
-											<td class="mute">{p.kind}</td>
-											<td class="mute">{p.notes ?? '—'}</td>
-											<td class="actions">
-												<form method="POST" action="?/deletePayment" style="display:inline;">
-													<input type="hidden" name="paymentId" value={p.id} />
-													<button type="submit" class="btn-del-pay" onclick={(e) => { if (!confirm('Usunąć tę płatność?')) e.preventDefault(); }}>Usuń</button>
-												</form>
-											</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						{/if}
-
-						{#if data.isAdmin && (leftZl > 0 || totalZl === 0 || z.payments.length === 0)}
-							<form method="POST" action="?/addPayment" class="pay-form">
-								<label class="pay-field">
-									<span>Kwota (zł)</span>
-									<input name="amountZl" type="number" step="0.01" min="0.01" value={leftZl > 0 ? leftZl.toFixed(2) : ''} placeholder="np. 1800" required />
-								</label>
-								<label class="pay-field">
-									<span>Metoda</span>
-									<select name="method">
-										<option value="gotówka">💵 Gotówka</option>
-										<option value="przelew">🏦 Przelew</option>
-										<option value="inne">inne</option>
-									</select>
-								</label>
-								<label class="pay-field">
-									<span>Rodzaj</span>
-									<select name="kind">
-										<option value="pełna">Pełna</option>
-										<option value="dopłata">Dopłata</option>
-									</select>
-								</label>
-								<label class="pay-field">
-									<span>Data</span>
-									<input name="paidAt" type="date" value={new Date().toISOString().slice(0, 10)} required />
-								</label>
-								<label class="pay-field wide">
-									<span>Notatka (opcjonalnie)</span>
-									<input name="notes" type="text" placeholder="np. zapłacone przy odbiorze" />
-								</label>
-								<button type="submit" class="btn-add-pay">+ Dodaj płatność</button>
-							</form>
-						{/if}
-					</div>
-				</section>
+				<PaymentBlock
+					payments={z.payments}
+					totalCents={z.totalCents}
+					paidCents={z.paidCents}
+					isAdmin={data.isAdmin}
+				/>
 
 				<!-- 10. ZDJĘCIA (sam dół — dokumentacja) -->
 				<section class="card">
@@ -830,87 +653,14 @@
 		color: var(--wn-granat);
 	}
 
+	/* .msg-text zostaje — "Wiadomość od klienta" inline (1 liner, nie warto komponent) */
 	.msg-text {
 		margin: 0;
 		font-size: 0.92rem;
 		color: var(--ink-2);
 		line-height: 1.55;
 	}
-	.notes-head {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 0.85rem;
-	}
-	.notes-head h2 {
-		margin: 0;
-	}
-	.btn-ghost-sm {
-		padding: 0.35rem 0.75rem;
-		background: transparent;
-		border: 1px solid var(--line);
-		border-radius: 5px;
-		font-size: 0.78rem;
-		color: var(--ink-2);
-		cursor: pointer;
-	}
-	.btn-ghost-sm:hover {
-		border-color: var(--wn-zielony);
-		color: var(--wn-zielony-ink);
-	}
-	.btn-primary-sm {
-		padding: 0.35rem 0.9rem;
-		background: var(--wn-zielony);
-		color: var(--wn-plotno);
-		border: none;
-		border-radius: 5px;
-		font-size: 0.8rem;
-		font-weight: 600;
-		cursor: pointer;
-	}
-	.note-form {
-		margin-bottom: 1rem;
-	}
-	.note-form textarea {
-		width: 100%;
-		padding: 0.65rem 0.85rem;
-		border: 1px solid var(--line);
-		border-radius: 6px;
-		font-family: var(--font-sans);
-		font-size: 0.9rem;
-		background: var(--paper-2);
-		color: var(--ink);
-		resize: vertical;
-	}
-	.note-form textarea:focus {
-		outline: none;
-		border-color: var(--wn-zielony);
-	}
-	.note-actions {
-		display: flex;
-		gap: 0.5rem;
-		justify-content: flex-end;
-		margin-top: 0.5rem;
-	}
-	.notes-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.55rem;
-	}
-	.note-entry {
-		padding: 0.7rem 0.95rem;
-		background: var(--paper-2);
-		border-left: 3px solid var(--wn-zielony);
-		border-radius: 0 6px 6px 0;
-		font-size: 0.88rem;
-		color: var(--ink-2);
-		line-height: 1.55;
-		white-space: pre-wrap;
-	}
-	.empty-note {
-		color: var(--dim);
-		font-style: italic;
-	}
+	/* .notes-* + .note-* + .btn-ghost/primary-sm + .empty-note → NotesSection.svelte */
 
 	/* .status-* → StatusChips.svelte */
 
@@ -920,121 +670,7 @@
 		border-top: 2px solid var(--line);
 	}
 
-	/* ─── ZESPÓŁ ─────────────────────────────── */
-	.team-block {
-		margin-top: 1.25rem;
-		padding-top: 1.25rem;
-		border-top: 2px solid var(--line);
-	}
-	.team-header h3 {
-		margin: 0 0 0.85rem;
-		font-size: 1.05rem;
-		font-weight: 700;
-	}
-	.team-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		margin-bottom: 1rem;
-	}
-	.team-member {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.55rem 0.85rem;
-		background: var(--paper-2);
-		border: 1px solid var(--line);
-	}
-	.member-avatar {
-		width: 32px;
-		height: 32px;
-		background: var(--wn-atrament);
-		color: var(--wn-plotno);
-		display: grid;
-		place-items: center;
-		font-weight: 700;
-		font-size: 0.85rem;
-	}
-	.member-info {
-		flex: 1;
-		display: flex;
-		gap: 0.75rem;
-		align-items: baseline;
-	}
-	.member-info strong {
-		font-size: 0.95rem;
-	}
-	.member-task {
-		font-size: 0.82rem;
-		color: var(--mute);
-	}
-	.btn-unassign {
-		padding: 0.3rem 0.55rem;
-		border: 1px solid transparent;
-		background: transparent;
-		color: var(--wn-pomidor);
-		cursor: pointer;
-		font-size: 0.9rem;
-	}
-	.btn-unassign:hover { border-color: var(--wn-pomidor); }
-	.team-empty {
-		color: var(--mute);
-		font-style: italic;
-		font-size: 0.88rem;
-		padding: 0.5rem 0;
-		margin: 0 0 1rem;
-	}
-	.team-form {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		gap: 0.7rem;
-		align-items: end;
-		padding: 0.85rem;
-		background: var(--paper-2);
-		border: 1px dashed var(--line);
-	}
-	.team-field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-	}
-	.team-field > span {
-		font-size: 0.7rem;
-		color: var(--mute);
-		font-weight: 500;
-	}
-	.team-field.wide { grid-column: 1 / -1; }
-	.team-field input,
-	.team-field select {
-		border: 1px solid var(--line);
-		padding: 0.4rem 0.55rem;
-		background: var(--paper);
-		font-family: inherit;
-		font-size: 0.85rem;
-		border-radius: 0;
-	}
-	.team-field input:focus,
-	.team-field select:focus {
-		outline: none;
-		border-color: var(--wn-zielony);
-	}
-	.btn-assign {
-		grid-column: 1 / -1;
-		justify-self: end;
-		padding: 0.5rem 1.15rem;
-		background: var(--wn-zielony);
-		color: var(--wn-atrament);
-		border: 2px solid var(--wn-atrament);
-		border-radius: 0;
-		font-weight: 700;
-		cursor: pointer;
-		font-family: inherit;
-		box-shadow: 3px 3px 0 var(--wn-atrament);
-	}
-	.btn-assign:hover {
-		transform: translate(-1px, -1px);
-		box-shadow: 4px 4px 0 var(--wn-atrament);
-	}
+	/* .team-* + .member-* + .btn-assign/unassign → TeamBlock.svelte */
 
 	/* ─── ZDJĘCIA ─────────────────────────────── */
 	.photos-block {
@@ -1181,191 +817,7 @@
 		box-shadow: 4px 4px 0 var(--wn-atrament);
 	}
 
-	/* ─── PŁATNOŚCI ─────────────────────────────── */
-	.payments-block {
-		margin-top: 1.25rem;
-		padding-top: 1.25rem;
-		border-top: 2px solid var(--line);
-	}
-	.pay-header {
-		display: flex;
-		align-items: center;
-		gap: 0.8rem;
-		margin-bottom: 0.85rem;
-	}
-	.pay-header h3 {
-		margin: 0;
-		font-size: 1.05rem;
-		font-weight: 700;
-	}
-	.pay-pill {
-		padding: 0.2rem 0.7rem;
-		border: 1px solid var(--line);
-		font-size: 0.78rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.02em;
-	}
-	.pay-pill.pay-paid {
-		background: var(--wn-zielony);
-		color: var(--wn-atrament);
-		border-color: var(--wn-atrament);
-	}
-	.pay-pill.pay-partial {
-		background: var(--wn-zarowka);
-		color: var(--wn-atrament);
-		border-color: #8a6d00;
-	}
-	.pay-pill.pay-none {
-		background: color-mix(in srgb, var(--wn-pomidor) 15%, transparent);
-		color: var(--wn-pomidor);
-		border-color: var(--wn-pomidor);
-	}
-	.pay-summary {
-		display: flex;
-		gap: 1.5rem;
-		flex-wrap: wrap;
-		margin-bottom: 1rem;
-		padding: 0.85rem 1rem;
-		background: var(--paper-2);
-		border-left: 3px solid var(--wn-zielony);
-		font-size: 0.9rem;
-	}
-	.pay-stat .pay-lbl {
-		color: var(--mute);
-		font-size: 0.8rem;
-		margin-right: 0.3rem;
-	}
-	.pay-stat strong {
-		font-family: var(--font-mono);
-		font-size: 0.95rem;
-	}
-	.pay-stat .pay-in {
-		color: var(--wn-zielony);
-	}
-	.pay-stat .pay-due {
-		color: var(--wn-pomidor);
-	}
-	.pay-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.85rem;
-		margin-bottom: 1rem;
-	}
-	.pay-table th,
-	.pay-table td {
-		text-align: left;
-		padding: 0.5rem 0.6rem;
-		border-bottom: 1px solid var(--line);
-	}
-	.pay-table th {
-		font-weight: 600;
-		color: var(--mute);
-		font-size: 0.72rem;
-		text-transform: uppercase;
-	}
-	.pay-table .num { text-align: right; font-family: var(--font-mono); }
-	.pay-table .mono { font-family: var(--font-mono); }
-	.pay-table .mute { color: var(--mute); }
-	.pay-table .actions { text-align: right; }
-	.pay-amount { font-weight: 600; color: var(--wn-zielony); }
-	.pay-method {
-		padding: 0.1rem 0.4rem;
-		background: var(--paper-2);
-		border: 1px solid var(--line);
-		font-size: 0.78rem;
-	}
-	.btn-del-pay {
-		padding: 0.25rem 0.55rem;
-		border: 1px solid transparent;
-		background: transparent;
-		color: var(--wn-pomidor);
-		cursor: pointer;
-		font-size: 0.75rem;
-	}
-	.btn-del-pay:hover { border-color: var(--wn-pomidor); }
-
-	.pay-quick {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		padding: 0.85rem 1rem;
-		background: color-mix(in srgb, var(--wn-zielony) 15%, var(--paper));
-		border: 2px dashed var(--wn-zielony);
-		margin-bottom: 0.85rem;
-	}
-	.btn-quick-pay {
-		padding: 0.65rem 1.1rem;
-		background: var(--wn-zielony);
-		color: var(--wn-atrament);
-		border: 2px solid var(--wn-atrament);
-		font-family: inherit;
-		font-size: 0.95rem;
-		font-weight: 700;
-		cursor: pointer;
-		border-radius: 0;
-		box-shadow: 3px 3px 0 var(--wn-atrament);
-	}
-	.btn-quick-pay:hover {
-		transform: translate(-1px, -1px);
-		box-shadow: 4px 4px 0 var(--wn-atrament);
-	}
-	.pay-quick-hint {
-		color: var(--mute);
-		font-size: 0.8rem;
-		font-style: italic;
-	}
-	.pay-form {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-		gap: 0.7rem;
-		align-items: end;
-		padding: 0.85rem;
-		background: var(--paper-2);
-		border: 1px dashed var(--line);
-	}
-	.pay-field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-	}
-	.pay-field > span {
-		font-size: 0.7rem;
-		color: var(--mute);
-		font-weight: 500;
-	}
-	.pay-field.wide { grid-column: 1 / -1; }
-	.pay-field input,
-	.pay-field select {
-		border: 1px solid var(--line);
-		padding: 0.4rem 0.55rem;
-		background: var(--paper);
-		font-family: inherit;
-		font-size: 0.85rem;
-		border-radius: 0;
-	}
-	.pay-field input:focus,
-	.pay-field select:focus {
-		outline: none;
-		border-color: var(--wn-zielony);
-	}
-	.btn-add-pay {
-		grid-column: 1 / -1;
-		justify-self: end;
-		padding: 0.55rem 1.15rem;
-		background: var(--wn-zielony);
-		color: var(--wn-atrament);
-		border: 2px solid var(--wn-atrament);
-		border-radius: 0;
-		font-weight: 700;
-		cursor: pointer;
-		font-family: inherit;
-		box-shadow: 3px 3px 0 var(--wn-atrament);
-	}
-	.btn-add-pay:hover {
-		transform: translate(-1px, -1px);
-		box-shadow: 4px 4px 0 var(--wn-atrament);
-	}
+	/* .pay-* + .btn-*-pay + .payments-block → PaymentBlock.svelte */
 	.op-form {
 		display: flex;
 		flex-direction: column;
