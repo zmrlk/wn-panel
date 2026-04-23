@@ -135,7 +135,29 @@ export const actions: Actions = {
 			i++;
 		}
 
-		const totalCents = Math.round(lines.reduce((s, l) => s + l.lineTotal, 0) * 100);
+		const computedCents = Math.round(lines.reduce((s, l) => s + l.lineTotal, 0) * 100);
+
+		// Manual override kwoty brutto (rabat / premium)
+		const overrideFlag = form.get('totalOverride')?.toString() === '1';
+		const overrideRaw = Number(form.get('totalOverrideValue') ?? '0');
+		const overrideCents =
+			overrideFlag && Number.isFinite(overrideRaw) && overrideRaw >= 0
+				? Math.round(overrideRaw * 100)
+				: null;
+		const totalCents = overrideCents ?? computedCents;
+
+		// Jeśli override — dopisz notkę do oferty dla transparencji
+		let finalNotes = notes;
+		if (overrideCents !== null && overrideCents !== computedCents) {
+			const diff = (overrideCents - computedCents) / 100;
+			const label = diff < 0 ? 'rabat' : 'premium';
+			const auto = (computedCents / 100).toFixed(2);
+			const manual = (overrideCents / 100).toFixed(2);
+			const note =
+				`💰 Cena ustalona ręcznie: ${manual} zł ` +
+				`(auto: ${auto} zł, ${label}: ${diff >= 0 ? '+' : ''}${diff.toFixed(2)} zł)`;
+			finalNotes = finalNotes ? `${finalNotes}\n\n${note}` : note;
+		}
 
 		const leadIdFromForm = form.get('leadId')?.toString() || null;
 
@@ -152,7 +174,7 @@ export const actions: Actions = {
 				venue,
 				totalCents,
 				status: 'draft',
-				notes
+				notes: finalNotes
 			})
 			.returning();
 

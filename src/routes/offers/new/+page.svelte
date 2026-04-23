@@ -125,9 +125,23 @@
 		return l.qty * l.days * l.unitPrice;
 	}
 
-	const subtotal = $derived(lines.reduce((s, l) => s + lineTotal(l), 0));
+	const computedTotal = $derived(lines.reduce((s, l) => s + lineTotal(l), 0));
+
+	// Manual override ceny brutto (np. rabat dla klienta, premium na dożynki)
+	let overrideTotal = $state(false);
+	let overrideValue = $state(0);
+
+	const subtotal = $derived(overrideTotal ? overrideValue : computedTotal);
 	const vat = $derived(subtotal - subtotal / 1.23); // inverse, bo ceny brutto (jak w cenniku)
 	const netto = $derived(subtotal - vat);
+
+	function enableOverride() {
+		overrideValue = Math.round(computedTotal * 100) / 100;
+		overrideTotal = true;
+	}
+	function disableOverride() {
+		overrideTotal = false;
+	}
 
 	function fmtZl(zl: number) {
 		return zl.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
@@ -439,7 +453,12 @@
 				<section class="card summary-card">
 					<header class="card-head">
 						<h2>5. Podsumowanie</h2>
+						{#if overrideTotal}
+							<span class="override-badge">✏️ cena ręczna</span>
+						{/if}
 					</header>
+					<input type="hidden" name="totalOverride" value={overrideTotal ? '1' : '0'} />
+					<input type="hidden" name="totalOverrideValue" value={overrideValue} />
 					<div class="summary-body">
 						<div class="sum-row">
 							<span>Netto</span>
@@ -451,8 +470,44 @@
 						</div>
 						<div class="sum-row total">
 							<span>Do zapłaty (brutto)</span>
-							<span class="sum-val big">{fmtZl(subtotal)}</span>
+							{#if overrideTotal}
+								<span class="sum-val big override">
+									<input
+										type="number"
+										step="0.01"
+										min="0"
+										bind:value={overrideValue}
+										class="override-input"
+										aria-label="Kwota brutto ręczna"
+									/>
+									<span class="override-unit">zł</span>
+									<button
+										type="button"
+										class="override-reset"
+										onclick={disableOverride}
+										title="Przywróć auto-kalkulację ({fmtZl(computedTotal)})"
+									>↩ auto</button>
+								</span>
+							{:else}
+								<span class="sum-val big">
+									{fmtZl(subtotal)}
+									<button
+										type="button"
+										class="override-edit"
+										onclick={enableOverride}
+										title="Ustaw kwotę ręcznie (np. rabat, premium)"
+									>✏️</button>
+								</span>
+							{/if}
 						</div>
+						{#if overrideTotal}
+							{@const diff = overrideValue - computedTotal}
+							<div class="override-hint">
+								Auto-kalkulacja: <strong>{fmtZl(computedTotal)}</strong>.
+								Różnica: <strong class:discount={diff < 0} class:premium={diff > 0}>{diff >= 0 ? '+' : ''}{fmtZl(diff)}</strong>.
+								Zostanie odnotowane w notatkach oferty.
+							</div>
+						{/if}
 					</div>
 				</section>
 			</div>
@@ -1035,6 +1090,69 @@
 		font-size: 1.3rem;
 		font-weight: 700;
 		color: var(--wn-zielony-ink);
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.sum-val.big.override {
+		color: var(--wn-atrament);
+	}
+	.override-badge {
+		font-size: 0.72rem;
+		font-weight: 600;
+		padding: 0.2rem 0.5rem;
+		background: color-mix(in srgb, var(--wn-zarowka, #eab308) 25%, transparent);
+		color: #713f12;
+		border-radius: 4px;
+	}
+	.override-input {
+		width: 120px;
+		padding: 0.35rem 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 1.15rem;
+		font-weight: 700;
+		text-align: right;
+		border: 2px solid var(--wn-atrament);
+		border-radius: 0;
+		background: var(--paper);
+	}
+	.override-input:focus {
+		outline: none;
+		box-shadow: 2px 2px 0 var(--wn-atrament);
+	}
+	.override-unit {
+		font-size: 1rem;
+	}
+	.override-edit,
+	.override-reset {
+		padding: 0.2rem 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		background: transparent;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		cursor: pointer;
+		color: var(--mute);
+		font-family: var(--font-sans);
+	}
+	.override-edit:hover,
+	.override-reset:hover {
+		border-color: var(--wn-atrament);
+		color: var(--ink);
+	}
+	.override-hint {
+		margin-top: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		background: color-mix(in srgb, var(--wn-zarowka, #eab308) 12%, transparent);
+		border-left: 3px solid color-mix(in srgb, var(--wn-zarowka, #eab308) 70%, transparent);
+		font-size: 0.78rem;
+		color: var(--ink-2);
+	}
+	.override-hint .discount {
+		color: var(--wn-zielony-ink);
+	}
+	.override-hint .premium {
+		color: #7a1515;
 	}
 
 	/* FOOTER */
