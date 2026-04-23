@@ -24,8 +24,7 @@
 		{ id: 'nowy', label: '🆕 Nowy', count: 'nowy' },
 		{ id: 'w-trakcie', label: '⚙️ W trakcie', count: 'w-trakcie' },
 		{ id: 'wygrany', label: '✅ Wygrany', count: 'wygrany' },
-		{ id: 'przegrany', label: '✕ Przegrany', count: 'przegrany' },
-		{ id: 'archiwum', label: '📦 Archiwum', count: 'archiwum' },
+		{ id: 'historia', label: '📦 Historia', count: 'historia' },
 		{ id: 'wszystko', label: 'Wszystko', count: 'all' }
 	];
 
@@ -213,8 +212,7 @@
 								<td class="num price">{fmtZl(z.valueCents)}</td>
 							</tr>
 							<tr class="notes-row clickable type-{z.type}" onclick={() => goto(detailHref(z))}>
-								<td></td>
-								<td colspan="4" class="notes-cell">
+								<td colspan="5" class="notes-cell">
 									{#if z.notes}
 										📝 {z.notes}
 									{:else}
@@ -618,7 +616,7 @@
 		text-transform: uppercase;
 		letter-spacing: 0.02em;
 	}
-	/* 5-stage model (v5.9): 1=nowy, 2=w-trakcie, 3=wygrany, 4=przegrany, 5=archiwum */
+	/* 6-stage model (v5.20): 1=nowy, 2=w-trakcie, 3=wygrany (do realizacji), 4=zrealizowany, 5=przegrany, 6=archiwum */
 	.stage-1 {
 		background: color-mix(in srgb, var(--wn-granat) 14%, transparent);
 		color: var(--wn-granat);
@@ -635,11 +633,16 @@
 		border-color: var(--wn-atrament);
 	}
 	.stage-4 {
+		background: var(--wn-atrament);
+		color: var(--wn-zielony);
+		border-color: var(--wn-atrament);
+	}
+	.stage-5 {
 		background: color-mix(in srgb, var(--wn-pomidor) 12%, transparent);
 		color: var(--wn-pomidor);
 		border-color: var(--wn-pomidor);
 	}
-	.stage-5 {
+	.stage-6 {
 		background: color-mix(in srgb, var(--mute) 10%, transparent);
 		color: var(--mute);
 		border-color: var(--line);
@@ -715,9 +718,11 @@
 		padding-top: 0;
 	}
 	.notes-cell {
-		font-size: 0.78rem;
+		font-size: 0.82rem;
 		color: var(--mute);
 		font-style: italic;
+		text-align: center;
+		padding: 0.5rem 1rem 0.85rem !important;
 	}
 	.notes-row.type-lead td,
 	.notes-row.type-offer td,

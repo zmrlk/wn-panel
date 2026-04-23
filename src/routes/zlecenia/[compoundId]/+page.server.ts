@@ -261,24 +261,22 @@ export const actions: Actions = {
 		const type = compound.slice(0, dashIdx) as 'lead' | 'offer' | 'booking';
 		const id = compound.slice(dashIdx + 1);
 
-		// Unified bucket → DB status per-type
+		// Unified bucket → DB status per-type (v5.20: 6 DB statuses, 5 UI buckets)
 		const UNIFIED_TO_DB: Record<string, Record<string, string>> = {
 			lead: {
 				nowy: 'new',
 				'w-trakcie': 'contacted',
-				wygrany: 'won',
 				przegrany: 'lost',
 				archiwum: 'archived'
 			},
 			offer: {
 				'w-trakcie': 'sent',
 				wygrany: 'accepted',
-				przegrany: 'rejected',
-				archiwum: 'expired'
+				przegrany: 'rejected'
 			},
 			booking: {
-				'w-trakcie': 'confirmed',
-				wygrany: 'done',
+				wygrany: 'confirmed',
+				zrealizowany: 'done',
 				przegrany: 'cancelled'
 			}
 		};

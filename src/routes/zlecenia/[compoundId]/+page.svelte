@@ -8,12 +8,13 @@
 	let newNote = $state('');
 	let addingNote = $state(false);
 
-	// UNIFIED 5-STATUS (v5.9): nowy / w-trakcie / wygrany / przegrany / archiwum
-	// ID = unified bucket, server mapuje na DB-status per-type
-	const UNIFIED_STATUSES: Array<{ id: string; label: string; emoji: string }> = [
+	// UNIFIED 6-STATUS (v5.20): nowy / w-trakcie / wygrany / zrealizowany / przegrany / archiwum
+	// Każdy chip ma semantyczny sens i mapuje na różny DB-status per typ
+	const ALL_STATUSES: Array<{ id: string; label: string; emoji: string }> = [
 		{ id: 'nowy', label: 'Nowy', emoji: '🆕' },
 		{ id: 'w-trakcie', label: 'W trakcie', emoji: '⚙️' },
 		{ id: 'wygrany', label: 'Wygrany', emoji: '✅' },
+		{ id: 'zrealizowany', label: 'Zrealizowany', emoji: '🎉' },
 		{ id: 'przegrany', label: 'Przegrany', emoji: '✕' },
 		{ id: 'archiwum', label: 'Archiwum', emoji: '📦' }
 	];
@@ -25,7 +26,7 @@
 			contacted: 'w-trakcie',
 			qualified: 'w-trakcie',
 			quoted: 'w-trakcie',
-			won: 'wygrany',
+			won: 'zrealizowany',
 			lost: 'przegrany',
 			archived: 'archiwum'
 		},
@@ -38,20 +39,26 @@
 			expired: 'przegrany'
 		},
 		booking: {
-			draft: 'w-trakcie',
-			confirmed: 'w-trakcie',
-			'in-progress': 'w-trakcie',
-			done: 'wygrany',
+			draft: 'wygrany',
+			confirmed: 'wygrany',
+			'in-progress': 'wygrany',
+			done: 'zrealizowany',
 			cancelled: 'przegrany'
 		}
 	};
 	const currentUnified = $derived(DB_TO_UNIFIED[z.type]?.[z.status] ?? z.status);
 
-	// "Nowy" ma sens tylko dla leada (offer/booking nie może wrócić do nowego)
+	// Per-type dostępne chipy — tylko sensowne przejścia:
+	//  lead    = nowy → w-trakcie → przegrany / archiwum (wygrany = tylko przez ofertę)
+	//  offer   = w-trakcie → wygrany (auto tworzy booking) / przegrany
+	//  booking = wygrany (aktywne) / zrealizowany / przegrany
+	const ALLOWED_PER_TYPE: Record<string, string[]> = {
+		lead: ['nowy', 'w-trakcie', 'przegrany', 'archiwum'],
+		offer: ['w-trakcie', 'wygrany', 'przegrany'],
+		booking: ['wygrany', 'zrealizowany', 'przegrany']
+	};
 	const statusList = $derived(
-		z.type === 'lead'
-			? UNIFIED_STATUSES
-			: UNIFIED_STATUSES.filter((s) => s.id !== 'nowy' && (z.type !== 'booking' || s.id !== 'archiwum'))
+		ALL_STATUSES.filter((s) => ALLOWED_PER_TYPE[z.type]?.includes(s.id) ?? true)
 	);
 
 	const ICONS: Record<string, string> = {

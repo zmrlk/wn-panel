@@ -613,13 +613,13 @@
 
 	/* CARDS */
 	.card {
-		background: var(--card);
+		background: var(--paper);
 		border: 1px solid var(--line);
-		border-radius: 10px;
+		border-radius: 0;
 		overflow: hidden;
 	}
 	.card-head {
-		padding: 0.7rem 1.1rem;
+		padding: 1rem 1.5rem;
 		border-bottom: 1px solid var(--line);
 		display: flex;
 		align-items: center;
@@ -627,17 +627,18 @@
 		gap: 0.8rem;
 	}
 	.section-hint {
-		padding: 0.7rem 1.1rem 0;
+		padding: 0.85rem 1.5rem 0;
 		margin: 0;
-		color: var(--muted, var(--mute));
-		font-size: 0.82rem;
-		line-height: 1.45;
+		color: var(--mute);
+		font-size: 0.85rem;
+		line-height: 1.5;
 	}
 	.card-head h2 {
 		margin: 0;
-		font-size: 0.92rem;
-		font-weight: 600;
+		font-size: 1.05rem;
+		font-weight: 700;
 		color: var(--ink);
+		font-family: var(--font-sans);
 	}
 	.card-body {
 		padding: 1rem 1.1rem;
@@ -940,18 +941,25 @@
 		gap: 0.5rem;
 	}
 	.btn-primary-lg {
-		padding: 0.6rem 1.3rem;
+		padding: 0.65rem 1.4rem;
 		background: var(--wn-zielony);
-		color: var(--wn-plotno);
-		border: none;
-		border-radius: 6px;
-		font-size: 0.88rem;
-		font-weight: 600;
+		color: var(--wn-atrament);
+		border: 2px solid var(--wn-atrament);
+		border-radius: 0;
+		font-size: 0.95rem;
+		font-weight: 700;
 		cursor: pointer;
 		font-family: var(--font-sans);
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+		transition: transform 0.1s, box-shadow 0.1s;
 	}
 	.btn-primary-lg:hover {
-		background: var(--wn-zielony-ink);
+		transform: translate(-1px, -1px);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
+	}
+	.btn-primary-lg:active {
+		transform: translate(1px, 1px);
+		box-shadow: 1px 1px 0 var(--wn-atrament);
 	}
 	.btn-send {
 		padding: 0.6rem 1.3rem;

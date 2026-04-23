@@ -99,31 +99,32 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		createdAt: Date;
 	};
 
-	// UNIFIED 5-STAGE MODEL (v5.9):
-	//   1 = Nowy       (tylko świeży lead)
-	//   2 = W trakcie  (wszystko "happening" — kontakt, oferta, rezerwacja)
-	//   3 = Wygrany    (zamknięte na plus: accepted/done/won)
-	//   4 = Przegrany  (lost/rejected/expired/cancelled)
-	//   5 = Archiwum   (lead.archived)
+	// UNIFIED 6-STAGE MODEL (v5.20):
+	//   1 = Nowy            (świeży lead, nic nie ruszane)
+	//   2 = W trakcie       (negocjacja: lead kontakt, oferta draft/sent)
+	//   3 = Wygrany         (klient zaakceptował → booking do REALIZACJI: draft/confirmed/in-progress)
+	//   4 = Zrealizowany    (booking.done — event za nami)
+	//   5 = Przegrany       (lost/rejected/expired/cancelled)
+	//   6 = Archiwum        (lead.archived)
 	const STAGES: Record<string, { stage: number; label: string; emoji: string; isLost: boolean }> = {
 		'lead:new':           { stage: 1, label: 'Nowy',           emoji: '🆕', isLost: false },
 		'lead:contacted':     { stage: 2, label: 'W trakcie',      emoji: '📞', isLost: false },
-		'lead:qualified':     { stage: 2, label: 'W trakcie',      emoji: '📞', isLost: false },
+		'lead:qualified':     { stage: 2, label: 'W trakcie',      emoji: '🎯', isLost: false },
 		'lead:quoted':        { stage: 2, label: 'W trakcie',      emoji: '✉️', isLost: false },
-		'lead:won':           { stage: 3, label: 'Wygrany',        emoji: '✅', isLost: false },
-		'lead:lost':          { stage: 4, label: 'Przegrany',      emoji: '✕',  isLost: true  },
-		'lead:archived':      { stage: 5, label: 'Archiwum',       emoji: '📦', isLost: true  },
+		'lead:won':           { stage: 4, label: 'Zrealizowany',   emoji: '🎉', isLost: false },
+		'lead:lost':          { stage: 5, label: 'Przegrany',      emoji: '✕',  isLost: true  },
+		'lead:archived':      { stage: 6, label: 'Archiwum',       emoji: '📦', isLost: true  },
 		'offer:draft':        { stage: 2, label: 'W trakcie',      emoji: '✏️', isLost: false },
 		'offer:sent':         { stage: 2, label: 'W trakcie',      emoji: '✉️', isLost: false },
 		'offer:viewed':       { stage: 2, label: 'W trakcie',      emoji: '👀', isLost: false },
 		'offer:accepted':     { stage: 3, label: 'Wygrany',        emoji: '✅', isLost: false },
-		'offer:rejected':     { stage: 4, label: 'Przegrany',      emoji: '✕',  isLost: true  },
-		'offer:expired':      { stage: 4, label: 'Przegrany',      emoji: '⏰', isLost: true  },
-		'booking:draft':      { stage: 2, label: 'W trakcie',      emoji: '📝', isLost: false },
-		'booking:confirmed':  { stage: 2, label: 'W trakcie',      emoji: '✅', isLost: false },
-		'booking:in-progress':{ stage: 2, label: 'W trakcie',      emoji: '🚚', isLost: false },
-		'booking:done':       { stage: 3, label: 'Wygrany',        emoji: '🎉', isLost: false },
-		'booking:cancelled':  { stage: 4, label: 'Przegrany',      emoji: '✕',  isLost: true  }
+		'offer:rejected':     { stage: 5, label: 'Przegrany',      emoji: '✕',  isLost: true  },
+		'offer:expired':      { stage: 5, label: 'Przegrany',      emoji: '⏰', isLost: true  },
+		'booking:draft':      { stage: 3, label: 'Wygrany',        emoji: '📝', isLost: false },
+		'booking:confirmed':  { stage: 3, label: 'Wygrany',        emoji: '✅', isLost: false },
+		'booking:in-progress':{ stage: 3, label: 'W realizacji',   emoji: '🚚', isLost: false },
+		'booking:done':       { stage: 4, label: 'Zrealizowany',   emoji: '🎉', isLost: false },
+		'booking:cancelled':  { stage: 5, label: 'Przegrany',      emoji: '✕',  isLost: true  }
 	};
 
 	const zlecenia: Zlecenie[] = [];
@@ -215,14 +216,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		});
 	}
 
-	// Counts per tab (5-stage model)
+	// Counts per tab (6 DB stages → 5 UI tabs; historia = 4+5+6)
 	const counts = {
 		all: zlecenia.length,
 		nowy: zlecenia.filter((z) => z.stage === 1).length,
 		'w-trakcie': zlecenia.filter((z) => z.stage === 2).length,
 		wygrany: zlecenia.filter((z) => z.stage === 3).length,
-		przegrany: zlecenia.filter((z) => z.stage === 4).length,
-		archiwum: zlecenia.filter((z) => z.stage === 5).length
+		historia: zlecenia.filter((z) => z.stage >= 4).length
 	};
 
 	// Search filter (q= param)
@@ -232,8 +232,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	if (tabFilter === 'nowy') filtered = zlecenia.filter((z) => z.stage === 1);
 	else if (tabFilter === 'w-trakcie') filtered = zlecenia.filter((z) => z.stage === 2);
 	else if (tabFilter === 'wygrany') filtered = zlecenia.filter((z) => z.stage === 3);
-	else if (tabFilter === 'przegrany') filtered = zlecenia.filter((z) => z.stage === 4);
-	else if (tabFilter === 'archiwum') filtered = zlecenia.filter((z) => z.stage === 5);
+	else if (tabFilter === 'historia') filtered = zlecenia.filter((z) => z.stage >= 4);
 	else if (tabFilter === 'wszystko') filtered = zlecenia;
 
 	if (q) {
@@ -254,7 +253,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		return ad - bd;
 	});
 
-	// Aggregates — wartość aktywnych (w-trakcie + wygrany)
+	// Aggregates — wartość aktywnych (w-trakcie + wygrany = negocjacja + do realizacji)
 	const activeValue = zlecenia
 		.filter((z) => (z.stage === 2 || z.stage === 3) && z.valueCents)
 		.reduce((s, z) => s + (z.valueCents ?? 0), 0);
