@@ -87,29 +87,33 @@
 		const pkg = data.packages.find((x) => x.id === pkgId);
 		if (!pkg) return;
 
-		// Ładuj items z package_items (synced z magazynu)
+		// Ładuj items z package_items (co zawiera pakiet — z magazynu)
 		const items = data.packageItems.filter((pi) => pi.packageId === pkgId);
 
+		// Pakiet ma JEDNĄ CENĘ (flat) + pozycje w zestawie (unit_price=0)
+		// User widzi: pakiet z ceną + lista co dostaje
+		const pkgLine = {
+			itemId: null,
+			desc: `📦 ${pkg.name}`,
+			qty: 1,
+			days: 1,
+			unitPrice: pkg.priceFromCents / 100
+		};
+
 		if (items.length > 0) {
-			// Pakiet ma zdefiniowane pozycje z magazynu
-			lines = items.map((pi) => ({
-				itemId: pi.itemId ?? null,
-				desc: pi.itemName ?? pi.customLabel ?? 'Pozycja',
-				qty: pi.quantity,
-				days,
-				unitPrice: pi.itemPriceCents ? pi.itemPriceCents / 100 : 0
-			}));
-		} else {
-			// Pakiet bez pozycji — daj jedną flat-price line
 			lines = [
-				{
-					itemId: null,
-					desc: `${pkg.name} (cena stała)`,
-					qty: 1,
-					days: 1,
-					unitPrice: pkg.priceFromCents / 100
-				}
+				pkgLine,
+				// Pozycje z ceną 0 = "w zestawie"
+				...items.map((pi) => ({
+					itemId: pi.itemId ?? null,
+					desc: pi.itemName ?? pi.customLabel ?? 'Pozycja',
+					qty: pi.quantity,
+					days,
+					unitPrice: 0 // w zestawie
+				}))
 			];
+		} else {
+			lines = [pkgLine];
 		}
 	}
 
@@ -342,7 +346,13 @@
 										<td class="num">
 											<input name={`item_${i}_price`} type="number" step="0.01" bind:value={line.unitPrice} class="f-price" />
 										</td>
-										<td class="num line-total">{fmtZl(lineTotal(line))}</td>
+										<td class="num line-total">
+										{#if line.unitPrice === 0}
+											<span class="in-set">w zestawie</span>
+										{:else}
+											{fmtZl(lineTotal(line))}
+										{/if}
+									</td>
 										<td class="actions">
 											<button type="button" class="btn-del" onclick={() => removeLine(i)} title="Usuń">×</button>
 										</td>
@@ -818,6 +828,12 @@
 		font-family: var(--font-mono);
 		font-weight: 600;
 		color: var(--wn-granat);
+	}
+	.in-set {
+		font-size: 0.78rem;
+		font-style: italic;
+		color: var(--mute);
+		font-weight: 400;
 	}
 	.btn-del {
 		width: 24px;

@@ -20,10 +20,8 @@
 		offer: [
 			{ id: 'draft', label: 'Szkic', emoji: '✏️' },
 			{ id: 'sent', label: 'Wysłana', emoji: '✉️' },
-			{ id: 'viewed', label: 'Klient zobaczył', emoji: '👀' },
 			{ id: 'accepted', label: 'Zaakceptowana', emoji: '✅' },
-			{ id: 'rejected', label: 'Odrzucona', emoji: '✕' },
-			{ id: 'expired', label: 'Wygasła', emoji: '⏰' }
+			{ id: 'rejected', label: 'Odrzucona', emoji: '✕' }
 		],
 		booking: [
 			{ id: 'draft', label: 'Szkic', emoji: '📝' },
@@ -239,21 +237,7 @@
 					{/if}
 				</div>
 				{#if addingNote}
-					<form
-						method="POST"
-						action="?/addNote"
-						use:enhance={() => {
-							return async ({ result, update }) => {
-								if (result.type === 'success') {
-									newNote = '';
-									addingNote = false;
-								}
-								await update();
-								await invalidateAll();
-							};
-						}}
-						class="note-form"
-					>
+					<form method="POST" action="?/addNote" class="note-form">
 						<textarea
 							name="content"
 							bind:value={newNote}
@@ -287,17 +271,7 @@
 						Żeby wysłać ofertę → klik <strong>"+ Oferta z leada"</strong> w prawym górnym rogu (otwiera kalkulator). Po zapisaniu oferty lead automatycznie dostanie status <em>"oferta wysłana"</em>.
 					</p>
 				{/if}
-				<form
-					method="POST"
-					action="?/updateStatus"
-					use:enhance={() => {
-						return async ({ update }) => {
-							await update();
-							await invalidateAll();
-						};
-					}}
-					class="status-form"
-				>
+				<form method="POST" action="?/updateStatus" class="status-form">
 					<div class="status-chips">
 						{#each statusList as s}
 							<button
