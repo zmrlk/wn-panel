@@ -674,14 +674,14 @@
 
 	.content {
 		padding: 1.25rem 1.5rem;
-		max-width: 1400px;
+		max-width: 1600px;
 		margin: 0 auto;
 		width: 100%;
 	}
 	.topbar,
 	.tabs-wrap {
-		padding-left: max(1.5rem, calc((100% - 1400px) / 2));
-		padding-right: max(1.5rem, calc((100% - 1400px) / 2));
+		padding-left: max(1.5rem, calc((100% - 1600px) / 2));
+		padding-right: max(1.5rem, calc((100% - 1600px) / 2));
 	}
 
 	/* TABLES */

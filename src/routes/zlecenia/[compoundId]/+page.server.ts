@@ -85,6 +85,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			task: string;
 			notes: string | null;
 		}>;
+		// Multi-source timeline (v5.25)
+		timeline: Array<{
+			label: string;
+			date: Date | null;
+			emoji: string;
+			kind: string;
+			note: string | null;
+		}>;
 		photos: Array<{
 			id: string;
 			url: string;
@@ -159,6 +167,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			payments: [],
 			paidCents: 0,
 			assignments: [],
+			timeline: [],
 			photos: [],
 			notes: l.notes,
 			message: l.message,
@@ -216,6 +225,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			payments: [],
 			paidCents: 0,
 			assignments: [],
+			timeline: [],
 			photos: [],
 			notes: o.offer.notes,
 			message: null,
@@ -249,8 +259,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.where(eq(booking.id, id))
 			.limit(1);
 		if (!b) throw error(404, 'Rezerwacja nie istnieje');
-		// Fetch items via booking_tent join + payments + assignments + photos
-		const [bookedItems, payments, assignmentsRaw, photosRaw] = await Promise.all([
+		// Fetch items via booking_tent join + payments + assignments + photos + movements
+		const [bookedItems, payments, assignmentsRaw, photosRaw, movementsRaw] = await Promise.all([
 			db
 				.select({
 					tentId: bookingTent.tentId,
@@ -291,9 +301,118 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				.from(photo)
 				.leftJoin(user, eq(photo.takenBy, user.id))
 				.where(eq(photo.bookingId, id))
-				.orderBy(desc(photo.uploadedAt))
+				.orderBy(desc(photo.uploadedAt)),
+			db
+				.select({
+					id: stockMovement.id,
+					direction: stockMovement.direction,
+					kind: stockMovement.kind,
+					qty: stockMovement.qty,
+					reason: stockMovement.reason,
+					notes: stockMovement.notes,
+					createdAt: stockMovement.createdAt,
+					itemName: item.name
+				})
+				.from(stockMovement)
+				.leftJoin(item, eq(stockMovement.itemId, item.id))
+				.where(eq(stockMovement.bookingId, id))
+				.orderBy(asc(stockMovement.createdAt))
 		]);
 		const paidCentsTotal = payments.reduce((s, p) => s + p.amountCents, 0);
+
+		// Multi-source timeline: booking created, assignments, dispatch (OUT), payments, photos, return (IN), strata, done
+		type TimelineEvent = {
+			label: string;
+			date: Date | null;
+			emoji: string;
+			kind: string;
+			note: string | null;
+		};
+		const timeline: TimelineEvent[] = [];
+		timeline.push({ label: 'Rezerwacja utworzona', date: b.createdAt, emoji: '➕', kind: 'created', note: null });
+		for (const a of assignmentsRaw) {
+			timeline.push({
+				label: `Przypisano: ${a.userName ?? '—'} (${a.task === 'driver' ? 'kierowca' : a.task === 'installer' ? 'montaż' : a.task === 'lead' ? 'lider' : a.task})`,
+				date: null, // assignmentsRaw nie ma createdAt — użyjemy null, sortuje na dół
+				emoji: '👥',
+				kind: 'assignment',
+				note: a.notes
+			});
+		}
+		// Dispatch OUT (wydanie_na_event) — zbieramy qty aggregated
+		const dispatchMovements = movementsRaw.filter((m) => m.kind === 'wydanie_na_event');
+		if (dispatchMovements.length > 0) {
+			const firstDispatch = dispatchMovements[0];
+			const totalItems = dispatchMovements.reduce((sum, m) => sum + m.qty, 0);
+			const names = dispatchMovements.map((m) => `${m.qty}× ${m.itemName}`).join(', ');
+			timeline.push({
+				label: `Wydano na event (${totalItems} szt.)`,
+				date: firstDispatch.createdAt,
+				emoji: '🚚',
+				kind: 'dispatch',
+				note: names
+			});
+		}
+		for (const p of payments) {
+			timeline.push({
+				label: `Płatność ${(p.amountCents / 100).toLocaleString('pl-PL')} zł (${p.method})`,
+				date: p.paidAt ? new Date(p.paidAt) : null,
+				emoji: '💰',
+				kind: 'payment',
+				note: p.notes
+			});
+		}
+		for (const p of photosRaw) {
+			timeline.push({
+				label: `Zdjęcie: ${p.kind === 'delivery' ? 'dostawa' : p.kind === 'return' ? 'odbiór' : p.kind === 'damage' ? 'uszkodzenie' : 'inne'}`,
+				date: p.uploadedAt,
+				emoji: '📸',
+				kind: 'photo',
+				note: p.caption
+			});
+		}
+		// Return (IN) + strata
+		const returnMovements = movementsRaw.filter((m) => m.kind === 'zwrot_po_evencie');
+		const stratyMovements = movementsRaw.filter((m) => m.kind === 'strata');
+		if (returnMovements.length > 0) {
+			const firstReturn = returnMovements[0];
+			const totalReturned = returnMovements.reduce((sum, m) => sum + m.qty, 0);
+			timeline.push({
+				label: `Zwrot z eventu (${totalReturned} szt.)`,
+				date: firstReturn.createdAt,
+				emoji: '📦',
+				kind: 'return',
+				note: returnMovements.map((m) => `${m.qty}× ${m.itemName}`).join(', ')
+			});
+		}
+		if (stratyMovements.length > 0) {
+			const firstStrata = stratyMovements[0];
+			const totalLost = stratyMovements.reduce((sum, m) => sum + m.qty, 0);
+			timeline.push({
+				label: `Straty (${totalLost} szt.)`,
+				date: firstStrata.createdAt,
+				emoji: '⚠️',
+				kind: 'loss',
+				note: stratyMovements.map((m) => `${m.qty}× ${m.itemName}`).join(', ')
+			});
+		}
+		if (b.status === 'done') {
+			timeline.push({
+				label: 'Event zakończony',
+				date: b.endDate ? new Date(b.endDate) : null,
+				emoji: '🎉',
+				kind: 'done',
+				note: null
+			});
+		}
+		// Sort chronologicznie (asc) — null daty na koniec
+		timeline.sort((a, b) => {
+			if (!a.date && !b.date) return 0;
+			if (!a.date) return 1;
+			if (!b.date) return -1;
+			return a.date.getTime() - b.date.getTime();
+		});
+
 		const s = STAGES[`booking:${b.status}`] ?? STAGES['booking:confirmed'];
 		zlecenie = {
 			type: 'booking',
@@ -350,6 +469,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				task: a.task,
 				notes: a.notes
 			})),
+			timeline,
 			photos: photosRaw.map((p) => ({
 				id: p.id,
 				url: p.url,
@@ -501,12 +621,15 @@ export const actions: Actions = {
 	},
 
 	// ═══ Wydaj booking na event: confirmed → in-progress + OUT movements ═══
-	dispatchBooking: async ({ params, locals }) => {
+	dispatchBooking: async ({ request, params, locals }) => {
 		const compound = params.compoundId!;
 		const dashIdx = compound.indexOf('-');
 		const type = compound.slice(0, dashIdx);
 		const id = compound.slice(dashIdx + 1);
 		if (type !== 'booking') return fail(400, { error: 'Tylko dla bookingów' });
+
+		const form = await request.formData();
+		const dispatchNote = form.get('dispatchNote')?.toString()?.trim() || null;
 
 		const [b] = await db.select().from(booking).where(eq(booking.id, id)).limit(1);
 		if (!b) return fail(404);
@@ -515,7 +638,7 @@ export const actions: Actions = {
 		const tents = await db.select().from(bookingTent).where(eq(bookingTent.bookingId, id));
 		const userId = locals.user?.id ?? null;
 
-		// Dla każdego booking_tent — wystaw OUT wydanie_na_event
+		// Dla każdego booking_tent — wystaw OUT wydanie_na_event (notes przechodzi na WSZYSTKIE movements)
 		if (tents.length > 0) {
 			await db.insert(stockMovement).values(
 				tents.map((t) => ({
@@ -525,9 +648,25 @@ export const actions: Actions = {
 					qty: t.quantity,
 					bookingId: id,
 					reason: `Wydanie na event: ${b.eventName}`,
+					notes: dispatchNote,
 					createdBy: userId
 				}))
 			);
+		}
+
+		// Append notatkę do booking.notes (historia widoczna w Notatki sekcji)
+		if (dispatchNote) {
+			const ts = new Date().toLocaleString('pl-PL', {
+				day: '2-digit',
+				month: '2-digit',
+				year: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			});
+			const author = locals.user?.name ?? 'System';
+			const entry = `[${ts} · ${author} · WYDANIE] ${dispatchNote}`;
+			const combined = b.notes ? `${entry}\n\n${b.notes}` : entry;
+			await db.update(booking).set({ notes: combined }).where(eq(booking.id, id));
 		}
 
 		await db
@@ -685,6 +824,8 @@ export const actions: Actions = {
 		if (type !== 'booking') return fail(400, { error: 'Tylko dla bookingów' });
 
 		const form = await request.formData();
+		const returnNote = form.get('returnNote')?.toString()?.trim() || null;
+
 		const [b] = await db.select().from(booking).where(eq(booking.id, id)).limit(1);
 		if (!b) return fail(404);
 		if (b.status !== 'in-progress') return fail(400, { error: 'Booking nie jest in-progress' });
@@ -698,6 +839,7 @@ export const actions: Actions = {
 			const returnedRaw = form.get(`return_${t.tentId}`)?.toString();
 			const returned = returnedRaw != null ? Math.max(0, Math.min(issued, Number(returnedRaw))) : issued;
 			const lost = issued - returned;
+			const itemNote = form.get(`note_${t.tentId}`)?.toString()?.trim() || null;
 
 			if (returned > 0) {
 				movements.push({
@@ -707,6 +849,7 @@ export const actions: Actions = {
 					qty: returned,
 					bookingId: id,
 					reason: `Zwrot po evencie: ${b.eventName}`,
+					notes: itemNote ?? returnNote,
 					createdBy: userId
 				});
 			}
@@ -718,6 +861,7 @@ export const actions: Actions = {
 					qty: lost,
 					bookingId: id,
 					reason: `Strata po evencie: ${b.eventName} (${lost} szt. nie wróciło)`,
+					notes: itemNote ?? returnNote,
 					createdBy: userId
 				});
 			}
@@ -725,6 +869,21 @@ export const actions: Actions = {
 
 		if (movements.length > 0) {
 			await db.insert(stockMovement).values(movements);
+		}
+
+		// Append notatkę do booking.notes
+		if (returnNote) {
+			const ts = new Date().toLocaleString('pl-PL', {
+				day: '2-digit',
+				month: '2-digit',
+				year: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			});
+			const author = locals.user?.name ?? 'System';
+			const entry = `[${ts} · ${author} · ZWROT] ${returnNote}`;
+			const combined = b.notes ? `${entry}\n\n${b.notes}` : entry;
+			await db.update(booking).set({ notes: combined }).where(eq(booking.id, id));
 		}
 
 		await db

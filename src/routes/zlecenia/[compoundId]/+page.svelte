@@ -96,18 +96,25 @@
 		return Math.max(1, Math.ceil((new Date(ed).getTime() - new Date(s).getTime()) / 86400000) + 1);
 	}
 
-	// Timeline events (stage-aware)
+	// Timeline events — booking ma multi-source z server (z.timeline),
+	// lead/offer dostają stage-aware fallback
 	const timeline = $derived.by(() => {
-		const events: Array<{ label: string; date: Date | null; emoji: string; done: boolean }> = [];
-		events.push({ label: 'Utworzono', date: z.createdAt, emoji: '➕', done: true });
-		if (z.type === 'offer' || (z.type === 'lead' && z.status === 'quoted')) {
-			events.push({ label: 'Wysłano ofertę', date: z.sentAt, emoji: '📤', done: !!z.sentAt });
-			events.push({ label: 'Klient otworzył', date: z.viewedAt, emoji: '👁️', done: !!z.viewedAt });
-			events.push({ label: 'Zaakceptowana', date: z.acceptedAt, emoji: '✓', done: !!z.acceptedAt });
+		if (z.type === 'booking' && z.timeline?.length > 0) {
+			return z.timeline.map((t: { label: string; date: Date | string | null; emoji: string; kind: string; note: string | null }) => ({
+				label: t.label,
+				date: t.date ? (t.date instanceof Date ? t.date : new Date(t.date)) : null,
+				emoji: t.emoji,
+				kind: t.kind,
+				note: t.note,
+				done: true
+			}));
 		}
-		if (z.type === 'booking') {
-			events.push({ label: 'Event start', date: z.event.startDate ? new Date(z.event.startDate) : null, emoji: '🚀', done: z.event.startDate ? new Date(z.event.startDate) <= new Date() : false });
-			events.push({ label: 'Event koniec', date: z.event.endDate ? new Date(z.event.endDate) : null, emoji: '🎉', done: z.status === 'done' });
+		const events: Array<{ label: string; date: Date | null; emoji: string; kind: string; note: string | null; done: boolean }> = [];
+		events.push({ label: 'Utworzono', date: z.createdAt, emoji: '➕', kind: 'created', note: null, done: true });
+		if (z.type === 'offer' || (z.type === 'lead' && z.status === 'quoted')) {
+			events.push({ label: 'Wysłano ofertę', date: z.sentAt, emoji: '📤', kind: 'sent', note: null, done: !!z.sentAt });
+			events.push({ label: 'Klient otworzył', date: z.viewedAt, emoji: '👁️', kind: 'viewed', note: null, done: !!z.viewedAt });
+			events.push({ label: 'Zaakceptowana', date: z.acceptedAt, emoji: '✓', kind: 'accepted', note: null, done: !!z.acceptedAt });
 		}
 		return events;
 	});
@@ -543,6 +550,14 @@
 								{:else if totalZl > 0}
 									<div class="cash-reminder ok">✓ Wszystko opłacone — lec spokojnie na event.</div>
 								{/if}
+								<label class="op-note-field">
+									<span>Notatka z wydania (opcjonalnie)</span>
+									<textarea
+										name="dispatchNote"
+										rows="2"
+										placeholder="np. Pepe + Mateusz, auto z przyczepą, wszystko sprawdzone, brak uszkodzeń"
+									></textarea>
+								</label>
 								<button type="submit" class="btn-op dispatch">🚚 Wydaj na event</button>
 							</form>
 						{:else if z.status === 'in-progress'}
@@ -564,7 +579,7 @@
 												<th>Pozycja</th>
 												<th class="num">Wydane</th>
 												<th class="num">Wróciło</th>
-												<th class="num">Strata</th>
+												<th>Uwagi (np. brudne, uszkodzone)</th>
 											</tr>
 										</thead>
 										<tbody>
@@ -582,7 +597,14 @@
 															class="return-input"
 														/>
 													</td>
-													<td class="num diff">— auto —</td>
+													<td>
+														<input
+															type="text"
+															name="note_{bt.tentId}"
+															placeholder="opcjonalnie — zapisze się w magazynie"
+															class="return-note-input"
+														/>
+													</td>
 												</tr>
 											{/each}
 										</tbody>
@@ -590,6 +612,14 @@
 								{:else}
 									<p class="op-hint-small">Brak pozycji magazynowych — tylko zmiana statusu.</p>
 								{/if}
+								<label class="op-note-field">
+									<span>Notatka końcowa (opcjonalnie)</span>
+									<textarea
+										name="returnNote"
+										rows="2"
+										placeholder="np. Klient zadowolony, 2 krzesła zostały polane winem — naprawimy, namiot OK"
+									></textarea>
+								</label>
 								<button type="submit" class="btn-op return">📦 Zakończ + zwróć</button>
 							</form>
 						{/if}
@@ -602,9 +632,12 @@
 				<h2>Przebieg</h2>
 				<ul class="timeline">
 					{#each timeline as t}
-						<li class:done={t.done}>
+						<li class:done={t.done} class="tl-{t.kind}">
 							<span class="t-emoji">{t.emoji}</span>
-							<span class="t-label">{t.label}</span>
+							<div class="t-body">
+								<span class="t-label">{t.label}</span>
+								{#if t.note}<span class="t-note">{t.note}</span>{/if}
+							</div>
 							<span class="t-date">{fmtDateTime(t.date)}</span>
 						</li>
 					{/each}
@@ -820,13 +853,13 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
-		max-width: 900px;
+		max-width: 1100px;
 		margin: 0 auto;
 		width: 100%;
 	}
 	.topbar {
-		padding-left: max(1.5rem, calc((100% - 900px) / 2));
-		padding-right: max(1.5rem, calc((100% - 900px) / 2));
+		padding-left: max(1.5rem, calc((100% - 1100px) / 2));
+		padding-right: max(1.5rem, calc((100% - 1100px) / 2));
 	}
 
 	.card {
@@ -1613,6 +1646,41 @@
 		outline: none;
 		border-color: var(--wn-zielony);
 	}
+	.return-note-input {
+		width: 100%;
+		padding: 0.3rem 0.5rem;
+		border: 1px solid var(--line);
+		font-family: inherit;
+		font-size: 0.82rem;
+		border-radius: 0;
+	}
+	.return-note-input:focus {
+		outline: none;
+		border-color: var(--wn-zielony);
+	}
+	.op-note-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+	.op-note-field > span {
+		font-size: 0.78rem;
+		color: var(--mute);
+		font-weight: 500;
+	}
+	.op-note-field textarea {
+		padding: 0.55rem 0.7rem;
+		border: 1px solid var(--line);
+		background: var(--paper);
+		font-family: inherit;
+		font-size: 0.88rem;
+		resize: vertical;
+		border-radius: 0;
+	}
+	.op-note-field textarea:focus {
+		outline: none;
+		border-color: var(--wn-zielony);
+	}
 
 	.timeline {
 		list-style: none;
@@ -1635,6 +1703,17 @@
 	}
 	.timeline li.done {
 		opacity: 1;
+	}
+	.t-body {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.t-note {
+		font-size: 0.78rem;
+		color: var(--mute);
+		font-style: italic;
 	}
 	.t-emoji {
 		font-size: 1.1rem;
