@@ -514,10 +514,11 @@
 		display: flex;
 		align-items: center;
 		gap: 0.55rem;
-		padding: 0.4rem 0.75rem;
+		padding: 0.4rem 0.85rem;
 		background: var(--paper-2);
-		border-radius: 6px;
-		font-size: 0.8rem;
+		border: 1px solid var(--line);
+		border-radius: 0;
+		font-size: 0.82rem;
 		color: var(--mute);
 	}
 	.status-inline b {
@@ -536,12 +537,13 @@
 		align-items: center;
 		gap: 0.4rem;
 		padding: 0.4rem 0.7rem;
-		background: transparent;
+		background: var(--paper);
 		border: 1px solid var(--line);
-		border-radius: 6px;
-		font-size: 0.78rem;
+		border-radius: 0;
+		font-size: 0.8rem;
 		color: var(--mute);
 		cursor: pointer;
+		font-family: inherit;
 	}
 	.cmdk:hover { color: var(--ink); border-color: var(--wn-zielony); }
 	.cmdk kbd {
@@ -601,45 +603,50 @@
 
 	/* ─── CARDS ────────────────────────────────────────── */
 	.card {
-		background: var(--card);
+		background: var(--paper);
 		border: 1px solid var(--line);
-		border-radius: 10px;
+		border-radius: 0;
 		overflow: hidden;
 	}
 	.card-head {
-		padding: 0.85rem 1.25rem;
+		padding: 1rem 1.5rem;
 		border-bottom: 1px solid var(--line);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 	}
 	h2 {
-		font-size: 0.95rem;
-		font-weight: 600;
+		font-size: 1.05rem;
+		font-weight: 700;
 		color: var(--ink);
 		margin: 0;
-		letter-spacing: -0.005em;
+		font-family: var(--font-sans);
 	}
 	.tabs {
 		display: flex;
 		gap: 0.2rem;
 	}
 	.tab {
-		padding: 0.32rem 0.7rem;
+		padding: 0.4rem 0.85rem;
 		background: transparent;
-		border: 1px solid transparent;
-		border-radius: 5px;
-		font-size: 0.78rem;
+		border: 2px solid transparent;
+		border-radius: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
 		color: var(--mute);
 		cursor: pointer;
 		font-family: var(--font-sans);
+		transition: all 0.1s;
 	}
 	.tab:hover {
-		background: var(--paper-2);
+		border-color: var(--line);
+		color: var(--ink);
 	}
 	.tab.active {
-		background: var(--wn-atrament);
-		color: var(--wn-plotno);
+		background: var(--wn-zielony);
+		color: var(--wn-atrament);
+		border-color: var(--wn-atrament);
+		box-shadow: 2px 2px 0 var(--wn-atrament);
 	}
 	.head-link {
 		font-size: 0.75rem;
