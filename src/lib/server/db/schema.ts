@@ -1,4 +1,13 @@
 import { pgTable, text, timestamp, boolean, integer, date, jsonb, uuid, primaryKey } from 'drizzle-orm/pg-core';
+
+// ─────────────────────────────────────────────────────────────
+// App settings (k-v singletons: company, contacts, offers)
+// ─────────────────────────────────────────────────────────────
+export const appSetting = pgTable('app_setting', {
+	key: text('key').primaryKey(),
+	value: jsonb('value').$type<Record<string, unknown>>().notNull().default({}),
+	updatedAt: timestamp('updated_at').notNull().defaultNow()
+});
 import { relations } from 'drizzle-orm';
 
 // ─────────────────────────────────────────────────────────────

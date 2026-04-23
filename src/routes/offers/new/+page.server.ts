@@ -1,6 +1,6 @@
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { pkg, pkgItem, item, client, offer, offerItem, lead } from '$lib/server/db/schema';
+import { pkg, pkgItem, item, client, offer, offerItem, lead, appSetting } from '$lib/server/db/schema';
 import { asc, sql, eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 
@@ -102,14 +102,21 @@ export const actions: Actions = {
 			return fail(400, { error: 'Wybierz klienta lub wpisz nowego' });
 		}
 
-		// Next offer number (OFF-2026-XXXX)
-		const [{ maxNum }] = await db
-			.select({
-				maxNum: sql<string>`COALESCE(MAX(CAST(SUBSTRING("number" FROM 'OFF-2026-(\\d+)') AS INTEGER)), 0)`
-			})
-			.from(offer);
-		const nextNum = (Number(maxNum) || 0) + 1;
-		const number = `OFF-2026-${String(nextNum).padStart(4, '0')}`;
+		// Numeracja z app_setting.offers (konfigurowane w /settings)
+		const [offersSetting] = await db
+			.select()
+			.from(appSetting)
+			.where(eq(appSetting.key, 'offers'))
+			.limit(1);
+		const cfg = (offersSetting?.value ?? {}) as {
+			prefix?: string;
+			year?: number;
+			nextNumber?: number;
+		};
+		const prefix = cfg.prefix ?? 'OFF';
+		const year = cfg.year ?? new Date().getFullYear();
+		const nextNum = Math.max(1, cfg.nextNumber ?? 1);
+		const number = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
 
 		// Parse items (form has item_0_id, item_0_qty, item_0_days, item_0_price, item_1_id, ...)
 		type Line = { itemId: string | null; desc: string; qty: number; days: number; unitPrice: number; lineTotal: number };
@@ -148,6 +155,15 @@ export const actions: Actions = {
 				notes
 			})
 			.returning();
+
+		// Inkrementuj nextNumber w settings (żeby następna oferta miała +1)
+		await db
+			.update(appSetting)
+			.set({
+				value: { ...cfg, prefix, year, nextNumber: nextNum + 1, validDays: cfg.validDays ?? 14 },
+				updatedAt: new Date()
+			})
+			.where(eq(appSetting.key, 'offers'));
 
 		// Insert offer items
 		if (lines.length > 0) {
