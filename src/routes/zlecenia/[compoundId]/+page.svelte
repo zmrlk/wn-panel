@@ -177,9 +177,17 @@
 		</header>
 
 		<div class="content">
-			<!-- 1. KLIENT -->
+			<!-- 1. KLIENT + WARTOŚĆ (w header po prawej) -->
 			<section class="card">
-				<h2>Klient</h2>
+				<div class="client-header">
+					<h2>Klient</h2>
+					{#if z.totalCents && z.totalCents > 0}
+						<div class="client-value">
+							<span class="cv-label">Wartość</span>
+							<span class="cv-amount">{fmtZl(z.totalCents)}</span>
+						</div>
+					{/if}
+				</div>
 				<div class="client-block">
 					<div class="c-name-row">
 						<span class="c-name">{z.client?.name ?? '—'}</span>
@@ -247,11 +255,6 @@
 							</tr>
 						</tfoot>
 					</table>
-				</section>
-			{:else if z.totalCents}
-				<section class="card">
-					<h2>Wartość</h2>
-					<div class="big-price">{fmtZl(z.totalCents)}</div>
 				</section>
 			{/if}
 
@@ -326,10 +329,18 @@
 						{/each}
 					</div>
 				</form>
+			</section>
 
-				{#if z.type === 'booking'}
-					<!-- ═══ ZESPÓŁ ═══ -->
-					<div class="team-block">
+			{#if z.type === 'booking'}
+				{@const totalZl = (z.totalCents ?? 0) / 100}
+				{@const paidZl = z.paidCents / 100}
+				{@const leftZl = Math.max(0, totalZl - paidZl)}
+				{@const paidPct = totalZl > 0 ? Math.round((paidZl / totalZl) * 100) : 0}
+				{@const payStatus = paidZl >= totalZl && totalZl > 0 ? 'paid' : paidZl > 0 ? 'partial' : 'none'}
+
+				<!-- 7. ZESPÓŁ REALIZUJĄCY -->
+				<section class="card">
+					<div class="team-block no-border">
 						<div class="team-header">
 							<h3>👥 Zespół realizujący ({z.assignments.length})</h3>
 						</div>
@@ -386,73 +397,113 @@
 							<button type="submit" class="btn-assign">+ Przypisz</button>
 						</form>
 					</div>
+				</section>
 
-					<!-- ═══ ZDJĘCIA ═══ -->
-					<div class="photos-block">
-						<div class="photos-header">
-							<h3>📸 Zdjęcia ({z.photos.length})</h3>
-							<span class="photos-hint-inline">dostawa · montaż · odbiór · uszkodzenia</span>
-						</div>
-
-						{#if z.photos.length > 0}
-							<div class="photos-grid">
-								{#each z.photos as p}
-									<div class="photo-tile kind-{p.kind}">
-										<a href={p.url} target="_blank" rel="noopener" class="photo-link">
-											<img src={p.url} alt={p.caption ?? p.kind} loading="lazy" />
-										</a>
-										<div class="photo-meta">
-											<span class="photo-kind">
-												{#if p.kind === 'delivery'}🚚 dostawa
-												{:else if p.kind === 'return'}📦 odbiór
-												{:else if p.kind === 'damage'}⚠️ uszkodzenie
-												{:else}📷 zdjęcie{/if}
-											</span>
-											{#if p.caption}<span class="photo-caption">{p.caption}</span>{/if}
-											{#if p.takenByName}<span class="photo-by">· {p.takenByName}</span>{/if}
-										</div>
-										<form method="POST" action="?/deletePhoto" class="photo-del-form">
-											<input type="hidden" name="photoId" value={p.id} />
-											<button type="submit" class="btn-photo-del" aria-label="Usuń" onclick={(e) => { if (!confirm('Usunąć to zdjęcie?')) e.preventDefault(); }}>✕</button>
-										</form>
+				<!-- 8. OPERACJE: Wydaj / Zakończ (dispatch/return) -->
+				{#if z.status === 'confirmed' || z.status === 'in-progress'}
+					<section class="card">
+						<h2>
+							{#if z.status === 'confirmed'}🚚 Realizacja{:else}📦 Zamknij event{/if}
+						</h2>
+						<div class="booking-ops no-border">
+						{#if z.status === 'confirmed'}
+							<form method="POST" action="?/dispatchBooking" class="op-form">
+								<p class="op-hint">
+									Rezerwacja potwierdzona. <strong>Wydaj na event</strong> — items znikną z magazynu do momentu zwrotu.
+								</p>
+								{#if leftZl > 0}
+									<div class="cash-reminder">
+										💰 <strong>Do pobrania od klienta: {fmtZl(leftZl * 100)}</strong>
+										{#if paidZl === 0}
+											— najczęściej klient płaci przy dostawie.
+										{:else}
+											— wpłacone już {fmtZl(paidZl * 100)}.
+										{/if}
+										Dodaj w sekcji "💰 Płatność" poniżej <em>przed</em> albo <em>po</em> wydaniu — kolejność bez znaczenia.
 									</div>
-								{/each}
-							</div>
-						{:else}
-							<p class="photos-empty">Brak zdjęć. Dodaj foto z telefonu ↓ (kamera włączy się od razu).</p>
+								{:else if totalZl > 0}
+									<div class="cash-reminder ok">✓ Wszystko opłacone — lec spokojnie na event.</div>
+								{/if}
+								<label class="op-note-field">
+									<span>Notatka z wydania (opcjonalnie)</span>
+									<textarea
+										name="dispatchNote"
+										rows="2"
+										placeholder="np. Pepe + Mateusz, auto z przyczepą, wszystko sprawdzone, brak uszkodzeń"
+									></textarea>
+								</label>
+								<button type="submit" class="btn-op dispatch">🚚 Wydaj na event</button>
+							</form>
+						{:else if z.status === 'in-progress'}
+							<form method="POST" action="?/returnBooking" class="op-form">
+								<p class="op-hint">
+									Event w trakcie. <strong>Zakończ + zwróć na magazyn</strong> — wpisz ile sztuk faktycznie wróciło (default = ile wydane). Różnica = strata.
+								</p>
+								{#if leftZl > 0}
+									<div class="cash-reminder urgent">
+										⚠️ <strong>Nieopłacone: {fmtZl(leftZl * 100)}</strong> — pobierz kasę przy odbiorze sprzętu albo dodaj płatność poniżej.
+									</div>
+								{:else if totalZl > 0}
+									<div class="cash-reminder ok">✓ Opłacone w całości — można zamykać event.</div>
+								{/if}
+								{#if z.bookingTents.length > 0}
+									<table class="return-table">
+										<thead>
+											<tr>
+												<th>Pozycja</th>
+												<th class="num">Wydane</th>
+												<th class="num">Wróciło</th>
+												<th>Uwagi (np. brudne, uszkodzone)</th>
+											</tr>
+										</thead>
+										<tbody>
+											{#each z.bookingTents as bt}
+												<tr>
+													<td>{bt.itemName}</td>
+													<td class="num">{bt.quantity}</td>
+													<td class="num">
+														<input
+															type="number"
+															name="return_{bt.tentId}"
+															min="0"
+															max={bt.quantity}
+															value={bt.quantity}
+															class="return-input"
+														/>
+													</td>
+													<td>
+														<input
+															type="text"
+															name="note_{bt.tentId}"
+															placeholder="opcjonalnie — zapisze się w magazynie"
+															class="return-note-input"
+														/>
+													</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								{:else}
+									<p class="op-hint-small">Brak pozycji magazynowych — tylko zmiana statusu.</p>
+								{/if}
+								<label class="op-note-field">
+									<span>Notatka końcowa (opcjonalnie)</span>
+									<textarea
+										name="returnNote"
+										rows="2"
+										placeholder="np. Klient zadowolony, 2 krzesła zostały polane winem — naprawimy, namiot OK"
+									></textarea>
+								</label>
+								<button type="submit" class="btn-op return">📦 Zakończ + zwróć</button>
+							</form>
 						{/if}
+						</div>
+					</section>
+				{/if}
 
-						<form method="POST" action="?/uploadPhoto" enctype="multipart/form-data" class="photo-form">
-							<div class="photo-form-row">
-								<label class="photo-field photo-file-field">
-									<span>Zdjęcie</span>
-									<input type="file" name="file" accept="image/*" capture="environment" required />
-								</label>
-								<label class="photo-field">
-									<span>Typ</span>
-									<select name="kind">
-										<option value="delivery">🚚 Dostawa</option>
-										<option value="general" selected>📷 Inne</option>
-										<option value="return">📦 Odbiór</option>
-										<option value="damage">⚠️ Uszkodzenie</option>
-									</select>
-								</label>
-							</div>
-							<label class="photo-field wide">
-								<span>Opis (opcjonalnie)</span>
-								<input name="caption" type="text" placeholder="np. namiot ustawiony 14:30" />
-							</label>
-							<button type="submit" class="btn-photo-upload">📤 Wyślij</button>
-						</form>
-					</div>
-
-					<!-- ═══ PŁATNOŚCI ═══ -->
-					{@const totalZl = (z.totalCents ?? 0) / 100}
-					{@const paidZl = z.paidCents / 100}
-					{@const leftZl = Math.max(0, totalZl - paidZl)}
-					{@const paidPct = totalZl > 0 ? Math.round((paidZl / totalZl) * 100) : 0}
-					{@const payStatus = paidZl >= totalZl && totalZl > 0 ? 'paid' : paidZl > 0 ? 'partial' : 'none'}
-					<div class="payments-block">
+				<!-- 9. PŁATNOŚĆ -->
+				<section class="card">
+					<div class="payments-block no-border">
 						<div class="pay-header">
 							<h3>💰 Płatność</h3>
 							<span class="pay-pill pay-{payStatus}">
@@ -530,102 +581,70 @@
 							</form>
 						{/if}
 					</div>
+				</section>
 
-					<div class="booking-ops">
-						{#if z.status === 'confirmed'}
-							<form method="POST" action="?/dispatchBooking" class="op-form">
-								<p class="op-hint">
-									Rezerwacja potwierdzona. <strong>Wydaj na event</strong> — items znikną z magazynu do momentu zwrotu.
-								</p>
-								{#if leftZl > 0}
-									<div class="cash-reminder">
-										💰 <strong>Do pobrania od klienta: {fmtZl(leftZl * 100)}</strong>
-										{#if paidZl === 0}
-											— najczęściej klient płaci przy dostawie.
-										{:else}
-											— wpłacone już {fmtZl(paidZl * 100)}.
-										{/if}
-										Dodaj w sekcji "💰 Płatność" powyżej <em>przed</em> albo <em>po</em> wydaniu — kolejność bez znaczenia.
+				<!-- 10. ZDJĘCIA (sam dół — dokumentacja) -->
+				<section class="card">
+					<div class="photos-block no-border">
+						<div class="photos-header">
+							<h3>📸 Zdjęcia ({z.photos.length})</h3>
+							<span class="photos-hint-inline">dostawa · montaż · odbiór · uszkodzenia</span>
+						</div>
+
+						{#if z.photos.length > 0}
+							<div class="photos-grid">
+								{#each z.photos as p}
+									<div class="photo-tile kind-{p.kind}">
+										<a href={p.url} target="_blank" rel="noopener" class="photo-link">
+											<img src={p.url} alt={p.caption ?? p.kind} loading="lazy" />
+										</a>
+										<div class="photo-meta">
+											<span class="photo-kind">
+												{#if p.kind === 'delivery'}🚚 dostawa
+												{:else if p.kind === 'return'}📦 odbiór
+												{:else if p.kind === 'damage'}⚠️ uszkodzenie
+												{:else}📷 zdjęcie{/if}
+											</span>
+											{#if p.caption}<span class="photo-caption">{p.caption}</span>{/if}
+											{#if p.takenByName}<span class="photo-by">· {p.takenByName}</span>{/if}
+										</div>
+										<form method="POST" action="?/deletePhoto" class="photo-del-form">
+											<input type="hidden" name="photoId" value={p.id} />
+											<button type="submit" class="btn-photo-del" aria-label="Usuń" onclick={(e) => { if (!confirm('Usunąć to zdjęcie?')) e.preventDefault(); }}>✕</button>
+										</form>
 									</div>
-								{:else if totalZl > 0}
-									<div class="cash-reminder ok">✓ Wszystko opłacone — lec spokojnie na event.</div>
-								{/if}
-								<label class="op-note-field">
-									<span>Notatka z wydania (opcjonalnie)</span>
-									<textarea
-										name="dispatchNote"
-										rows="2"
-										placeholder="np. Pepe + Mateusz, auto z przyczepą, wszystko sprawdzone, brak uszkodzeń"
-									></textarea>
-								</label>
-								<button type="submit" class="btn-op dispatch">🚚 Wydaj na event</button>
-							</form>
-						{:else if z.status === 'in-progress'}
-							<form method="POST" action="?/returnBooking" class="op-form">
-								<p class="op-hint">
-									Event w trakcie. <strong>Zakończ + zwróć na magazyn</strong> — wpisz ile sztuk faktycznie wróciło (default = ile wydane). Różnica = strata.
-								</p>
-								{#if leftZl > 0}
-									<div class="cash-reminder urgent">
-										⚠️ <strong>Nieopłacone: {fmtZl(leftZl * 100)}</strong> — pobierz kasę przy odbiorze sprzętu albo dodaj płatność powyżej.
-									</div>
-								{:else if totalZl > 0}
-									<div class="cash-reminder ok">✓ Opłacone w całości — można zamykać event.</div>
-								{/if}
-								{#if z.bookingTents.length > 0}
-									<table class="return-table">
-										<thead>
-											<tr>
-												<th>Pozycja</th>
-												<th class="num">Wydane</th>
-												<th class="num">Wróciło</th>
-												<th>Uwagi (np. brudne, uszkodzone)</th>
-											</tr>
-										</thead>
-										<tbody>
-											{#each z.bookingTents as bt}
-												<tr>
-													<td>{bt.itemName}</td>
-													<td class="num">{bt.quantity}</td>
-													<td class="num">
-														<input
-															type="number"
-															name="return_{bt.tentId}"
-															min="0"
-															max={bt.quantity}
-															value={bt.quantity}
-															class="return-input"
-														/>
-													</td>
-													<td>
-														<input
-															type="text"
-															name="note_{bt.tentId}"
-															placeholder="opcjonalnie — zapisze się w magazynie"
-															class="return-note-input"
-														/>
-													</td>
-												</tr>
-											{/each}
-										</tbody>
-									</table>
-								{:else}
-									<p class="op-hint-small">Brak pozycji magazynowych — tylko zmiana statusu.</p>
-								{/if}
-								<label class="op-note-field">
-									<span>Notatka końcowa (opcjonalnie)</span>
-									<textarea
-										name="returnNote"
-										rows="2"
-										placeholder="np. Klient zadowolony, 2 krzesła zostały polane winem — naprawimy, namiot OK"
-									></textarea>
-								</label>
-								<button type="submit" class="btn-op return">📦 Zakończ + zwróć</button>
-							</form>
+								{/each}
+							</div>
+						{:else}
+							<p class="photos-empty">Brak zdjęć. Dodaj foto z telefonu ↓ (kamera włączy się od razu).</p>
 						{/if}
+
+						<form method="POST" action="?/uploadPhoto" enctype="multipart/form-data" class="photo-form">
+							<div class="photo-form-row">
+								<label class="photo-field photo-file-field">
+									<span>Zdjęcie</span>
+									<input type="file" name="file" accept="image/*" capture="environment" required />
+								</label>
+								<label class="photo-field">
+									<span>Typ</span>
+									<select name="kind">
+										<option value="delivery">🚚 Dostawa</option>
+										<option value="general" selected>📷 Inne</option>
+										<option value="return">📦 Odbiór</option>
+										<option value="damage">⚠️ Uszkodzenie</option>
+									</select>
+								</label>
+							</div>
+							<label class="photo-field wide">
+								<span>Opis (opcjonalnie)</span>
+								<input name="caption" type="text" placeholder="np. namiot ustawiony 14:30" />
+							</label>
+							<button type="submit" class="btn-photo-upload">📤 Wyślij</button>
+						</form>
 					</div>
-				{/if}
-			</section>
+				</section>
+			{/if}
+
 
 			<!-- 7. TIMELINE -->
 			<section class="card">
@@ -876,6 +895,36 @@
 		font-family: var(--font-sans);
 	}
 
+	.client-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 1rem;
+		margin-bottom: 0.4rem;
+	}
+	.client-header h2 {
+		margin: 0;
+	}
+	.client-value {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		padding: 0.45rem 0.85rem;
+		background: var(--paper-2);
+		border-left: 3px solid var(--wn-zielony);
+	}
+	.cv-label {
+		font-size: 0.7rem;
+		text-transform: uppercase;
+		color: var(--mute);
+		letter-spacing: 0.04em;
+	}
+	.cv-amount {
+		font-family: var(--font-mono);
+		font-size: 1.15rem;
+		font-weight: 700;
+		color: var(--wn-zielony-ink);
+	}
 	.client-block {
 		display: flex;
 		flex-direction: column;
