@@ -9,6 +9,9 @@
 	import NotesSection from '$lib/components/zlecenia/NotesSection.svelte';
 	import TeamBlock from '$lib/components/zlecenia/TeamBlock.svelte';
 	import PaymentBlock from '$lib/components/zlecenia/PaymentBlock.svelte';
+	import BookingOpsDispatch from '$lib/components/zlecenia/BookingOpsDispatch.svelte';
+	import BookingOpsReturn from '$lib/components/zlecenia/BookingOpsReturn.svelte';
+	import PhotoGallery from '$lib/components/zlecenia/PhotoGallery.svelte';
 	import {
 		dbStatusToUnified,
 		allowedStatusesForType,
@@ -154,122 +157,10 @@
 				<TeamBlock assignments={z.assignments} availableUsers={data.availableUsers} />
 
 				<!-- 8. OPERACJE: Wydaj / Zakończ (dispatch/return) -->
-				{#if z.status === 'confirmed' || z.status === 'in-progress'}
-					<section class="card">
-						<h2>
-							{#if z.status === 'confirmed'}🚚 Realizacja{:else}📦 Zamknij event{/if}
-						</h2>
-						<div class="booking-ops no-border">
-						{#if z.status === 'confirmed'}
-							<form method="POST" action="?/dispatchBooking" class="op-form">
-								<p class="op-hint">
-									Rezerwacja potwierdzona. <strong>Wydaj na event</strong> — items znikną z magazynu do momentu zwrotu.
-								</p>
-								{#if leftZl > 0}
-									<div class="cash-reminder">
-										💰 <strong>Do pobrania od klienta: {fmtZl(leftZl * 100)}</strong>
-										{#if paidZl === 0}
-											— najczęściej klient płaci przy dostawie.
-										{:else}
-											— wpłacone już {fmtZl(paidZl * 100)}.
-										{/if}
-										Dodaj w sekcji "💰 Płatność" poniżej <em>przed</em> albo <em>po</em> wydaniu — kolejność bez znaczenia.
-									</div>
-								{:else if totalZl > 0}
-									<div class="cash-reminder ok">✓ Wszystko opłacone — lec spokojnie na event.</div>
-								{/if}
-								<label class="op-note-field">
-									<span>Notatka z wydania (opcjonalnie)</span>
-									<textarea
-										name="dispatchNote"
-										rows="2"
-										placeholder="np. Pepe + Mateusz, auto z przyczepą, wszystko sprawdzone, brak uszkodzeń"
-									></textarea>
-								</label>
-								<button type="submit" class="btn-op dispatch">🚚 Wydaj na event</button>
-							</form>
-						{:else if z.status === 'in-progress'}
-							<form
-								method="POST"
-								action="?/returnBooking"
-								class="op-form"
-								onsubmit={(e) => {
-									const fd = new FormData(e.currentTarget as HTMLFormElement);
-									const losses: string[] = [];
-									for (const bt of z.bookingTents) {
-										const r = Number(fd.get(`return_${bt.tentId}`) ?? bt.quantity);
-										const lost = bt.quantity - r;
-										if (lost > 0) losses.push(`${lost}× ${bt.itemName} (wydane ${bt.quantity}, wróciło ${r})`);
-									}
-									if (losses.length > 0) {
-										const msg = '⚠️ WYKRYTE STRATY:\n\n' + losses.join('\n') + '\n\nNa pewno zapisujesz? Ta strata zostanie zapisana i możesz ją wykorzystać do obciążenia klienta.';
-										if (!confirm(msg)) e.preventDefault();
-									}
-								}}
-							>
-								<p class="op-hint">
-									Event w trakcie. <strong>Zakończ + zwróć na magazyn</strong> — wpisz ile sztuk faktycznie wróciło (default = ile wydane). Różnica = strata.
-								</p>
-								{#if leftZl > 0}
-									<div class="cash-reminder urgent">
-										⚠️ <strong>Nieopłacone: {fmtZl(leftZl * 100)}</strong> — pobierz kasę przy odbiorze sprzętu albo dodaj płatność poniżej.
-									</div>
-								{:else if totalZl > 0}
-									<div class="cash-reminder ok">✓ Opłacone w całości — można zamykać event.</div>
-								{/if}
-								{#if z.bookingTents.length > 0}
-									<table class="return-table">
-										<thead>
-											<tr>
-												<th>Pozycja</th>
-												<th class="num">Wydane</th>
-												<th class="num">Wróciło</th>
-												<th>Uwagi (np. brudne, uszkodzone)</th>
-											</tr>
-										</thead>
-										<tbody>
-											{#each z.bookingTents as bt}
-												<tr>
-													<td>{bt.itemName}</td>
-													<td class="num">{bt.quantity}</td>
-													<td class="num">
-														<input
-															type="number"
-															name="return_{bt.tentId}"
-															min="0"
-															max={bt.quantity}
-															value={bt.quantity}
-															class="return-input"
-														/>
-													</td>
-													<td>
-														<input
-															type="text"
-															name="note_{bt.tentId}"
-															placeholder="opcjonalnie — zapisze się w magazynie"
-															class="return-note-input"
-														/>
-													</td>
-												</tr>
-											{/each}
-										</tbody>
-									</table>
-								{:else}
-									<p class="op-hint-small">Brak pozycji magazynowych — tylko zmiana statusu.</p>
-								{/if}
-								<label class="op-note-field">
-									<span>Notatka końcowa (opcjonalnie)</span>
-									<textarea
-										name="returnNote"
-										rows="2"
-										placeholder="np. Klient zadowolony, 2 krzesła zostały polane winem — naprawimy, namiot OK"
-									></textarea>
-								</label>
-								<button type="submit" class="btn-op return">📦 Zakończ + zwróć</button>
-							</form>
-						{/if}
-						</div>
-					</section>
+				{#if z.status === 'confirmed'}
+					<BookingOpsDispatch {leftZl} {paidZl} {totalZl} />
+				{:else if z.status === 'in-progress'}
+					<BookingOpsReturn bookingTents={z.bookingTents} {leftZl} {totalZl} />
 				{/if}
 
 				<!-- 9. PŁATNOŚĆ — admin pełna, pracownik: pill + quick-pay -->
@@ -281,65 +172,7 @@
 				/>
 
 				<!-- 10. ZDJĘCIA (sam dół — dokumentacja) -->
-				<section class="card">
-					<div class="photos-block no-border">
-						<div class="photos-header">
-							<h3>📸 Zdjęcia ({z.photos.length})</h3>
-							<span class="photos-hint-inline">dostawa · montaż · odbiór · uszkodzenia</span>
-						</div>
-
-						{#if z.photos.length > 0}
-							<div class="photos-grid">
-								{#each z.photos as p}
-									<div class="photo-tile kind-{p.kind}">
-										<a href={p.url} target="_blank" rel="noopener" class="photo-link">
-											<img src={p.url} alt={p.caption ?? p.kind} loading="lazy" />
-										</a>
-										<div class="photo-meta">
-											<span class="photo-kind">
-												{#if p.kind === 'delivery'}🚚 dostawa
-												{:else if p.kind === 'return'}📦 odbiór
-												{:else if p.kind === 'damage'}⚠️ uszkodzenie
-												{:else}📷 zdjęcie{/if}
-											</span>
-											{#if p.caption}<span class="photo-caption">{p.caption}</span>{/if}
-											{#if p.takenByName}<span class="photo-by">· {p.takenByName}</span>{/if}
-										</div>
-										<form method="POST" action="?/deletePhoto" class="photo-del-form">
-											<input type="hidden" name="photoId" value={p.id} />
-											<button type="submit" class="btn-photo-del" aria-label="Usuń" onclick={(e) => { if (!confirm('Usunąć to zdjęcie?')) e.preventDefault(); }}>✕</button>
-										</form>
-									</div>
-								{/each}
-							</div>
-						{:else}
-							<p class="photos-empty">Brak zdjęć. Dodaj foto z telefonu ↓ (kamera włączy się od razu).</p>
-						{/if}
-
-						<form method="POST" action="?/uploadPhoto" enctype="multipart/form-data" class="photo-form">
-							<div class="photo-form-row">
-								<label class="photo-field photo-file-field">
-									<span>Zdjęcie</span>
-									<input type="file" name="file" accept="image/*" capture="environment" required />
-								</label>
-								<label class="photo-field">
-									<span>Typ</span>
-									<select name="kind">
-										<option value="delivery">🚚 Dostawa</option>
-										<option value="general" selected>📷 Inne</option>
-										<option value="return">📦 Odbiór</option>
-										<option value="damage">⚠️ Uszkodzenie</option>
-									</select>
-								</label>
-							</div>
-							<label class="photo-field wide">
-								<span>Opis (opcjonalnie)</span>
-								<input name="caption" type="text" placeholder="np. namiot ustawiony 14:30" />
-							</label>
-							<button type="submit" class="btn-photo-upload">📤 Wyślij</button>
-						</form>
-					</div>
-				</section>
+				<PhotoGallery photos={z.photos} />
 			{/if}
 
 
@@ -664,295 +497,14 @@
 
 	/* .status-* → StatusChips.svelte */
 
-	.booking-ops {
-		margin-top: 1.25rem;
-		padding-top: 1.25rem;
-		border-top: 2px solid var(--line);
-	}
+	/* .booking-ops + .op-* + .btn-op + .cash-reminder + .return-* → BookingOpsDispatch.svelte + BookingOpsReturn.svelte */
 
 	/* .team-* + .member-* + .btn-assign/unassign → TeamBlock.svelte */
 
-	/* ─── ZDJĘCIA ─────────────────────────────── */
-	.photos-block {
-		margin-top: 1.25rem;
-		padding-top: 1.25rem;
-		border-top: 2px solid var(--line);
-	}
-	.photos-header {
-		display: flex;
-		align-items: baseline;
-		gap: 0.75rem;
-		margin-bottom: 0.85rem;
-		flex-wrap: wrap;
-	}
-	.photos-header h3 {
-		margin: 0;
-		font-size: 1.05rem;
-		font-weight: 700;
-	}
-	.photos-hint-inline {
-		color: var(--mute);
-		font-size: 0.78rem;
-	}
-	.photos-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-	}
-	.photo-tile {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		background: var(--paper-2);
-		border: 1px solid var(--line);
-	}
-	.photo-tile.kind-damage { border-color: var(--wn-pomidor); }
-	.photo-tile.kind-delivery { border-color: var(--wn-zielony); }
-	.photo-tile.kind-return { border-color: var(--wn-granat); }
-	.photo-link {
-		display: block;
-		aspect-ratio: 4 / 3;
-		overflow: hidden;
-		background: var(--wn-atrament);
-	}
-	.photo-link img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		display: block;
-	}
-	.photo-meta {
-		padding: 0.45rem 0.55rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-		font-size: 0.75rem;
-	}
-	.photo-kind {
-		font-weight: 600;
-	}
-	.photo-caption {
-		color: var(--ink-2);
-	}
-	.photo-by {
-		color: var(--mute);
-		font-size: 0.7rem;
-	}
-	.photo-del-form {
-		position: absolute;
-		top: 4px;
-		right: 4px;
-	}
-	.btn-photo-del {
-		width: 26px;
-		height: 26px;
-		border: none;
-		background: rgba(0, 0, 0, 0.55);
-		color: white;
-		cursor: pointer;
-		font-size: 0.85rem;
-		line-height: 1;
-	}
-	.btn-photo-del:hover { background: var(--wn-pomidor); }
-	.photos-empty {
-		color: var(--mute);
-		font-style: italic;
-		font-size: 0.88rem;
-		padding: 0.5rem 0;
-		margin: 0 0 1rem;
-	}
-	.photo-form {
-		padding: 0.85rem;
-		background: var(--paper-2);
-		border: 1px dashed var(--line);
-		display: flex;
-		flex-direction: column;
-		gap: 0.7rem;
-	}
-	.photo-form-row {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.7rem;
-	}
-	.photo-field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-	}
-	.photo-field > span {
-		font-size: 0.7rem;
-		color: var(--mute);
-		font-weight: 500;
-	}
-	.photo-field.wide { width: 100%; }
-	.photo-field input[type='text'],
-	.photo-field select {
-		border: 1px solid var(--line);
-		padding: 0.4rem 0.55rem;
-		background: var(--paper);
-		font-family: inherit;
-		font-size: 0.85rem;
-		border-radius: 0;
-	}
-	.photo-file-field input[type='file'] {
-		padding: 0.35rem;
-		font-size: 0.85rem;
-	}
-	.btn-photo-upload {
-		align-self: flex-end;
-		padding: 0.6rem 1.3rem;
-		background: var(--wn-zielony);
-		color: var(--wn-atrament);
-		border: 2px solid var(--wn-atrament);
-		border-radius: 0;
-		font-weight: 700;
-		cursor: pointer;
-		font-family: inherit;
-		font-size: 0.92rem;
-		box-shadow: 3px 3px 0 var(--wn-atrament);
-	}
-	.btn-photo-upload:hover {
-		transform: translate(-1px, -1px);
-		box-shadow: 4px 4px 0 var(--wn-atrament);
-	}
+	/* .photos-* + .photo-* + .btn-photo-* → PhotoGallery.svelte */
 
 	/* .pay-* + .btn-*-pay + .payments-block → PaymentBlock.svelte */
-	.op-form {
-		display: flex;
-		flex-direction: column;
-		gap: 0.85rem;
-	}
-	.op-hint {
-		margin: 0;
-		font-size: 0.88rem;
-		color: var(--ink-2);
-		line-height: 1.5;
-	}
-	.op-hint-small {
-		margin: 0;
-		font-size: 0.82rem;
-		color: var(--mute);
-		font-style: italic;
-	}
-	.cash-reminder {
-		padding: 0.7rem 1rem;
-		border-left: 3px solid var(--wn-zarowka);
-		background: color-mix(in srgb, var(--wn-zarowka) 20%, var(--paper));
-		font-size: 0.88rem;
-		line-height: 1.45;
-	}
-	.cash-reminder strong {
-		font-family: var(--font-mono);
-	}
-	.cash-reminder em {
-		font-style: italic;
-		color: var(--wn-atrament);
-	}
-	.cash-reminder.urgent {
-		border-left-color: var(--wn-pomidor);
-		background: color-mix(in srgb, var(--wn-pomidor) 12%, var(--paper));
-	}
-	.cash-reminder.ok {
-		border-left-color: var(--wn-zielony);
-		background: color-mix(in srgb, var(--wn-zielony) 14%, var(--paper));
-		color: var(--wn-zielony-ink);
-	}
-	.btn-op {
-		padding: 0.65rem 1.3rem;
-		border: 2px solid var(--wn-atrament);
-		border-radius: 0;
-		font-size: 0.95rem;
-		font-weight: 700;
-		font-family: inherit;
-		cursor: pointer;
-		box-shadow: 3px 3px 0 var(--wn-atrament);
-		transition: transform 0.1s, box-shadow 0.1s;
-		align-self: flex-start;
-	}
-	.btn-op.dispatch {
-		background: var(--wn-zarowka);
-		color: var(--wn-atrament);
-	}
-	.btn-op.return {
-		background: var(--wn-zielony);
-		color: var(--wn-atrament);
-	}
-	.btn-op:hover {
-		transform: translate(-1px, -1px);
-		box-shadow: 4px 4px 0 var(--wn-atrament);
-	}
-	.btn-op:active {
-		transform: translate(1px, 1px);
-		box-shadow: 1px 1px 0 var(--wn-atrament);
-	}
-	.return-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.88rem;
-	}
-	.return-table th,
-	.return-table td {
-		text-align: left;
-		padding: 0.4rem 0.5rem;
-		border-bottom: 1px solid var(--line);
-	}
-	.return-table th {
-		font-weight: 600;
-		color: var(--mute);
-		font-size: 0.72rem;
-		text-transform: uppercase;
-	}
-	.return-table .num {
-		text-align: right;
-	}
-	.return-input {
-		width: 70px;
-		padding: 0.3rem 0.5rem;
-		border: 1px solid var(--line);
-		text-align: right;
-		font-family: var(--font-mono);
-		border-radius: 0;
-	}
-	.return-input:focus {
-		outline: none;
-		border-color: var(--wn-zielony);
-	}
-	.return-note-input {
-		width: 100%;
-		padding: 0.3rem 0.5rem;
-		border: 1px solid var(--line);
-		font-family: inherit;
-		font-size: 0.82rem;
-		border-radius: 0;
-	}
-	.return-note-input:focus {
-		outline: none;
-		border-color: var(--wn-zielony);
-	}
-	.op-note-field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-	.op-note-field > span {
-		font-size: 0.78rem;
-		color: var(--mute);
-		font-weight: 500;
-	}
-	.op-note-field textarea {
-		padding: 0.55rem 0.7rem;
-		border: 1px solid var(--line);
-		background: var(--paper);
-		font-family: inherit;
-		font-size: 0.88rem;
-		resize: vertical;
-		border-radius: 0;
-	}
-	.op-note-field textarea:focus {
-		outline: none;
-		border-color: var(--wn-zielony);
-	}
+	/* .op-* + .btn-op + .cash-reminder + .return-* → BookingOpsDispatch/Return.svelte */
 
 	/* .timeline / .t-* styles przeniesione do TimelineSection.svelte */
 
@@ -1000,12 +552,7 @@
 			display: none;
 		}
 
-		/* Mobile — większe CTA dla field worka (kierowcy w ruchu) */
-		.btn-op {
-			width: 100%;
-			padding: 0.95rem 1rem;
-			font-size: 1.05rem;
-		}
+		/* .btn-op mobile → BookingOpsDispatch/Return.svelte */
 		.btn-assign,
 		.btn-add-pay,
 		.btn-photo-upload {
@@ -1013,12 +560,7 @@
 			padding: 0.85rem 1rem;
 			font-size: 1rem;
 		}
-		.photo-form-row {
-			grid-template-columns: 1fr;
-		}
-		.photos-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
+		/* .photo-form-row + .photos-grid mobile → PhotoGallery.svelte */
 		/* .status-chip-btn mobile → StatusChips.svelte */
 	}
 </style>
