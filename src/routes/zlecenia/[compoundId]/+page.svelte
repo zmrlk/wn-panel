@@ -58,7 +58,7 @@
 		dashboard: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9ZM9 22V12h6v10',
 		zlecenia: 'M22 12h-4l-3 9L9 3l-3 9H2',
 		tents: 'M3 20 L12 4 L21 20 Z M8 20 L12 13 L16 20',
-		settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z'
+		settings: 'M20 7h-9 M14 17H5 M17 14a3 3 0 1 0 0 6a3 3 0 1 0 0-6Z M7 4a3 3 0 1 0 0 6a3 3 0 1 0 0-6Z'
 	};
 	const NAV = [
 		{ id: 'dashboard', label: 'Home', href: '/dashboard' },
