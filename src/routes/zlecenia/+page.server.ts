@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { lead, offer, booking, client, payment } from '$lib/server/db/schema';
-import { desc, eq, sql } from 'drizzle-orm';
+import { lead, offer, booking, client, payment, bookingAssignment } from '$lib/server/db/schema';
+import { desc, eq, sql, inArray } from 'drizzle-orm';
 
 /**
  * UNIFIED "Zlecenia" — leads + offers + bookings w jednej tabeli.
@@ -19,14 +19,25 @@ import { desc, eq, sql } from 'drizzle-orm';
  *   X. lost/rejected/cancelled → Przegrana
  */
 export const load: PageServerLoad = async ({ locals, url }) => {
-	const user = locals.user ?? {
+	const me = locals.user ?? {
 		id: 'preview',
 		name: 'Denis',
 		email: 'denis@wolnynamiot.pl',
 		role: 'admin'
 	};
+	const isAdmin = me.role === 'admin';
 
 	const tabFilter = url.searchParams.get('tab') ?? 'w-trakcie';
+
+	// Dla non-admin: zbierz booking IDs gdzie user jest w zespole
+	let myBookingIds: string[] = [];
+	if (!isAdmin) {
+		const myAssigned = await db
+			.select({ bookingId: bookingAssignment.bookingId })
+			.from(bookingAssignment)
+			.where(eq(bookingAssignment.userId, me.id));
+		myBookingIds = [...new Set(myAssigned.map((a) => a.bookingId))];
+	}
 
 	// Load raw data + payment sums per booking
 	const [leads, offers, bookings, paymentSums] = await Promise.all([
@@ -138,6 +149,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const zlecenia: Zlecenie[] = [];
 
+	// Non-admin: widzi TYLKO bookingi gdzie jest w zespole (brak leadów/ofert)
+	// Admin: pełny dostęp
+	const myBookingSet = new Set(myBookingIds);
+	const filteredLeads = isAdmin ? leads : [];
+	const filteredOffers = isAdmin ? offers : [];
+	const filteredBookings = isAdmin
+		? bookings
+		: bookings.filter((b) => myBookingSet.has(b.id));
+
 	// Deduplikacja:
 	// - lead skipowany TYLKO jeśli ma zarejestrowany offer (z leadId) — inaczej pokazuj
 	// - offer skipowany gdy ma convertedToBookingId ALBO matching booking (retroactive)
@@ -162,7 +182,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.map((o) => o.id)
 	);
 
-	for (const l of leads) {
+	for (const l of filteredLeads) {
 		if (leadsWithOffer.has(l.id)) continue; // offer pokaże to zlecenie
 		const key = `lead:${l.status}`;
 		const s = STAGES[key] ?? STAGES['lead:new'];
@@ -189,7 +209,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		});
 	}
 
-	for (const o of offers) {
+	for (const o of filteredOffers) {
 		if (skipOffers.has(o.id)) continue; // ma swój booking row
 		const key = `offer:${o.status}`;
 		const s = STAGES[key] ?? STAGES['offer:draft'];
@@ -216,7 +236,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		});
 	}
 
-	for (const b of bookings) {
+	for (const b of filteredBookings) {
 		const key = `booking:${b.status}`;
 		const s = STAGES[key] ?? STAGES['booking:confirmed'];
 		zlecenia.push({
@@ -284,5 +304,5 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.filter((z) => (z.stage === 2 || z.stage === 3) && z.valueCents)
 		.reduce((s, z) => s + (z.valueCents ?? 0), 0);
 
-	return { user, zlecenia: filtered, counts, tabFilter, activeValue, q };
+	return { user: me, isAdmin, zlecenia: filtered, counts, tabFilter, activeValue, q };
 };

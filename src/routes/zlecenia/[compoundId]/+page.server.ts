@@ -501,7 +501,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		availableUsers = rows.map((r) => ({ id: r.id, name: r.name, skills: r.skills ?? [] }));
 	}
 
-	return { user: me, zlecenie, availableUsers };
+	return { user: me, isAdmin: me.role === 'admin', zlecenie, availableUsers };
 };
 
 export const actions: Actions = {

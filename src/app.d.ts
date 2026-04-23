@@ -11,6 +11,7 @@ declare global {
 				emailVerified?: boolean;
 				image?: string | null;
 				role?: string | null;
+				skills?: string[];
 				createdAt?: Date;
 				updatedAt?: Date;
 			} | null;

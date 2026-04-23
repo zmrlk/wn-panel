@@ -301,7 +301,8 @@
 				</div>
 			</section>
 
-			<!-- 6. ZMIANA STATUSU -->
+			<!-- 6. ZMIANA STATUSU (admin only) -->
+			{#if data.isAdmin}
 			<section class="card">
 				<h2>Status</h2>
 				{#if z.type === 'lead'}
@@ -330,6 +331,7 @@
 					</div>
 				</form>
 			</section>
+			{/if}
 
 			{#if z.type === 'booking'}
 				{@const totalZl = (z.totalCents ?? 0) / 100}
@@ -518,7 +520,8 @@
 					</section>
 				{/if}
 
-				<!-- 9. PŁATNOŚĆ -->
+				<!-- 9. PŁATNOŚĆ (admin only; pracownik nie rozlicza) -->
+				{#if data.isAdmin}
 				<section class="card">
 					<div class="payments-block no-border">
 						<div class="pay-header">
@@ -613,6 +616,7 @@
 						{/if}
 					</div>
 				</section>
+				{/if}
 
 				<!-- 10. ZDJĘCIA (sam dół — dokumentacja) -->
 				<section class="card">
