@@ -3,6 +3,9 @@
 	import { invalidateAll } from '$app/navigation';
 	import SidebarRail from '$lib/components/SidebarRail.svelte';
 	import TimelineSection from '$lib/components/zlecenia/TimelineSection.svelte';
+	import ClientCard from '$lib/components/zlecenia/ClientCard.svelte';
+	import EventCard from '$lib/components/zlecenia/EventCard.svelte';
+	import StatusChips from '$lib/components/zlecenia/StatusChips.svelte';
 	import {
 		dbStatusToUnified,
 		allowedStatusesForType,
@@ -84,67 +87,11 @@
 		</header>
 
 		<div class="content">
-			<!-- 1. KLIENT + WARTOŚĆ (w header po prawej) -->
-			<section class="card">
-				<div class="client-header">
-					<h2>Klient</h2>
-					{#if z.totalCents && z.totalCents > 0}
-						<div class="client-value">
-							<span class="cv-label">Wartość</span>
-							<span class="cv-amount">{fmtZl(z.totalCents)}</span>
-						</div>
-					{/if}
-				</div>
-				<div class="client-block">
-					<div class="c-name-row">
-						<span class="c-name">{z.client?.name ?? '—'}</span>
-						{#if z.client?.company}<span class="c-company">{z.client.company}</span>{/if}
-						{#if z.source}<span class="source-chip">źródło: {z.source}</span>{/if}
-					</div>
-					<div class="c-contact">
-						{#if z.client?.phone}<a href={`tel:${z.client.phone}`}>📞 {z.client.phone}</a>{/if}
-						{#if z.client?.email}<a href={`mailto:${z.client.email}`}>✉️ {z.client.email}</a>{/if}
-						{#if z.client?.address}<span>📍 {z.client.address}</span>{/if}
-					</div>
-				</div>
-			</section>
+			<!-- 1. KLIENT + WARTOŚĆ -->
+			<ClientCard client={z.client} totalCents={z.totalCents} source={z.source} />
 
 			<!-- 2. EVENT -->
-			<section class="card">
-				<h2>Event</h2>
-				<div class="event-grid">
-					<div class="e-field">
-						<span class="e-label">Termin</span>
-						<span class="e-val">{eventRange(z.event.startDate, z.event.endDate)}</span>
-					</div>
-					<div class="e-field">
-						<span class="e-label">Dni</span>
-						<span class="e-val">{daysCount(z.event.startDate, z.event.endDate)}</span>
-					</div>
-					{#if z.event.guestsCount}
-						<div class="e-field">
-							<span class="e-label">Gości</span>
-							<span class="e-val">{z.event.guestsCount}</span>
-						</div>
-					{/if}
-					<div class="e-field">
-						<span class="e-label">Miejsce</span>
-						{#if z.event.venue}
-							<a
-								class="e-val e-map-link"
-								href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(z.event.venue)}`}
-								target="_blank"
-								rel="noopener"
-								title="Otwórz w mapach"
-							>
-								📍 {z.event.venue}
-							</a>
-						{:else}
-							<span class="e-val">—</span>
-						{/if}
-					</div>
-				</div>
-			</section>
+			<EventCard event={z.event} />
 
 			<!-- 3. POZYCJE (admin only — pracownik ma to w return form) -->
 			{#if z.items.length > 0 && data.isAdmin}
@@ -222,34 +169,7 @@
 
 			<!-- 6. ZMIANA STATUSU (admin only) -->
 			{#if data.isAdmin}
-			<section class="card">
-				<h2>Status</h2>
-				{#if z.type === 'lead'}
-					<p class="status-hint">
-						Żeby wysłać ofertę → klik <strong>"+ Oferta z leada"</strong> w prawym górnym rogu (otwiera kalkulator). Po zapisaniu oferty lead automatycznie dostanie status <em>"oferta wysłana"</em>.
-					</p>
-				{:else if z.type === 'offer'}
-					<p class="status-hint">
-						Klik <strong>"Wygrany"</strong> = oferta przyjęta → automatycznie utworzymy rezerwację w magazynie (z items oferty).
-					</p>
-				{/if}
-				<form method="POST" action="?/updateStatus" class="status-form">
-					<div class="status-chips">
-						{#each statusList as s}
-							<button
-								type="submit"
-								name="status"
-								value={s.id}
-								class="status-chip-btn"
-								class:active={currentUnified === s.id}
-							>
-								<span>{s.emoji}</span>
-								<span>{s.label}</span>
-							</button>
-						{/each}
-					</div>
-				</form>
-			</section>
+				<StatusChips zType={z.type} {currentUnified} {statusList} />
 			{/if}
 
 			{#if z.type === 'booking'}
@@ -855,109 +775,8 @@
 		font-family: var(--font-sans);
 	}
 
-	.client-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		gap: 1rem;
-		margin-bottom: 0.4rem;
-	}
-	.client-header h2 {
-		margin: 0;
-	}
-	.client-value {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		padding: 0.45rem 0.85rem;
-		background: var(--paper-2);
-		border-left: 3px solid var(--wn-zielony);
-	}
-	.cv-label {
-		font-size: 0.7rem;
-		text-transform: uppercase;
-		color: var(--mute);
-		letter-spacing: 0.04em;
-	}
-	.cv-amount {
-		font-family: var(--font-mono);
-		font-size: 1.85rem;
-		line-height: 1;
-		font-weight: 800;
-		color: var(--wn-zielony-ink);
-	}
-	.e-map-link {
-		color: var(--wn-granat);
-		text-decoration: none;
-		font-weight: 500;
-	}
-	.e-map-link:hover {
-		color: var(--wn-zielony);
-		text-decoration: underline;
-	}
-	.client-block {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-	.c-name-row {
-		display: flex;
-		align-items: baseline;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-	.c-name {
-		font-size: 1.15rem;
-		font-weight: 600;
-		color: var(--ink);
-	}
-	.c-company {
-		color: var(--ink-2);
-	}
-	.source-chip {
-		padding: 0.15rem 0.5rem;
-		background: var(--paper-2);
-		border-radius: 4px;
-		font-size: 0.72rem;
-		font-family: var(--font-mono);
-		color: var(--mute);
-	}
-	.c-contact {
-		display: flex;
-		gap: 1rem;
-		font-size: 0.88rem;
-		flex-wrap: wrap;
-	}
-	.c-contact a {
-		color: var(--wn-granat);
-		text-decoration: none;
-	}
-	.c-contact a:hover {
-		text-decoration: underline;
-	}
-
-	.event-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		gap: 0.85rem;
-	}
-	.e-field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-	}
-	.e-label {
-		font-size: 0.7rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		color: var(--mute);
-		font-family: var(--font-mono);
-	}
-	.e-val {
-		font-size: 0.95rem;
-		color: var(--ink);
-		font-weight: 500;
-	}
+	/* .client-* + .cv-* → ClientCard.svelte */
+	/* .event-grid + .e-* → EventCard.svelte */
 
 	.items-t {
 		width: 100%;
@@ -1093,55 +912,7 @@
 		font-style: italic;
 	}
 
-	.status-hint {
-		margin: 0 0 0.85rem;
-		padding: 0.6rem 0.85rem;
-		background: color-mix(in srgb, var(--wn-zielony) 8%, transparent);
-		border-left: 3px solid var(--wn-zielony);
-		border-radius: 0 6px 6px 0;
-		font-size: 0.85rem;
-		color: var(--ink-2);
-	}
-	.status-hint strong {
-		color: var(--ink);
-	}
-	.status-hint em {
-		font-style: italic;
-		color: var(--wn-zielony-ink);
-	}
-
-	/* STATUS buttons */
-	.status-chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-	}
-	.status-chip-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.5rem 0.95rem;
-		background: var(--paper);
-		border: 2px solid var(--line);
-		border-radius: 0;
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--ink-2);
-		cursor: pointer;
-		font-family: var(--font-sans);
-		transition: transform 0.1s, box-shadow 0.1s;
-	}
-	.status-chip-btn:hover {
-		border-color: var(--wn-atrament);
-		color: var(--ink);
-	}
-	.status-chip-btn.active {
-		background: var(--wn-zielony);
-		color: var(--wn-atrament);
-		border-color: var(--wn-atrament);
-		box-shadow: 3px 3px 0 var(--wn-atrament);
-		transform: translate(-1px, -1px);
-	}
+	/* .status-* → StatusChips.svelte */
 
 	.booking-ops {
 		margin-top: 1.25rem;
@@ -1796,9 +1567,6 @@
 		.photos-grid {
 			grid-template-columns: repeat(2, 1fr);
 		}
-		.status-chip-btn {
-			padding: 0.7rem 0.95rem;
-			font-size: 0.95rem;
-		}
+		/* .status-chip-btn mobile → StatusChips.svelte */
 	}
 </style>
