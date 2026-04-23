@@ -47,6 +47,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				viewedAt: offer.viewedAt,
 				acceptedAt: offer.acceptedAt,
 				convertedToBookingId: offer.convertedToBookingId,
+				leadId: offer.leadId,
 				clientId: offer.clientId,
 				clientName: client.name,
 				clientCompany: client.company,
@@ -127,14 +128,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const zlecenia: Zlecenie[] = [];
 
-	// Mapa pomocnicza — pomijaj leady które są "won" (stały się ofertą/rezerwacją)
-	// Pomijaj oferty które mają convertedToBookingId (są już w booking rows)
+	// Deduplikacja:
+	// - lead skipowany TYLKO jeśli ma zarejestrowany offer (z leadId) — inaczej pokazuj
+	// - offer skipowany gdy ma convertedToBookingId — booking reprezentuje
+	const leadsWithOffer = new Set<string>(
+		offers.map((o) => o.leadId).filter((id): id is string => id != null)
+	);
 	const skipOffers = new Set<string>(
 		offers.filter((o) => o.convertedToBookingId).map((o) => o.id)
 	);
 
 	for (const l of leads) {
-		if (l.status === 'won') continue; // zastąpione przez offer lub booking
+		if (leadsWithOffer.has(l.id)) continue; // offer pokaże to zlecenie
 		const key = `lead:${l.status}`;
 		const s = STAGES[key] ?? STAGES['lead:new'];
 		zlecenia.push({

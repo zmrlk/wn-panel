@@ -300,6 +300,10 @@
 						<h2>4. Pozycje oferty</h2>
 						<span class="muted">{lines.length} {lines.length === 1 ? 'pozycja' : lines.length < 5 ? 'pozycje' : 'pozycji'}</span>
 					</header>
+					<p class="section-hint">
+						Po kliknięciu pakietu — items pakietu lecą z ceną 0 ("w zestawie"). <strong>Dopasuj ilości pod event</strong>
+						(np. 6 stołów zamiast 10, +więcej girland) albo zamień: kliknij × żeby usunąć, "+ Dodaj pozycję" żeby dodać inną.
+					</p>
 					<div class="card-body no-padding">
 						<table class="lines-table">
 							<thead>
@@ -621,6 +625,13 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.8rem;
+	}
+	.section-hint {
+		padding: 0.7rem 1.1rem 0;
+		margin: 0;
+		color: var(--muted, var(--mute));
+		font-size: 0.82rem;
+		line-height: 1.45;
 	}
 	.card-head h2 {
 		margin: 0;

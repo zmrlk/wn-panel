@@ -369,7 +369,8 @@
 										</td>
 										<td>{p.active ? '✓' : '✕'}</td>
 										<td class="actions">
-											<button class="row-edit" onclick={() => (editingPackageId = p.id)}>Edytuj</button>
+											<a class="row-edit" href={`/magazyn/packages/${p.id}`} title="Edytuj pakiet i items">Items →</a>
+											<button class="row-edit" onclick={() => (editingPackageId = p.id)}>Meta</button>
 										</td>
 									</tr>
 								{/if}
@@ -514,6 +515,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		padding: 0.65rem 0;
 		gap: 2px;
 		width: 100%;

@@ -347,6 +347,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		padding: 0.65rem 0;
 		gap: 2px;
 		overflow-y: auto;
