@@ -36,6 +36,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		email: 'denis@wolnynamiot.pl',
 		role: 'admin'
 	};
+	if (me.role !== 'admin') {
+		const { redirect } = await import('@sveltejs/kit');
+		throw redirect(303, '/dashboard');
+	}
 
 	const [settingsRows, users] = await Promise.all([
 		db.select().from(appSetting),
@@ -58,7 +62,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const contacts = (byKey['contacts'] ?? {}) as Partial<Contacts>;
 	const offers = (byKey['offers'] ?? {}) as Partial<Offers>;
 
-	return { user: me, company, contacts, offers, users };
+	return { user: me, isAdmin: me.role === 'admin', company, contacts, offers, users };
 };
 
 async function upsertSetting(key: string, value: Record<string, unknown>) {

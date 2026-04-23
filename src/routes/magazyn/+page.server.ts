@@ -4,13 +4,19 @@ import { pkg, item, stockMovement, booking } from '$lib/server/db/schema';
 import { asc, desc, eq, isNull } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 
+import { redirect } from '@sveltejs/kit';
+
 export const load: PageServerLoad = async ({ locals }) => {
-	const user = locals.user ?? {
+	const me = locals.user ?? {
 		id: 'preview',
 		name: 'Denis',
 		email: 'denis@wolnynamiot.pl',
 		role: 'admin'
 	};
+	const isAdmin = me.role === 'admin';
+
+	// Non-admin: przekieruj na dashboard — magazyn tylko dla admin
+	if (!isAdmin) throw redirect(303, '/dashboard');
 
 	const [packages, items, movements] = await Promise.all([
 		db.select().from(pkg).orderBy(asc(pkg.sortOrder)),
@@ -46,7 +52,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const belowMin = items.filter((i) => i.totalQty < i.minQty).length;
 	const atMin = items.filter((i) => i.totalQty === i.minQty && i.minQty > 0).length;
 
-	return { user, packages, items, movements, stats: { belowMin, atMin } };
+	return { user: me, isAdmin, packages, items, movements, stats: { belowMin, atMin } };
 };
 
 export const actions: Actions = {

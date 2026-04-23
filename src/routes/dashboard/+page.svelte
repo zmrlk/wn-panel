@@ -89,8 +89,8 @@
 		return `${s.available}`;
 	}
 
-	// Group items by category for matrix
-	const grouped = data.items.reduce<Record<string, typeof data.items>>((acc, it) => {
+	// Group items by category for matrix (admin only)
+	const grouped = (data.items ?? []).reduce<Record<string, NonNullable<typeof data.items>>>((acc, it) => {
 		acc[it.group] = acc[it.group] ?? [];
 		acc[it.group].push(it);
 		return acc;
@@ -122,25 +122,29 @@
 
 		<nav class="rail-nav">
 			{#each MAIN as item, i}
-				<a href="/{item.id === 'dashboard' ? 'dashboard' : item.id === 'tents' ? 'magazyn' : item.id}" class="rail-item" class:active={item.active}>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-						<path d={ICONS[item.id]} />
-					</svg>
-					<span class="rail-label">{item.label}</span>
-					{#if item.active}<div class="rail-indicator"></div>{/if}
-				</a>
+				{#if item.id !== 'tents' || data.isAdmin}
+					<a href="/{item.id === 'dashboard' ? 'dashboard' : item.id === 'tents' ? 'magazyn' : item.id}" class="rail-item" class:active={item.active}>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+							<path d={ICONS[item.id]} />
+						</svg>
+						<span class="rail-label">{item.label}</span>
+						{#if item.active}<div class="rail-indicator"></div>{/if}
+					</a>
+				{/if}
 			{/each}
 
-			<div class="rail-sep"></div>
+			{#if data.isAdmin}
+				<div class="rail-sep"></div>
 
-			{#each ADMIN as item}
-				<a href="/{item.id}" class="rail-item">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-						<path d={ICONS[item.id]} />
-					</svg>
-					<span class="rail-label">{item.label}</span>
-				</a>
-			{/each}
+				{#each ADMIN as item}
+					<a href="/{item.id}" class="rail-item">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+							<path d={ICONS[item.id]} />
+						</svg>
+						<span class="rail-label">{item.label}</span>
+					</a>
+				{/each}
+			{/if}
 		</nav>
 
 		<div class="rail-foot">
@@ -162,10 +166,17 @@
 		<!-- Top bar: kompakt, wszystko w jednym rzędzie -->
 		<header class="topbar">
 			<div class="top-left">
-				<h1>Dashboard</h1>
-				<span class="top-date">{dateLabel} · {seasonLabel}</span>
+				<h1>{data.employeeView ? 'Plan pracy' : 'Dashboard'}</h1>
+				<span class="top-date">
+					{#if data.employeeView}
+						{data.nowDate} · {data.totalAssigned} zleceń przypisanych
+					{:else}
+						{dateLabel} · {seasonLabel}
+					{/if}
+				</span>
 			</div>
 			<div class="top-right">
+				{#if !data.employeeView}
 				<div class="status-inline">
 					<span class="si"><b>{data.status.eventsThisWeek}</b> eventy w tygodniu</span>
 					<span class="dot-sep">·</span>
@@ -173,6 +184,7 @@
 					<span class="dot-sep">·</span>
 					<span class="si"><b>{data.status.flagshipFreeDays}</b>/{data.status.totalDays} dni wolne ({data.status.flagshipName})</span>
 				</div>
+				{/if}
 				<button class="cmdk" type="button" onclick={() => (searchOpen = true)}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
 						<circle cx="11" cy="11" r="8" />
@@ -204,6 +216,60 @@
 		{/if}
 
 		<div class="content">
+			{#if data.employeeView}
+				<!-- ═══ PRACOWNIK: plan pracy zgrupowany ═══ -->
+				{#if data.groups.length === 0}
+					<div class="empty-work">
+						<div class="empty-emoji">🏖️</div>
+						<h2>Brak zleceń</h2>
+						<p>Nie masz przypisanych eventów. Admin dobierze Cię do zespołu i tu się pojawią.</p>
+					</div>
+				{:else}
+					{#each data.groups as g}
+						<section class="work-group">
+							<h2 class="group-title">{g.emoji} {g.label} <span class="group-count">({g.events.length})</span></h2>
+							<div class="work-cards">
+								{#each g.events as ev}
+									<a href={`/zlecenia/booking-${ev.bookingId}`} class="work-card status-{ev.status}">
+										<div class="wc-head">
+											<span class="wc-task">
+												{#if ev.task === 'driver'}🚚 kierowca
+												{:else if ev.task === 'installer'}🔨 montażysta
+												{:else if ev.task === 'lead'}👑 lider
+												{:else}{ev.task}{/if}
+											</span>
+											<span class="wc-status-pill">
+												{#if ev.status === 'confirmed'}Potwierdzona
+												{:else if ev.status === 'in-progress'}🚚 W realizacji
+												{:else if ev.status === 'done'}✓ Zakończony
+												{:else if ev.status === 'draft'}Szkic
+												{:else}{ev.status}{/if}
+											</span>
+										</div>
+										<h3 class="wc-name">{ev.eventName}</h3>
+										<div class="wc-meta">
+											<div class="wc-row"><span class="wc-icon">📅</span> {ev.startDate}{ev.endDate !== ev.startDate ? ` — ${ev.endDate}` : ''}</div>
+											{#if ev.venue}<div class="wc-row"><span class="wc-icon">📍</span> {ev.venue}</div>{/if}
+											{#if ev.clientName}
+												<div class="wc-row"><span class="wc-icon">👤</span> {ev.clientName}</div>
+											{/if}
+											{#if ev.clientPhone}
+												<div class="wc-row"><span class="wc-icon">📞</span> <span class="wc-phone">{ev.clientPhone}</span></div>
+											{/if}
+											{#if ev.assignmentNotes}
+												<div class="wc-row wc-note"><span class="wc-icon">📝</span> {ev.assignmentNotes}</div>
+											{/if}
+										</div>
+										<div class="wc-cta">Otwórz zlecenie →</div>
+									</a>
+								{/each}
+							</div>
+						</section>
+					{/each}
+				{/if}
+
+			{:else}
+
 			{#if data.status.belowMin > 0}
 				<div class="alert-banner alert-below">
 					<span class="alert-icon">⚠️</span>
@@ -327,6 +393,7 @@
 					</ul>
 				</div>
 			</section>
+			{/if}
 		</div>
 	</main>
 </div>
@@ -678,6 +745,118 @@
 	.alert-cta:hover {
 		background: var(--wn-plotno);
 		color: var(--wn-atrament);
+	}
+
+	/* ─── EMPLOYEE PLAN PRACY ─────────────────────────── */
+	.empty-work {
+		padding: 4rem 2rem;
+		text-align: center;
+		color: var(--mute);
+	}
+	.empty-work .empty-emoji {
+		font-size: 3rem;
+		margin-bottom: 1rem;
+	}
+	.empty-work h2 {
+		margin: 0 0 0.5rem;
+		color: var(--ink);
+	}
+	.work-group {
+		margin-bottom: 1.5rem;
+	}
+	.group-title {
+		font-size: 1.05rem;
+		font-weight: 700;
+		margin: 0 0 0.85rem;
+		color: var(--ink);
+	}
+	.group-count {
+		font-weight: 400;
+		color: var(--mute);
+		font-size: 0.88rem;
+	}
+	.work-cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+		gap: 0.85rem;
+	}
+	.work-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+		padding: 1rem 1.15rem;
+		background: var(--paper);
+		border: 2px solid var(--wn-atrament);
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+		text-decoration: none;
+		color: var(--ink);
+		transition: transform 0.1s, box-shadow 0.1s;
+	}
+	.work-card:hover {
+		transform: translate(-1px, -1px);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
+	}
+	.work-card.status-in-progress {
+		background: color-mix(in srgb, var(--wn-zarowka) 18%, var(--paper));
+	}
+	.work-card.status-done {
+		opacity: 0.7;
+	}
+	.wc-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.75rem;
+	}
+	.wc-task {
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.wc-status-pill {
+		padding: 0.15rem 0.5rem;
+		background: var(--wn-atrament);
+		color: var(--wn-plotno);
+		font-size: 0.7rem;
+		font-weight: 600;
+	}
+	.wc-name {
+		margin: 0;
+		font-size: 1.1rem;
+		font-weight: 700;
+	}
+	.wc-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		font-size: 0.85rem;
+	}
+	.wc-row {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		color: var(--ink-2);
+	}
+	.wc-icon {
+		width: 18px;
+		text-align: center;
+		font-size: 0.9rem;
+	}
+	.wc-phone {
+		font-family: var(--font-mono);
+	}
+	.wc-note {
+		font-style: italic;
+		color: var(--mute);
+	}
+	.wc-cta {
+		margin-top: 0.4rem;
+		padding-top: 0.55rem;
+		border-top: 1px dashed var(--line);
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--wn-zielony-ink);
 	}
 
 	/* ─── CARDS ────────────────────────────────────────── */

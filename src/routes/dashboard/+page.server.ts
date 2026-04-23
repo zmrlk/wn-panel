@@ -1,22 +1,105 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { item, booking, bookingTent, lead, offer, client } from '$lib/server/db/schema';
-import { and, desc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
+import { item, booking, bookingTent, lead, offer, client, bookingAssignment, user as userTable } from '$lib/server/db/schema';
+import { and, asc, desc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
 
 /**
  * DASHBOARD v5 — REAL DB.
- * - items: z tabeli `tent` (alias item), grouped by category
- * - reserved[iso]: JOIN booking + booking_tent, sumuj quantity per item per day w active bookings
- * - maintenance: item.status = 'maintenance' (point-in-time, applied across full range)
- * - status/funnel/actions/recentLeads: agregacje z lead/offer/booking
+ * - admin: matrix + funnel + alerty (pełny widok)
+ * - employee: plan pracy — grouped "dziś / jutro / ten tydzień / później"
  */
 export const load: PageServerLoad = async ({ locals, url }) => {
-	const user = locals.user ?? {
+	const me = locals.user ?? {
 		id: 'preview',
 		name: 'Denis',
 		email: 'denis@wolnynamiot.pl',
 		role: 'admin'
 	};
+	const isAdmin = me.role === 'admin';
+
+	// ═══ EMPLOYEE VIEW: plan pracy (moje eventy zgrupowane po dniach) ═══
+	if (!isAdmin) {
+		const todayStart = new Date();
+		todayStart.setHours(0, 0, 0, 0);
+		const todayIso = todayStart.toISOString().slice(0, 10);
+
+		const myAssignments = await db
+			.select({
+				bookingId: booking.id,
+				eventName: booking.eventName,
+				startDate: booking.startDate,
+				endDate: booking.endDate,
+				venue: booking.venue,
+				status: booking.status,
+				priceCents: booking.priceCents,
+				clientName: client.name,
+				clientPhone: client.phone,
+				task: bookingAssignment.task,
+				assignmentNotes: bookingAssignment.notes
+			})
+			.from(bookingAssignment)
+			.innerJoin(booking, eq(bookingAssignment.bookingId, booking.id))
+			.leftJoin(client, eq(booking.clientId, client.id))
+			.where(
+				and(
+					eq(bookingAssignment.userId, me.id),
+					ne(booking.status, 'cancelled')
+				)
+			)
+			.orderBy(asc(booking.startDate));
+
+		// Group: dziś / jutro / ten tydzień / później / zakończone (done)
+		const tomorrowStart = new Date(todayStart);
+		tomorrowStart.setDate(todayStart.getDate() + 1);
+		const tomorrowIso = tomorrowStart.toISOString().slice(0, 10);
+		const weekEnd = new Date(todayStart);
+		weekEnd.setDate(todayStart.getDate() + 7);
+		const weekEndIso = weekEnd.toISOString().slice(0, 10);
+
+		type EventCard = typeof myAssignments[number];
+		const groups: { label: string; emoji: string; events: EventCard[] }[] = [
+			{ label: 'Dziś', emoji: '🔥', events: [] },
+			{ label: 'Jutro', emoji: '⏰', events: [] },
+			{ label: 'Ten tydzień', emoji: '📅', events: [] },
+			{ label: 'Później', emoji: '🗓️', events: [] },
+			{ label: 'Zakończone', emoji: '✓', events: [] }
+		];
+
+		for (const a of myAssignments) {
+			if (a.status === 'done') {
+				groups[4].events.push(a);
+			} else if (a.startDate === todayIso || (a.startDate <= todayIso && a.endDate >= todayIso)) {
+				groups[0].events.push(a);
+			} else if (a.startDate === tomorrowIso) {
+				groups[1].events.push(a);
+			} else if (a.startDate > todayIso && a.startDate <= weekEndIso) {
+				groups[2].events.push(a);
+			} else if (a.startDate > weekEndIso) {
+				groups[3].events.push(a);
+			}
+		}
+
+		// Zostaw tylko niepuste grupy
+		const activeGroups = groups.filter((g) => g.events.length > 0);
+
+		const nowDate = new Date().toLocaleDateString('pl-PL', {
+			weekday: 'long',
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric'
+		});
+
+		return {
+			user: me,
+			isAdmin: false,
+			employeeView: true,
+			groups: activeGroups,
+			totalAssigned: myAssignments.length,
+			nowDate
+		};
+	}
+
+	// ═══ ADMIN VIEW — pełny matrix (poniżej) ═══
 
 	// ─── Range: 21d | month | season ───────────────────────────
 	const range = (url.searchParams.get('range') ?? '21d') as '21d' | 'month' | 'season';
@@ -365,5 +448,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		age: ageLabel(new Date(l.createdAt))
 	}));
 
-	return { user, items, days, status, actions, warehouse, funnel, recentLeads, range, rangeLabel };
+	return {
+		user: me,
+		isAdmin: true,
+		employeeView: false,
+		items,
+		days,
+		status,
+		actions,
+		warehouse,
+		funnel,
+		recentLeads,
+		range,
+		rangeLabel
+	};
 };

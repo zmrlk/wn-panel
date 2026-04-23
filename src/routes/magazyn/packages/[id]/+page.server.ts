@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		db.select().from(item).orderBy(asc(item.category), asc(item.name))
 	]);
 
-	return { user, pkg: p, pkgItems, allItems };
+	return { user, isAdmin: (user?.role ?? 'admin') === 'admin', pkg: p, pkgItems, allItems };
 };
 
 export const actions: Actions = {

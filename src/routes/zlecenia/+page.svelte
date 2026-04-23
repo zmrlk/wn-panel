@@ -95,23 +95,27 @@
 		<a href="/" class="logo"><span class="logo-mark">wn</span></a>
 		<nav class="rail-nav">
 			{#each NAV as nav}
-				<a href={nav.href} class="rail-item" class:active={nav.active}>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-						<path d={ICONS[nav.id]} />
-					</svg>
-					<span class="rail-label">{nav.label}</span>
-					{#if nav.active}<div class="rail-indicator"></div>{/if}
-				</a>
+				{#if nav.id !== 'tents' || data.isAdmin}
+					<a href={nav.href} class="rail-item" class:active={nav.active}>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+							<path d={ICONS[nav.id]} />
+						</svg>
+						<span class="rail-label">{nav.label}</span>
+						{#if nav.active}<div class="rail-indicator"></div>{/if}
+					</a>
+				{/if}
 			{/each}
-			<div class="rail-sep"></div>
-			{#each ADMIN as it}
-				<a href={it.href} class="rail-item">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-						<path d={ICONS[it.id]} />
-					</svg>
-					<span class="rail-label">{it.label}</span>
-				</a>
-			{/each}
+			{#if data.isAdmin}
+				<div class="rail-sep"></div>
+				{#each ADMIN as it}
+					<a href={it.href} class="rail-item">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+							<path d={ICONS[it.id]} />
+						</svg>
+						<span class="rail-label">{it.label}</span>
+					</a>
+				{/each}
+			{/if}
 		</nav>
 		<div class="rail-foot">
 			<button class="theme-btn" type="button" aria-label="Motyw" onclick={() => (window as typeof window & { toggleTheme?: () => void }).toggleTheme?.()}>

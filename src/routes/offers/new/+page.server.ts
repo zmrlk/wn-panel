@@ -62,7 +62,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		}
 	}
 
-	return { user, packages, packageItems, items, clients, prefill };
+	return { user, isAdmin: (user?.role ?? 'admin') === 'admin', packages, packageItems, items, clients, prefill };
 };
 
 export const actions: Actions = {
