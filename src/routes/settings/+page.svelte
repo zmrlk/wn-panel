@@ -33,10 +33,32 @@
 		'{{driverPhone}}'
 	];
 
+	// Przykładowe dane do preview
+	const SAMPLE_CONTEXT: Record<string, string> = {
+		clientName: 'Anna Kowalska',
+		eventName: 'Wesele 50-osobowe',
+		eventDateRange: '25 czerwca — 27 czerwca 2026',
+		venue: 'Stodoła u Babci, Chmielnik',
+		offerNumber: 'OFF-2026-0042',
+		totalValue: '3 200 zł',
+		offerLink: 'https://wolnynamiot.pl/offers/abc-123',
+		validUntil: '2026-05-10',
+		paymentInfo: '\n\nKaucja 500 zł wpłacona 12.04. Pozostało: 2 700 zł',
+		driverName: 'Pepe',
+		driverPhone: '+48 690 000 000'
+	};
+
+	function renderPreview(body: string): string {
+		return body.replace(/\{\{(\w+)\}\}/g, (_, k) => SAMPLE_CONTEXT[k] ?? `{{${k}}}`);
+	}
+
+	let previewOpen = $state<Record<string, boolean>>({});
+
 	const ICONS: Record<string, string> = {
 		dashboard: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9ZM9 22V12h6v10',
 		zlecenia: 'M22 12h-4l-3 9L9 3l-3 9H2',
 		tents: 'M3 20 L12 4 L21 20 Z M8 20 L12 13 L16 20',
+		team: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
 		settings: 'M20 7h-9 M14 17H5 M17 14a3 3 0 1 0 0 6a3 3 0 1 0 0-6Z M7 4a3 3 0 1 0 0 6a3 3 0 1 0 0-6Z'
 	};
 
@@ -64,6 +86,10 @@
 			<a href="/magazyn" class="rail-item">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS.tents} /></svg>
 				<span class="rail-label">Magazyn</span>
+			</a>
+			<a href="/team" class="rail-item">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d={ICONS.team} /></svg>
+				<span class="rail-label">Zespół</span>
 			</a>
 			<div class="rail-sep"></div>
 			<a href="/settings" class="rail-item active">
@@ -148,8 +174,49 @@
 
 			{#if activeTab === 'contacts'}
 				<section class="card">
+					<h2>Integracja Resend</h2>
+					<p class="hint">
+						Resend to serwis do wysyłki emaili. Klucz API przechowujemy w zmiennej środowiskowej <code>RESEND_API_KEY</code> (bezpieczniej niż w DB).
+					</p>
+
+					<div class="resend-status" class:ok={data.resendConfigured} class:miss={!data.resendConfigured}>
+						{#if data.resendConfigured}
+							<div>
+								<strong>✓ Skonfigurowane</strong>
+								<span>Nadawca: <code>{data.resendFrom}</code></span>
+							</div>
+							<form method="POST" action="?/sendTestEmail" style="display:inline;">
+								<button type="submit" class="btn-primary">📬 Wyślij test do {data.user.email}</button>
+							</form>
+						{:else}
+							<div>
+								<strong>⚠️ Brak konfiguracji</strong>
+								<span>W dev mode emaile są tylko logowane do console (nie wysyłają się realnie).</span>
+							</div>
+							<details class="resend-setup">
+								<summary>Jak skonfigurować</summary>
+								<ol>
+									<li>Załóż konto na <a href="https://resend.com" target="_blank" rel="noopener">resend.com</a> (free tier = 3000 maili/miesiąc)</li>
+									<li>Zweryfikuj domenę <code>wolnynamiot.pl</code> (SPF + DKIM records)</li>
+									<li>Utwórz API key w panelu Resend</li>
+									<li>Dodaj do <code>.env</code> na serwerze:
+										<pre>RESEND_API_KEY=re_xxxxx
+RESEND_FROM=biuro@wolnynamiot.pl</pre>
+									</li>
+									<li>Restart panelu</li>
+								</ol>
+							</details>
+						{/if}
+					</div>
+
+					{#if form?.testEmailResult}
+						<p class="test-result">→ {form.testEmailResult}</p>
+					{/if}
+				</section>
+
+				<section class="card">
 					<h2>Kontakty / szablon email</h2>
-					<p class="hint">Używane przy wysyłce ofert przez Resend.</p>
+					<p class="hint">Nadawca, podpis — używane w wysyłce.</p>
 					<form method="POST" action="?/updateContacts" class="form-grid">
 						<label class="field">
 							<span>Email nadawcy (Reply-To)</span>
@@ -213,7 +280,16 @@
 						{#each TEMPLATE_KEYS as key}
 							{@const tpl = data.emailTemplates?.[key] ?? { name: '', subject: '', body: '' }}
 							<div class="template-block">
-								<h3>{TEMPLATE_LABELS[key]}</h3>
+								<div class="tpl-head">
+									<h3>{TEMPLATE_LABELS[key]}</h3>
+									<button
+										type="button"
+										class="btn-inline"
+										onclick={() => (previewOpen[key] = !previewOpen[key])}
+									>
+										{previewOpen[key] ? '✕ zamknij podgląd' : '👁️ podgląd'}
+									</button>
+								</div>
 								<div class="tpl-grid">
 									<label class="field">
 										<span>Nazwa wewnętrzna</span>
@@ -228,6 +304,13 @@
 										<textarea name={`${key}_body`} rows="8">{tpl.body}</textarea>
 									</label>
 								</div>
+								{#if previewOpen[key]}
+									<div class="tpl-preview">
+										<div class="tpl-preview-label">📬 Podgląd z przykładowymi danymi:</div>
+										<div class="tpl-preview-subject"><strong>Temat:</strong> {renderPreview(tpl.subject)}</div>
+										<div class="tpl-preview-body">{renderPreview(tpl.body)}</div>
+									</div>
+								{/if}
 							</div>
 						{/each}
 
@@ -495,8 +578,15 @@
 		background: var(--paper-2);
 		border-left: 3px solid var(--wn-zielony);
 	}
+	.tpl-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 0.75rem;
+	}
 	.template-block h3 {
-		margin: 0 0 0.75rem;
+		margin: 0;
 		font-size: 0.95rem;
 	}
 	.tpl-grid {
@@ -511,6 +601,85 @@
 		font-family: var(--font-mono);
 		font-size: 0.82rem;
 		resize: vertical;
+	}
+	.tpl-preview {
+		margin-top: 0.9rem;
+		padding: 0.85rem 1rem;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-left: 3px solid var(--wn-zarowka);
+		font-size: 0.88rem;
+	}
+	.tpl-preview-label {
+		font-size: 0.72rem;
+		color: var(--mute);
+		margin-bottom: 0.5rem;
+	}
+	.tpl-preview-subject {
+		margin-bottom: 0.6rem;
+		font-size: 0.95rem;
+	}
+	.tpl-preview-body {
+		white-space: pre-wrap;
+		line-height: 1.5;
+		color: var(--ink);
+	}
+
+	.resend-status {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 1rem;
+		padding: 0.85rem 1rem;
+		margin-bottom: 1rem;
+	}
+	.resend-status.ok {
+		background: color-mix(in srgb, var(--wn-zielony) 12%, var(--paper));
+		border-left: 3px solid var(--wn-zielony);
+	}
+	.resend-status.miss {
+		background: color-mix(in srgb, var(--wn-zarowka) 18%, var(--paper));
+		border-left: 3px solid var(--wn-zarowka);
+	}
+	.resend-status div {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.resend-status strong { font-size: 0.95rem; }
+	.resend-status code { font-family: var(--font-mono); font-size: 0.82rem; }
+	.resend-setup {
+		margin-top: 0.75rem;
+		width: 100%;
+	}
+	.resend-setup summary {
+		cursor: pointer;
+		font-size: 0.88rem;
+		color: var(--wn-granat);
+		font-weight: 600;
+	}
+	.resend-setup ol {
+		margin-top: 0.5rem;
+		padding-left: 1.3rem;
+		font-size: 0.88rem;
+		line-height: 1.6;
+	}
+	.resend-setup pre {
+		margin: 0.3rem 0;
+		padding: 0.55rem 0.75rem;
+		background: var(--wn-atrament);
+		color: var(--wn-plotno);
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		overflow-x: auto;
+	}
+	.test-result {
+		padding: 0.65rem 0.9rem;
+		background: var(--paper-2);
+		border-left: 3px solid var(--wn-zielony);
+		font-size: 0.85rem;
+		font-family: var(--font-mono);
 	}
 
 	.form-grid {

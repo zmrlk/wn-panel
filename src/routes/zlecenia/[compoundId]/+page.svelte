@@ -65,12 +65,14 @@
 		dashboard: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9ZM9 22V12h6v10',
 		zlecenia: 'M22 12h-4l-3 9L9 3l-3 9H2',
 		tents: 'M3 20 L12 4 L21 20 Z M8 20 L12 13 L16 20',
+		team: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
 		settings: 'M20 7h-9 M14 17H5 M17 14a3 3 0 1 0 0 6a3 3 0 1 0 0-6Z M7 4a3 3 0 1 0 0 6a3 3 0 1 0 0-6Z'
 	};
 	const NAV = [
 		{ id: 'dashboard', label: 'Home', href: '/dashboard' },
 		{ id: 'zlecenia', label: 'Zlecenia', href: '/zlecenia', active: true },
-		{ id: 'tents', label: 'Magazyn', href: '/magazyn' }
+		{ id: 'tents', label: 'Magazyn', href: '/magazyn' },
+		{ id: 'team', label: 'Zespół', href: '/team' }
 	];
 
 	function fmtZl(cents: number | null | undefined) {
@@ -129,7 +131,7 @@
 		<a href="/" class="logo"><span class="logo-mark">wn</span></a>
 		<nav class="rail-nav">
 			{#each NAV as nav}
-				{#if (nav.id !== 'tents' || data.isAdmin) && (nav.id !== 'zlecenia' || data.isAdmin)}
+				{#if data.isAdmin || (nav.id !== 'tents' && nav.id !== 'zlecenia' && nav.id !== 'team')}
 					<a href={nav.href} class="rail-item" class:active={nav.active}>
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
 							<path d={ICONS[nav.id]} />

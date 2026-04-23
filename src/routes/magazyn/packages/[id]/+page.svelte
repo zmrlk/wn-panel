@@ -42,6 +42,10 @@
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 L12 4 L21 20 Z M8 20 L12 13 L16 20" /></svg>
 				<span class="rail-label">Magazyn</span>
 			</a>
+			<a href="/team" class="rail-item">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+				<span class="rail-label">Zespół</span>
+			</a>
 		</nav>
 	</aside>
 

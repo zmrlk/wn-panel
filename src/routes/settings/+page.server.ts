@@ -77,7 +77,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		contacts,
 		offers,
 		emailTemplates,
-		users
+		users,
+		resendConfigured: !!process.env.RESEND_API_KEY,
+		resendFrom: process.env.RESEND_FROM ?? 'biuro@wolnynamiot.pl'
 	};
 };
 
@@ -128,6 +130,27 @@ export const actions: Actions = {
 		};
 		await upsertSetting('offers', value);
 		return { success: true, section: 'offers' };
+	},
+
+	// Wyślij testowy email do currentUser — weryfikacja konfiguracji Resend
+	sendTestEmail: async ({ locals }) => {
+		const { sendEmail, getCompanyInfo } = await import('$lib/server/email');
+		const to = locals.user?.email;
+		if (!to) return fail(400, { error: 'Brak email usera' });
+		const company = await getCompanyInfo();
+		const result = await sendEmail({
+			to,
+			subject: `Test z ${company.name ?? 'Wolny Namiot'} — konfiguracja email`,
+			body: `Cześć ${locals.user?.name ?? ''},\n\nTo testowy email z panelu wolnynamiot. Jeśli widzisz tę wiadomość — integracja Resend działa prawidłowo.\n\nCzas wysłania: ${new Date().toLocaleString('pl-PL')}\nNadawca: ${process.env.RESEND_FROM ?? 'biuro@wolnynamiot.pl'}\n\nOK!`,
+			template: 'test'
+		});
+		return {
+			success: true,
+			section: 'contacts',
+			testEmailResult: result.ok
+				? ('dev' in result && result.dev ? `Dev mode (brak RESEND_API_KEY) — email zalogowany do console, nie wysłany do ${to}` : `Wysłano na ${to}`)
+				: `Błąd: ${'error' in result ? result.error : 'unknown'}`
+		};
 	},
 
 	// Zapisz wszystkie email_templates naraz (4 × name/subject/body)
