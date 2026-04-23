@@ -2,6 +2,12 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import SidebarRail from '$lib/components/SidebarRail.svelte';
+	import {
+		dbStatusToUnified,
+		allowedStatusesForType,
+		type ZlecenieType
+	} from '$lib/booking-stages';
+	import { fmtZl, fmtDate, fmtDateTime, eventRange, daysCount } from '$lib/formatters';
 
 	let { data } = $props();
 	const z = $derived(data.zlecenie);
@@ -9,95 +15,12 @@
 	let newNote = $state('');
 	let addingNote = $state(false);
 
-	// UNIFIED 6-STATUS (v5.20): nowy / w-trakcie / wygrany / zrealizowany / przegrany / archiwum
-	// Każdy chip ma semantyczny sens i mapuje na różny DB-status per typ
-	const ALL_STATUSES: Array<{ id: string; label: string; emoji: string }> = [
-		{ id: 'nowy', label: 'Nowy', emoji: '🆕' },
-		{ id: 'w-trakcie', label: 'W trakcie', emoji: '⚙️' },
-		{ id: 'wygrany', label: 'Wygrany', emoji: '✅' },
-		{ id: 'zrealizowany', label: 'Zrealizowany', emoji: '🎉' },
-		{ id: 'przegrany', label: 'Przegrany', emoji: '✕' },
-		{ id: 'archiwum', label: 'Archiwum', emoji: '📦' }
-	];
+	// Status mapping + filter wyniesione do $lib/booking-stages (24 testów unit)
+	const currentUnified = $derived(dbStatusToUnified(z.type as ZlecenieType, z.status));
+	const statusList = $derived(allowedStatusesForType(z.type as ZlecenieType));
 
-	// Mapowanie DB-status → unified bucket (do podświetlenia aktywnego chipa)
-	const DB_TO_UNIFIED: Record<string, Record<string, string>> = {
-		lead: {
-			new: 'nowy',
-			contacted: 'w-trakcie',
-			qualified: 'w-trakcie',
-			quoted: 'w-trakcie',
-			won: 'zrealizowany',
-			lost: 'przegrany',
-			archived: 'archiwum'
-		},
-		offer: {
-			draft: 'w-trakcie',
-			sent: 'w-trakcie',
-			viewed: 'w-trakcie',
-			accepted: 'wygrany',
-			rejected: 'przegrany',
-			expired: 'przegrany'
-		},
-		booking: {
-			draft: 'wygrany',
-			confirmed: 'wygrany',
-			'in-progress': 'wygrany',
-			done: 'zrealizowany',
-			cancelled: 'przegrany'
-		}
-	};
-	const currentUnified = $derived(DB_TO_UNIFIED[z.type]?.[z.status] ?? z.status);
-
-	// Per-type dostępne chipy — tylko sensowne przejścia:
-	//  lead    = nowy → w-trakcie → przegrany / archiwum (wygrany = tylko przez ofertę)
-	//  offer   = w-trakcie → wygrany (auto tworzy booking) / przegrany
-	//  booking = wygrany (aktywne) / zrealizowany / przegrany
-	const ALLOWED_PER_TYPE: Record<string, string[]> = {
-		lead: ['nowy', 'w-trakcie', 'przegrany', 'archiwum'],
-		offer: ['w-trakcie', 'wygrany', 'przegrany'],
-		booking: ['wygrany', 'zrealizowany', 'przegrany']
-	};
-	const statusList = $derived(
-		ALL_STATUSES.filter((s) => ALLOWED_PER_TYPE[z.type]?.includes(s.id) ?? true)
-	);
-
-	const ICONS: Record<string, string> = {
-		dashboard: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9ZM9 22V12h6v10',
-		zlecenia: 'M22 12h-4l-3 9L9 3l-3 9H2',
-		tents: 'M3 20 L12 4 L21 20 Z M8 20 L12 13 L16 20',
-		team: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
-		settings: 'M20 7h-9 M14 17H5 M17 14a3 3 0 1 0 0 6a3 3 0 1 0 0-6Z M7 4a3 3 0 1 0 0 6a3 3 0 1 0 0-6Z'
-	};
-	const NAV = [
-		{ id: 'dashboard', label: 'Home', href: '/dashboard' },
-		{ id: 'zlecenia', label: 'Zlecenia', href: '/zlecenia', active: true },
-		{ id: 'tents', label: 'Magazyn', href: '/magazyn' },
-		{ id: 'team', label: 'Zespół', href: '/team' }
-	];
-
-	function fmtZl(cents: number | null | undefined) {
-		if (cents == null) return '—';
-		return (cents / 100).toLocaleString('pl-PL', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' zł';
-	}
-	function fmtDate(d: string | Date | null | undefined) {
-		if (!d) return '—';
-		return new Date(d).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
-	}
-	function fmtDateTime(d: string | Date | null | undefined) {
-		if (!d) return '—';
-		return new Date(d).toLocaleDateString('pl-PL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-	}
-	function eventRange(s: string | null, e: string | null) {
-		if (!s) return '—';
-		if (!e || s === e) return fmtDate(s);
-		return `${fmtDate(s)} – ${fmtDate(e)}`;
-	}
-	function daysCount(s: string | null, e: string | null) {
-		if (!s) return 0;
-		const ed = e ?? s;
-		return Math.max(1, Math.ceil((new Date(ed).getTime() - new Date(s).getTime()) / 86400000) + 1);
-	}
+	// ICONS + NAV usunięte — SidebarRail używa NAV_ITEMS z $lib/constants/icons
+	// Formatters wyniesione do $lib/formatters (23 testów)
 
 	// Timeline events — booking ma multi-source z server (z.timeline),
 	// lead/offer dostają stage-aware fallback

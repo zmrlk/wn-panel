@@ -19,6 +19,8 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { asc, eq, sql } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
+import { getStage, unifiedToDbStatus, type ZlecenieType } from '$lib/booking-stages';
+import { buildBookingTimeline } from '$lib/booking-timeline';
 
 /**
  * Unified detail page dla zlecenia.
@@ -37,11 +39,11 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const dashIdx = compound.indexOf('-');
 	if (dashIdx < 0) throw error(400, { message: 'Nieprawidłowy format id zlecenia' });
 
-	const type = compound.slice(0, dashIdx) as 'lead' | 'offer' | 'booking';
+	const type = compound.slice(0, dashIdx) as ZlecenieType;
 	const id = compound.slice(dashIdx + 1);
 
 	type Zlecenie = {
-		type: 'lead' | 'offer' | 'booking';
+		type: ZlecenieType;
 		id: string;
 		number: string | null;
 		status: string;
@@ -111,34 +113,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		acceptedAt: Date | null;
 	};
 
-	// Unified labels — "w trakcie" dla pośrednich stanów, ale zachowujemy fine-grained sub-label
-	const STAGES: Record<string, { label: string; emoji: string }> = {
-		'lead:new': { label: 'Nowy', emoji: '🆕' },
-		'lead:contacted': { label: 'W trakcie · kontakt', emoji: '📞' },
-		'lead:qualified': { label: 'W trakcie · hot', emoji: '🎯' },
-		'lead:quoted': { label: 'W trakcie · oferta', emoji: '✉️' },
-		'lead:won': { label: 'Wygrany', emoji: '✅' },
-		'lead:lost': { label: 'Przegrany', emoji: '✕' },
-		'lead:archived': { label: 'Archiwum', emoji: '📦' },
-		'offer:draft': { label: 'W trakcie · szkic', emoji: '✏️' },
-		'offer:sent': { label: 'W trakcie · wysłana', emoji: '✉️' },
-		'offer:viewed': { label: 'W trakcie · zobaczył', emoji: '👀' },
-		'offer:accepted': { label: 'Wygrany', emoji: '✅' },
-		'offer:rejected': { label: 'Przegrany', emoji: '✕' },
-		'offer:expired': { label: 'Przegrany · wygasła', emoji: '⏰' },
-		'booking:draft': { label: 'W trakcie · szkic', emoji: '📝' },
-		'booking:confirmed': { label: 'W trakcie · potwierdzona', emoji: '✅' },
-		'booking:in-progress': { label: 'W trakcie · realizacja', emoji: '🚚' },
-		'booking:done': { label: 'Wygrany', emoji: '🎉' },
-		'booking:cancelled': { label: 'Przegrany', emoji: '✕' }
-	};
-
+	// STAGES map wyniesiony do $lib/booking-stages (single source of truth, +24 testów)
 	let zlecenie: Zlecenie;
 
 	if (type === 'lead') {
 		const [l] = await db.select().from(lead).where(eq(lead.id, id)).limit(1);
 		if (!l) throw error(404, { message: 'Lead nie istnieje' });
-		const s = STAGES[`lead:${l.status}`] ?? STAGES['lead:new'];
+		const s = getStage('lead', l.status);
 		zlecenie = {
 			type: 'lead',
 			id: l.id,
@@ -189,7 +170,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.limit(1);
 		if (!o) throw error(404, { message: 'Oferta nie istnieje' });
 		const items = await db.select().from(offerItem).where(eq(offerItem.offerId, id));
-		const s = STAGES[`offer:${o.offer.status}`] ?? STAGES['offer:draft'];
+		const s = getStage('offer', o.offer.status);
 		zlecenie = {
 			type: 'offer',
 			id: o.offer.id,
@@ -320,100 +301,36 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		]);
 		const paidCentsTotal = payments.reduce((s, p) => s + p.amountCents, 0);
 
-		// Multi-source timeline: booking created, assignments, dispatch (OUT), payments, photos, return (IN), strata, done
-		type TimelineEvent = {
-			label: string;
-			date: Date | null;
-			emoji: string;
-			kind: string;
-			note: string | null;
-		};
-		const timeline: TimelineEvent[] = [];
-		timeline.push({ label: 'Rezerwacja utworzona', date: b.createdAt, emoji: '➕', kind: 'created', note: null });
-		for (const a of assignmentsRaw) {
-			timeline.push({
-				label: `Przypisano: ${a.userName ?? '—'} (${a.task === 'driver' ? 'kierowca' : a.task === 'installer' ? 'montaż' : a.task === 'lead' ? 'lider' : a.task})`,
-				date: null, // assignmentsRaw nie ma createdAt — użyjemy null, sortuje na dół
-				emoji: '👥',
-				kind: 'assignment',
-				note: a.notes
-			});
-		}
-		// Dispatch OUT (wydanie_na_event) — zbieramy qty aggregated
-		const dispatchMovements = movementsRaw.filter((m) => m.kind === 'wydanie_na_event');
-		if (dispatchMovements.length > 0) {
-			const firstDispatch = dispatchMovements[0];
-			const totalItems = dispatchMovements.reduce((sum, m) => sum + m.qty, 0);
-			const names = dispatchMovements.map((m) => `${m.qty}× ${m.itemName}`).join(', ');
-			timeline.push({
-				label: `Wydano na event (${totalItems} szt.)`,
-				date: firstDispatch.createdAt,
-				emoji: '🚚',
-				kind: 'dispatch',
-				note: names
-			});
-		}
-		for (const p of payments) {
-			timeline.push({
-				label: `Płatność ${(p.amountCents / 100).toLocaleString('pl-PL')} zł (${p.method})`,
-				date: p.paidAt ? new Date(p.paidAt) : null,
-				emoji: '💰',
-				kind: 'payment',
-				note: p.notes
-			});
-		}
-		for (const p of photosRaw) {
-			timeline.push({
-				label: `Zdjęcie: ${p.kind === 'delivery' ? 'dostawa' : p.kind === 'return' ? 'odbiór' : p.kind === 'damage' ? 'uszkodzenie' : 'inne'}`,
-				date: p.uploadedAt,
-				emoji: '📸',
-				kind: 'photo',
-				note: p.caption
-			});
-		}
-		// Return (IN) + strata
-		const returnMovements = movementsRaw.filter((m) => m.kind === 'zwrot_po_evencie');
-		const stratyMovements = movementsRaw.filter((m) => m.kind === 'strata');
-		if (returnMovements.length > 0) {
-			const firstReturn = returnMovements[0];
-			const totalReturned = returnMovements.reduce((sum, m) => sum + m.qty, 0);
-			timeline.push({
-				label: `Zwrot z eventu (${totalReturned} szt.)`,
-				date: firstReturn.createdAt,
-				emoji: '📦',
-				kind: 'return',
-				note: returnMovements.map((m) => `${m.qty}× ${m.itemName}`).join(', ')
-			});
-		}
-		if (stratyMovements.length > 0) {
-			const firstStrata = stratyMovements[0];
-			const totalLost = stratyMovements.reduce((sum, m) => sum + m.qty, 0);
-			timeline.push({
-				label: `Straty (${totalLost} szt.)`,
-				date: firstStrata.createdAt,
-				emoji: '⚠️',
-				kind: 'loss',
-				note: stratyMovements.map((m) => `${m.qty}× ${m.itemName}`).join(', ')
-			});
-		}
-		if (b.status === 'done') {
-			timeline.push({
-				label: 'Event zakończony',
-				date: b.endDate ? new Date(b.endDate) : null,
-				emoji: '🎉',
-				kind: 'done',
-				note: null
-			});
-		}
-		// Sort chronologicznie (asc) — null daty na koniec
-		timeline.sort((a, b) => {
-			if (!a.date && !b.date) return 0;
-			if (!a.date) return 1;
-			if (!b.date) return -1;
-			return a.date.getTime() - b.date.getTime();
+		// Multi-source timeline — pure builder w $lib/booking-timeline (19 testów unit)
+		const timeline = buildBookingTimeline({
+			bookingCreatedAt: b.createdAt,
+			bookingEndDate: b.endDate,
+			bookingStatus: b.status,
+			assignments: assignmentsRaw.map((a) => ({
+				userName: a.userName,
+				task: a.task,
+				notes: a.notes
+			})),
+			movements: movementsRaw.map((m) => ({
+				kind: m.kind,
+				qty: m.qty,
+				itemName: m.itemName,
+				createdAt: m.createdAt
+			})),
+			payments: payments.map((p) => ({
+				amountCents: p.amountCents,
+				method: p.method,
+				paidAt: p.paidAt,
+				notes: p.notes
+			})),
+			photos: photosRaw.map((p) => ({
+				kind: p.kind,
+				caption: p.caption,
+				uploadedAt: p.uploadedAt
+			}))
 		});
 
-		const s = STAGES[`booking:${b.status}`] ?? STAGES['booking:confirmed'];
+		const s = getStage('booking', b.status);
 		zlecenie = {
 			type: 'booking',
 			id: b.bookingId,
@@ -512,31 +429,11 @@ export const actions: Actions = {
 
 		const compound = params.compoundId!;
 		const dashIdx = compound.indexOf('-');
-		const type = compound.slice(0, dashIdx) as 'lead' | 'offer' | 'booking';
+		const type = compound.slice(0, dashIdx) as ZlecenieType;
 		const id = compound.slice(dashIdx + 1);
 
-		// Unified bucket → DB status per-type (v5.20: 6 DB statuses, 5 UI buckets)
-		const UNIFIED_TO_DB: Record<string, Record<string, string>> = {
-			lead: {
-				nowy: 'new',
-				'w-trakcie': 'contacted',
-				przegrany: 'lost',
-				archiwum: 'archived'
-			},
-			offer: {
-				'w-trakcie': 'sent',
-				wygrany: 'accepted',
-				przegrany: 'rejected'
-			},
-			booking: {
-				wygrany: 'confirmed',
-				zrealizowany: 'done',
-				przegrany: 'cancelled'
-			}
-		};
-
-		// Fallback: jeśli to już surowy DB status (np. ktoś prześle "new"), pozostaw bez mapowania
-		const mapped = UNIFIED_TO_DB[type]?.[bucket] ?? bucket;
+		// Mapowanie + fallback w $lib/booking-stages (testowane)
+		const mapped = unifiedToDbStatus(type, bucket);
 
 		const table = type === 'lead' ? lead : type === 'offer' ? offer : booking;
 		await db.update(table).set({ status: mapped, updatedAt: new Date() }).where(eq(table.id, id));
