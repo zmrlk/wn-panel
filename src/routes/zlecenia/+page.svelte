@@ -409,16 +409,27 @@
 		color: var(--mute);
 	}
 	.btn-primary {
-		padding: 0.5rem 1rem;
+		padding: 0.5rem 1.15rem;
 		background: var(--wn-zielony);
-		color: var(--wn-plotno);
-		border-radius: 6px;
-		font-size: 0.85rem;
-		font-weight: 600;
+		color: var(--wn-atrament);
+		border: 2px solid var(--wn-atrament);
+		border-radius: 0;
+		font-size: 0.88rem;
+		font-weight: 700;
 		text-decoration: none;
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+		transition: transform 0.1s, box-shadow 0.1s;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
 	}
 	.btn-primary:hover {
-		background: var(--wn-zielony-ink);
+		transform: translate(-1px, -1px);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
+	}
+	.btn-primary:active {
+		transform: translate(1px, 1px);
+		box-shadow: 1px 1px 0 var(--wn-atrament);
 	}
 
 	.tabs-wrap {
@@ -474,12 +485,12 @@
 	.tab {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0.55rem 0.85rem;
+		gap: 0.45rem;
+		padding: 0.55rem 0.95rem;
 		background: transparent;
 		border: none;
 		border-bottom: 2px solid transparent;
-		font-size: 0.85rem;
+		font-size: 0.88rem;
 		color: var(--mute);
 		cursor: pointer;
 		margin-bottom: -1px;
@@ -519,9 +530,9 @@
 		padding-right: max(1.5rem, calc((100% - 1400px) / 2));
 	}
 	.table-card {
-		background: var(--card);
+		background: var(--paper);
 		border: 1px solid var(--line);
-		border-radius: 10px;
+		border-radius: 0;
 		overflow: hidden;
 	}
 	.data-table {
@@ -600,34 +611,43 @@
 		align-items: center;
 		gap: 0.35rem;
 		padding: 0.22rem 0.6rem;
-		border-radius: 4px;
+		border: 1px solid var(--line);
+		border-radius: 0;
 		font-size: 0.75rem;
-		font-weight: 500;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 	}
-	.stage-1, .stage-2 {
-		background: color-mix(in srgb, var(--mute) 12%, transparent);
-		color: var(--ink-2);
-	}
-	.stage-3 {
+	/* 5-stage model (v5.9): 1=nowy, 2=w-trakcie, 3=wygrany, 4=przegrany, 5=archiwum */
+	.stage-1 {
 		background: color-mix(in srgb, var(--wn-granat) 14%, transparent);
 		color: var(--wn-granat);
+		border-color: var(--wn-granat);
 	}
-	.stage-4, .stage-5 {
+	.stage-2 {
 		background: color-mix(in srgb, var(--wn-zarowka) 40%, transparent);
 		color: #8a6d00;
+		border-color: #d4ad00;
 	}
-	.stage-6, .stage-7 {
-		background: color-mix(in srgb, var(--wn-zielony) 20%, transparent);
-		color: var(--wn-zielony-ink);
-	}
-	.stage-8 {
+	.stage-3 {
 		background: var(--wn-zielony);
-		color: var(--wn-plotno);
-		font-weight: 600;
+		color: var(--wn-atrament);
+		border-color: var(--wn-atrament);
+	}
+	.stage-4 {
+		background: color-mix(in srgb, var(--wn-pomidor) 12%, transparent);
+		color: var(--wn-pomidor);
+		border-color: var(--wn-pomidor);
+	}
+	.stage-5 {
+		background: color-mix(in srgb, var(--mute) 10%, transparent);
+		color: var(--mute);
+		border-color: var(--line);
 	}
 	.stage-badge.lost {
 		background: color-mix(in srgb, var(--wn-pomidor) 12%, transparent);
 		color: var(--wn-pomidor);
+		border-color: var(--wn-pomidor);
 	}
 	.mono-num {
 		margin-left: 0.4rem;
