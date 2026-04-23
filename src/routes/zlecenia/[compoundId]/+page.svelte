@@ -490,9 +490,13 @@
 	.stage-chip {
 		padding: 0.25rem 0.65rem;
 		background: var(--paper-2);
-		border-radius: 4px;
+		border: 1px solid var(--line);
+		border-radius: 0;
 		font-size: 0.78rem;
+		font-weight: 600;
 		color: var(--ink-2);
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 	}
 	.mono-num {
 		font-family: var(--font-mono);
@@ -501,20 +505,34 @@
 		font-weight: 600;
 	}
 	.btn-primary {
-		padding: 0.5rem 1rem;
+		padding: 0.5rem 1.15rem;
 		background: var(--wn-zielony);
-		color: var(--wn-plotno);
-		border-radius: 6px;
-		font-size: 0.85rem;
-		font-weight: 600;
+		color: var(--wn-atrament);
+		border: 2px solid var(--wn-atrament);
+		border-radius: 0;
+		font-size: 0.88rem;
+		font-weight: 700;
 		text-decoration: none;
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+		transition: transform 0.1s, box-shadow 0.1s;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+	.btn-primary:hover {
+		transform: translate(-1px, -1px);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
+	}
+	.btn-primary:active {
+		transform: translate(1px, 1px);
+		box-shadow: 1px 1px 0 var(--wn-atrament);
 	}
 
 	.content {
 		padding: 1.25rem 1.5rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 1.25rem;
 		max-width: 900px;
 		margin: 0 auto;
 		width: 100%;
@@ -525,19 +543,17 @@
 	}
 
 	.card {
-		background: var(--card);
+		background: var(--paper);
 		border: 1px solid var(--line);
-		border-radius: 10px;
-		padding: 1rem 1.25rem;
+		border-radius: 0;
+		padding: 1.25rem 1.5rem;
 	}
 	.card h2 {
-		margin: 0 0 0.85rem;
-		font-size: 0.72rem;
-		text-transform: uppercase;
-		letter-spacing: 0.12em;
-		color: var(--mute);
-		font-family: var(--font-mono);
-		font-weight: 600;
+		margin: 0 0 0.6rem;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--ink);
+		font-family: var(--font-sans);
 	}
 
 	.client-block {
@@ -764,26 +780,28 @@
 	.status-chip-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
-		padding: 0.45rem 0.8rem;
-		background: var(--paper-2);
-		border: 1px solid var(--line);
-		border-radius: 20px;
-		font-size: 0.82rem;
+		gap: 0.4rem;
+		padding: 0.5rem 0.95rem;
+		background: var(--paper);
+		border: 2px solid var(--line);
+		border-radius: 0;
+		font-size: 0.85rem;
+		font-weight: 600;
 		color: var(--ink-2);
 		cursor: pointer;
 		font-family: var(--font-sans);
-		transition: all 120ms ease;
+		transition: transform 0.1s, box-shadow 0.1s;
 	}
 	.status-chip-btn:hover {
-		border-color: var(--wn-zielony);
-		color: var(--wn-zielony-ink);
+		border-color: var(--wn-atrament);
+		color: var(--ink);
 	}
 	.status-chip-btn.active {
-		background: var(--wn-atrament);
-		color: var(--wn-plotno);
+		background: var(--wn-zielony);
+		color: var(--wn-atrament);
 		border-color: var(--wn-atrament);
-		font-weight: 500;
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+		transform: translate(-1px, -1px);
 	}
 
 	.timeline {
