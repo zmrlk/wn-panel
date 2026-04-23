@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import SidebarRail from '$lib/components/SidebarRail.svelte';
+	import type { ItemAvailability } from '$lib/availability';
 
 	let { data } = $props();
 
@@ -130,6 +131,71 @@
 
 	function fmtZl(zl: number) {
 		return zl.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+	}
+
+	// ─── AVAILABILITY CHECK ──────────────────────────────
+	let availability = $state<Record<string, ItemAvailability>>({});
+	let availabilityChecking = $state(false);
+	let availabilityError = $state<string | null>(null);
+
+	$effect(() => {
+		// Zbierz unikalne itemy z sumą ilości
+		const spec = new Map<string, number>();
+		for (const l of lines) {
+			if (!l.itemId) continue;
+			spec.set(l.itemId, (spec.get(l.itemId) ?? 0) + l.qty);
+		}
+
+		if (!eventStartDate || !eventEndDate || spec.size === 0) {
+			availability = {};
+			availabilityError = null;
+			return;
+		}
+
+		const controller = new AbortController();
+		const timer = setTimeout(async () => {
+			availabilityChecking = true;
+			availabilityError = null;
+			try {
+				const items = Array.from(spec.entries()).map(([itemId, requested]) => ({ itemId, requested }));
+				const res = await fetch('/api/availability', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ from: eventStartDate, to: eventEndDate, items }),
+					signal: controller.signal
+				});
+				if (!res.ok) {
+					availabilityError = `HTTP ${res.status}`;
+					return;
+				}
+				const data = (await res.json()) as { items: ItemAvailability[] };
+				const map: Record<string, ItemAvailability> = {};
+				for (const it of data.items) map[it.itemId] = it;
+				availability = map;
+			} catch (e) {
+				if ((e as Error).name !== 'AbortError') {
+					availabilityError = (e as Error).message;
+				}
+			} finally {
+				availabilityChecking = false;
+			}
+		}, 400);
+
+		return () => {
+			clearTimeout(timer);
+			controller.abort();
+		};
+	});
+
+	const conflictCount = $derived(Object.values(availability).filter((a) => !a.ok).length);
+
+	function conflictTitle(av: ItemAvailability): string {
+		if (av.conflicts.length === 0) {
+			return `Brak stanu magazynowego (totalQty = ${av.totalQty}).`;
+		}
+		return av.conflicts
+			.map((c) => `${c.eventName}: ${c.overlapFrom} – ${c.overlapTo} (${c.quantity} szt.)`)
+			.join('\n');
 	}
 </script>
 
@@ -267,12 +333,28 @@
 				<section class="card">
 					<header class="card-head">
 						<h2>4. Pozycje oferty</h2>
-						<span class="muted">{lines.length} {lines.length === 1 ? 'pozycja' : lines.length < 5 ? 'pozycje' : 'pozycji'}</span>
+						<span class="muted">
+							{lines.length} {lines.length === 1 ? 'pozycja' : lines.length < 5 ? 'pozycje' : 'pozycji'}
+							{#if availabilityChecking}· <span class="av-checking">sprawdzam dostępność…</span>{/if}
+						</span>
 					</header>
 					<p class="section-hint">
 						Po kliknięciu pakietu — items pakietu lecą z ceną 0 ("w zestawie"). <strong>Dopasuj ilości pod event</strong>
 						(np. 6 stołów zamiast 10, +więcej girland) albo zamień: kliknij × żeby usunąć, "+ Dodaj pozycję" żeby dodać inną.
 					</p>
+					{#if conflictCount > 0}
+						<div class="av-banner bad" role="alert">
+							⚠️ <strong>{conflictCount} {conflictCount === 1 ? 'konflikt' : 'konflikty'} magazynowy</strong>
+							— w wybranych datach brakuje niektórych pozycji. Sprawdź wiersze poniżej (najedź na czerwony badge po szczegóły).
+						</div>
+					{:else if Object.keys(availability).length > 0 && eventStartDate && eventEndDate}
+						<div class="av-banner ok">
+							✅ Wszystkie pozycje dostępne w wybranych datach ({eventStartDate} → {eventEndDate}).
+						</div>
+					{/if}
+					{#if availabilityError}
+						<div class="av-banner warn">⚠️ Nie udało się sprawdzić dostępności: {availabilityError}</div>
+					{/if}
 					<div class="card-body no-padding">
 						<table class="lines-table">
 							<thead>
@@ -293,7 +375,8 @@
 									</tr>
 								{/if}
 								{#each lines as line, i}
-									<tr class="line">
+									{@const av = line.itemId ? availability[line.itemId] : undefined}
+									<tr class="line" class:line-conflict={av && !av.ok}>
 										<td>
 											<select
 												name={`item_${i}_id`}
@@ -306,6 +389,17 @@
 													<option value={it.id}>{it.name} ({it.totalQty} szt.)</option>
 												{/each}
 											</select>
+											{#if av}
+												{#if av.ok}
+													<span class="av-pill ok" title="Dostępne w wybranym zakresie">
+														✅ {av.available}/{av.totalQty} wolne
+													</span>
+												{:else}
+													<span class="av-pill bad" title={conflictTitle(av)}>
+														❌ tylko {av.available}/{av.totalQty} — konflikt
+													</span>
+												{/if}
+											{/if}
 										</td>
 										<td>
 											<input name={`item_${i}_desc`} type="text" bind:value={line.desc} placeholder="Opis pozycji" class="f-desc" />
@@ -837,6 +931,56 @@
 		text-align: center;
 		color: var(--mute);
 		font-size: 0.85rem;
+	}
+	/* AVAILABILITY */
+	.av-banner {
+		margin: 0 1rem 0.75rem;
+		padding: 0.55rem 0.75rem;
+		border-radius: 6px;
+		font-size: 0.85rem;
+		line-height: 1.4;
+	}
+	.av-banner.bad {
+		background: color-mix(in srgb, var(--wn-pomidor) 12%, transparent);
+		border: 1px solid color-mix(in srgb, var(--wn-pomidor) 40%, transparent);
+		color: var(--wn-pomidor-ink, #7a1515);
+	}
+	.av-banner.ok {
+		background: color-mix(in srgb, var(--wn-zielony) 10%, transparent);
+		border: 1px solid color-mix(in srgb, var(--wn-zielony) 30%, transparent);
+		color: var(--wn-zielony-ink);
+	}
+	.av-banner.warn {
+		background: color-mix(in srgb, #eab308 15%, transparent);
+		border: 1px solid color-mix(in srgb, #eab308 40%, transparent);
+		color: #713f12;
+	}
+	.av-checking {
+		color: var(--wn-zielony-ink);
+		font-style: italic;
+	}
+	.av-pill {
+		display: inline-block;
+		margin-top: 4px;
+		padding: 1px 6px;
+		font-size: 0.7rem;
+		font-weight: 500;
+		border-radius: 4px;
+		line-height: 1.3;
+		white-space: nowrap;
+		cursor: help;
+	}
+	.av-pill.ok {
+		background: color-mix(in srgb, var(--wn-zielony) 15%, transparent);
+		color: var(--wn-zielony-ink);
+	}
+	.av-pill.bad {
+		background: color-mix(in srgb, var(--wn-pomidor) 18%, transparent);
+		color: var(--wn-pomidor-ink, #7a1515);
+		font-weight: 600;
+	}
+	.line-conflict {
+		background: color-mix(in srgb, var(--wn-pomidor) 5%, transparent);
 	}
 	.add-row td {
 		padding: 0;
