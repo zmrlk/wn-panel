@@ -19,8 +19,30 @@
 	} from '$lib/booking-stages';
 	import { fmtZl, fmtDate, fmtDateTime, eventRange, daysCount } from '$lib/formatters';
 
-	let { data } = $props();
+	let { data, form } = $props();
 	const z = $derived(data.zlecenie);
+
+	type AvailabilityConflictBooking = {
+		eventName: string;
+		from: string;
+		to: string;
+		quantity: number;
+	};
+	type AvailabilityConflictItem = {
+		name: string;
+		requested: number;
+		available: number;
+		totalQty: number;
+		bookings: AvailabilityConflictBooking[];
+	};
+	const availabilityConflict = $derived(
+		form?.error === 'availability_conflict'
+			? {
+					message: form.message as string,
+					conflicts: (form.conflicts as AvailabilityConflictItem[]) ?? []
+				}
+			: null
+	);
 
 	// State dla notes form → w NotesSection component (lokalny state)
 
@@ -142,6 +164,39 @@
 
 			<!-- 6. ZMIANA STATUSU (admin only) -->
 			{#if data.isAdmin}
+				{#if availabilityConflict}
+					<section class="av-conflict-card" role="alert">
+						<header class="avc-head">
+							<span class="avc-icon">🚫</span>
+							<h2>Nie można potwierdzić rezerwacji</h2>
+						</header>
+						<p class="avc-msg">{availabilityConflict.message}</p>
+						<ul class="avc-list">
+							{#each availabilityConflict.conflicts as c}
+								<li>
+									<strong>{c.name}</strong> — chcesz <strong>{c.requested} szt.</strong>,
+									dostępne <strong class="avc-bad">{c.available}/{c.totalQty}</strong>.
+									{#if c.bookings.length > 0}
+										<div class="avc-bookings">
+											Konflikt z:
+											<ul>
+												{#each c.bookings as b}
+													<li>
+														{b.eventName} <span class="avc-dates">({b.from} → {b.to}, {b.quantity} szt.)</span>
+													</li>
+												{/each}
+											</ul>
+										</div>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+						<p class="avc-hint">
+							Opcje: zmień pozycje w ofercie (mniej sztuk / inny namiot), zmień daty eventu,
+							albo skontaktuj się z klientem konfliktującej rezerwacji.
+						</p>
+					</section>
+				{/if}
 				<StatusChips zType={z.type} {currentUnified} {statusList} />
 			{/if}
 
@@ -562,5 +617,68 @@
 		}
 		/* .photo-form-row + .photos-grid mobile → PhotoGallery.svelte */
 		/* .status-chip-btn mobile → StatusChips.svelte */
+	}
+
+	/* AVAILABILITY CONFLICT BANNER (hard block offer→booking) */
+	.av-conflict-card {
+		background: color-mix(in srgb, var(--wn-pomidor, #dc2626) 8%, var(--paper, #fff));
+		border: 2px solid var(--wn-pomidor, #dc2626);
+		border-radius: 8px;
+		padding: 1rem 1.1rem;
+		box-shadow: 3px 3px 0 var(--ink, #111);
+	}
+	.avc-head {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-bottom: 0.6rem;
+	}
+	.avc-icon {
+		font-size: 1.3rem;
+	}
+	.avc-head h2 {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--wn-pomidor-ink, #7a1515);
+	}
+	.avc-msg {
+		margin: 0 0 0.75rem;
+		font-size: 0.9rem;
+		color: var(--ink, #111);
+	}
+	.avc-list {
+		margin: 0 0 0.75rem;
+		padding-left: 1.1rem;
+		font-size: 0.88rem;
+		line-height: 1.55;
+	}
+	.avc-list > li + li {
+		margin-top: 0.45rem;
+	}
+	.avc-bad {
+		color: var(--wn-pomidor, #dc2626);
+	}
+	.avc-bookings {
+		margin-top: 0.3rem;
+		padding-left: 0.4rem;
+		font-size: 0.82rem;
+		color: var(--ink-2, #444);
+	}
+	.avc-bookings ul {
+		margin: 0.25rem 0 0;
+		padding-left: 1rem;
+	}
+	.avc-dates {
+		font-family: var(--font-mono, monospace);
+		color: var(--mute, #777);
+	}
+	.avc-hint {
+		margin: 0;
+		padding: 0.55rem 0.75rem;
+		background: var(--paper-2, #faf7f2);
+		border-left: 3px solid var(--wn-pomidor, #dc2626);
+		font-size: 0.82rem;
+		color: var(--ink-2, #444);
 	}
 </style>

@@ -4,11 +4,15 @@ import { db } from '$lib/server/db';
 import { lead, offer, offerItem, booking, bookingTent } from '$lib/server/db/schema';
 import { unifiedToDbStatus } from '$lib/booking-stages';
 import { parseCompoundId } from '$lib/compound-id';
+import { checkAvailability } from '$lib/server/availability-check';
 
 /**
  * Update status dla lead/offer/booking.
  * Bonus: auto-konwersja offer.accepted → utwórz booking + booking_tent
  * + redirect do nowego bookingu.
+ *
+ * Hard block: przed offer → booking sprawdzamy availability. Jeśli konflikt,
+ * fail(409) z listą brakujących pozycji. Status oferty pozostaje niezmieniony.
  */
 export async function updateStatus(event: RequestEvent) {
 	const form = await event.request.formData();
@@ -20,12 +24,54 @@ export async function updateStatus(event: RequestEvent) {
 	const { type, id } = parsed;
 
 	const mapped = unifiedToDbStatus(type, bucket);
+
+	// ═══ HARD BLOCK: availability check przed offer → booking ═══
+	if (type === 'offer' && mapped === 'accepted') {
+		const [o] = await db.select().from(offer).where(eq(offer.id, id)).limit(1);
+		if (o && !o.convertedToBookingId) {
+			const items = await db.select().from(offerItem).where(eq(offerItem.offerId, id));
+			const tentItems = items.filter((i) => i.tentId);
+			if (tentItems.length > 0) {
+				const spec = new Map<string, number>();
+				for (const it of tentItems) {
+					if (!it.tentId) continue;
+					spec.set(it.tentId, (spec.get(it.tentId) ?? 0) + it.quantity);
+				}
+				const av = await checkAvailability(
+					o.eventStartDate,
+					o.eventEndDate,
+					Array.from(spec.entries()).map(([itemId, requested]) => ({ itemId, requested }))
+				);
+				if (av.hasConflicts) {
+					const bad = av.items.filter((i) => !i.ok);
+					return fail(409, {
+						error: 'availability_conflict',
+						message:
+							`Nie można potwierdzić rezerwacji: ${bad.length} ${bad.length === 1 ? 'pozycja niedostępna' : 'pozycji niedostępne'} ` +
+							`w wybranych datach (${o.eventStartDate} → ${o.eventEndDate}). Zmień pozycje lub daty.`,
+						conflicts: bad.map((c) => ({
+							name: c.name,
+							requested: c.requested,
+							available: c.available,
+							totalQty: c.totalQty,
+							bookings: c.conflicts.map((bc) => ({
+								eventName: bc.eventName,
+								from: bc.overlapFrom,
+								to: bc.overlapTo,
+								quantity: bc.quantity
+							}))
+						}))
+					});
+				}
+			}
+		}
+	}
+
 	const table = type === 'lead' ? lead : type === 'offer' ? offer : booking;
 	await db.update(table).set({ status: mapped, updatedAt: new Date() }).where(eq(table.id, id));
 
 	// ═══ AUTO-KONWERSJA: offer.accepted → utwórz booking + booking_tent ═══
-	// Gdy user klika "Wygrany" na ofercie: automatycznie tworzymy rezerwację.
-	// Przenosi items (tylko te z tentId != null) do booking_tent.
+	// Już po hard-block — availability potwierdzona.
 	if (type === 'offer' && mapped === 'accepted') {
 		const [o] = await db.select().from(offer).where(eq(offer.id, id)).limit(1);
 		if (o && !o.convertedToBookingId && o.clientId) {
@@ -44,7 +90,6 @@ export async function updateStatus(event: RequestEvent) {
 				})
 				.returning();
 
-			// Tylko items powiązane z magazynem (tentId != null) trafiają do booking_tent
 			const tentItems = items.filter((i) => i.tentId);
 			if (tentItems.length > 0) {
 				await db.insert(bookingTent).values(

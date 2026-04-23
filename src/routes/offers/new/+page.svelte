@@ -667,7 +667,7 @@
 		min-height: calc(100dvh - 64px);
 	}
 	.content {
-		padding: 1.25rem 1.5rem;
+		padding: 1.25rem 1.5rem 5.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
