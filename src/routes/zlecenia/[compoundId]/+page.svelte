@@ -291,6 +291,10 @@
 					<p class="status-hint">
 						Żeby wysłać ofertę → klik <strong>"+ Oferta z leada"</strong> w prawym górnym rogu (otwiera kalkulator). Po zapisaniu oferty lead automatycznie dostanie status <em>"oferta wysłana"</em>.
 					</p>
+				{:else if z.type === 'offer'}
+					<p class="status-hint">
+						Klik <strong>"Wygrany"</strong> = oferta przyjęta → automatycznie utworzymy rezerwację w magazynie (z items oferty).
+					</p>
 				{/if}
 				<form method="POST" action="?/updateStatus" class="status-form">
 					<div class="status-chips">
@@ -308,6 +312,59 @@
 						{/each}
 					</div>
 				</form>
+
+				{#if z.type === 'booking'}
+					<div class="booking-ops">
+						{#if z.status === 'confirmed'}
+							<form method="POST" action="?/dispatchBooking" class="op-form">
+								<p class="op-hint">
+									Rezerwacja potwierdzona. <strong>Wydaj na event</strong> — items znikną z magazynu do momentu zwrotu.
+								</p>
+								<button type="submit" class="btn-op dispatch">🚚 Wydaj na event</button>
+							</form>
+						{:else if z.status === 'in-progress'}
+							<form method="POST" action="?/returnBooking" class="op-form">
+								<p class="op-hint">
+									Event w trakcie. <strong>Zakończ + zwróć na magazyn</strong> — wpisz ile sztuk faktycznie wróciło (default = ile wydane). Różnica = strata.
+								</p>
+								{#if z.bookingTents.length > 0}
+									<table class="return-table">
+										<thead>
+											<tr>
+												<th>Pozycja</th>
+												<th class="num">Wydane</th>
+												<th class="num">Wróciło</th>
+												<th class="num">Strata</th>
+											</tr>
+										</thead>
+										<tbody>
+											{#each z.bookingTents as bt}
+												<tr>
+													<td>{bt.itemName}</td>
+													<td class="num">{bt.quantity}</td>
+													<td class="num">
+														<input
+															type="number"
+															name="return_{bt.tentId}"
+															min="0"
+															max={bt.quantity}
+															value={bt.quantity}
+															class="return-input"
+														/>
+													</td>
+													<td class="num diff">— auto —</td>
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								{:else}
+									<p class="op-hint-small">Brak pozycji magazynowych — tylko zmiana statusu.</p>
+								{/if}
+								<button type="submit" class="btn-op return">📦 Zakończ + zwróć</button>
+							</form>
+						{/if}
+					</div>
+				{/if}
 			</section>
 
 			<!-- 7. TIMELINE -->
@@ -802,6 +859,89 @@
 		border-color: var(--wn-atrament);
 		box-shadow: 3px 3px 0 var(--wn-atrament);
 		transform: translate(-1px, -1px);
+	}
+
+	.booking-ops {
+		margin-top: 1.25rem;
+		padding-top: 1.25rem;
+		border-top: 2px solid var(--line);
+	}
+	.op-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+	}
+	.op-hint {
+		margin: 0;
+		font-size: 0.88rem;
+		color: var(--ink-2);
+		line-height: 1.5;
+	}
+	.op-hint-small {
+		margin: 0;
+		font-size: 0.82rem;
+		color: var(--mute);
+		font-style: italic;
+	}
+	.btn-op {
+		padding: 0.65rem 1.3rem;
+		border: 2px solid var(--wn-atrament);
+		border-radius: 0;
+		font-size: 0.95rem;
+		font-weight: 700;
+		font-family: inherit;
+		cursor: pointer;
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+		transition: transform 0.1s, box-shadow 0.1s;
+		align-self: flex-start;
+	}
+	.btn-op.dispatch {
+		background: var(--wn-zarowka);
+		color: var(--wn-atrament);
+	}
+	.btn-op.return {
+		background: var(--wn-zielony);
+		color: var(--wn-atrament);
+	}
+	.btn-op:hover {
+		transform: translate(-1px, -1px);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
+	}
+	.btn-op:active {
+		transform: translate(1px, 1px);
+		box-shadow: 1px 1px 0 var(--wn-atrament);
+	}
+	.return-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.88rem;
+	}
+	.return-table th,
+	.return-table td {
+		text-align: left;
+		padding: 0.4rem 0.5rem;
+		border-bottom: 1px solid var(--line);
+	}
+	.return-table th {
+		font-weight: 600;
+		color: var(--mute);
+		font-size: 0.72rem;
+		text-transform: uppercase;
+	}
+	.return-table .num {
+		text-align: right;
+	}
+	.return-input {
+		width: 70px;
+		padding: 0.3rem 0.5rem;
+		border: 1px solid var(--line);
+		text-align: right;
+		font-family: var(--font-mono);
+		border-radius: 0;
+	}
+	.return-input:focus {
+		outline: none;
+		border-color: var(--wn-zielony);
 	}
 
 	.timeline {

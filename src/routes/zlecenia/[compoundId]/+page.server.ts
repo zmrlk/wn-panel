@@ -1,6 +1,15 @@
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { lead, offer, offerItem, booking, bookingTent, client, item } from '$lib/server/db/schema';
+import {
+	lead,
+	offer,
+	offerItem,
+	booking,
+	bookingTent,
+	client,
+	item,
+	stockMovement
+} from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
 
@@ -48,6 +57,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		};
 		totalCents: number | null;
 		items: Array<{ description: string; quantity: number; unitPriceCents: number; lineTotalCents: number }>;
+		// Booking-only: raw booking_tent do akcji dispatch/return
+		bookingTents: Array<{ tentId: string; itemName: string; quantity: number }>;
 		notes: string | null;
 		message: string | null;
 		source: string | null;
@@ -109,6 +120,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			},
 			totalCents: null,
 			items: [],
+			bookingTents: [],
 			notes: l.notes,
 			message: l.message,
 			source: l.source,
@@ -161,6 +173,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				unitPriceCents: i.unitPriceCents,
 				lineTotalCents: i.lineTotalCents
 			})),
+			bookingTents: [],
 			notes: o.offer.notes,
 			message: null,
 			source: null,
@@ -215,6 +228,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				unitPriceCents: bi.item?.pricePerDayCents ?? 0,
 				lineTotalCents: (bi.item?.pricePerDayCents ?? 0) * bi.bookingTent.quantity
 			})),
+			bookingTents: bookedItems
+				.filter((bi) => bi.item)
+				.map((bi) => ({
+					tentId: bi.bookingTent.tentId,
+					itemName: bi.item?.name ?? 'Pozycja',
+					quantity: bi.bookingTent.quantity
+				})),
 			notes: b.booking.notes,
 			message: null,
 			source: null,
@@ -345,6 +365,101 @@ export const actions: Actions = {
 		const [existing] = await db.select({ notes: table.notes }).from(table).where(eq(table.id, id));
 		const combined = existing?.notes ? `${entry}\n\n${existing.notes}` : entry;
 		await db.update(table).set({ notes: combined, updatedAt: new Date() }).where(eq(table.id, id));
+		return { success: true };
+	},
+
+	// ═══ Wydaj booking na event: confirmed → in-progress + OUT movements ═══
+	dispatchBooking: async ({ params, locals }) => {
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx);
+		const id = compound.slice(dashIdx + 1);
+		if (type !== 'booking') return fail(400, { error: 'Tylko dla bookingów' });
+
+		const [b] = await db.select().from(booking).where(eq(booking.id, id)).limit(1);
+		if (!b) return fail(404);
+		if (b.status !== 'confirmed') return fail(400, { error: 'Booking nie jest w stanie confirmed' });
+
+		const tents = await db.select().from(bookingTent).where(eq(bookingTent.bookingId, id));
+		const userId = locals.user?.id ?? null;
+
+		// Dla każdego booking_tent — wystaw OUT wydanie_na_event
+		if (tents.length > 0) {
+			await db.insert(stockMovement).values(
+				tents.map((t) => ({
+					itemId: t.tentId,
+					direction: 'OUT',
+					kind: 'wydanie_na_event',
+					qty: t.quantity,
+					bookingId: id,
+					reason: `Wydanie na event: ${b.eventName}`,
+					createdBy: userId
+				}))
+			);
+		}
+
+		await db
+			.update(booking)
+			.set({ status: 'in-progress', updatedAt: new Date() })
+			.where(eq(booking.id, id));
+		return { success: true };
+	},
+
+	// ═══ Zakończ booking: in-progress → done + IN movements (zwrot) + ew. straty ═══
+	returnBooking: async ({ request, params, locals }) => {
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx);
+		const id = compound.slice(dashIdx + 1);
+		if (type !== 'booking') return fail(400, { error: 'Tylko dla bookingów' });
+
+		const form = await request.formData();
+		const [b] = await db.select().from(booking).where(eq(booking.id, id)).limit(1);
+		if (!b) return fail(404);
+		if (b.status !== 'in-progress') return fail(400, { error: 'Booking nie jest in-progress' });
+
+		const tents = await db.select().from(bookingTent).where(eq(bookingTent.bookingId, id));
+		const userId = locals.user?.id ?? null;
+
+		const movements: Array<typeof stockMovement.$inferInsert> = [];
+		for (const t of tents) {
+			const issued = t.quantity;
+			const returnedRaw = form.get(`return_${t.tentId}`)?.toString();
+			const returned = returnedRaw != null ? Math.max(0, Math.min(issued, Number(returnedRaw))) : issued;
+			const lost = issued - returned;
+
+			if (returned > 0) {
+				movements.push({
+					itemId: t.tentId,
+					direction: 'IN',
+					kind: 'zwrot_po_evencie',
+					qty: returned,
+					bookingId: id,
+					reason: `Zwrot po evencie: ${b.eventName}`,
+					createdBy: userId
+				});
+			}
+			if (lost > 0) {
+				movements.push({
+					itemId: t.tentId,
+					direction: 'OUT',
+					kind: 'strata',
+					qty: lost,
+					bookingId: id,
+					reason: `Strata po evencie: ${b.eventName} (${lost} szt. nie wróciło)`,
+					createdBy: userId
+				});
+			}
+		}
+
+		if (movements.length > 0) {
+			await db.insert(stockMovement).values(movements);
+		}
+
+		await db
+			.update(booking)
+			.set({ status: 'done', updatedAt: new Date() })
+			.where(eq(booking.id, id));
 		return { success: true };
 	}
 };
