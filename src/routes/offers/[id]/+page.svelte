@@ -5,7 +5,7 @@
 		if (cents == null) return '—';
 		return (cents / 100).toLocaleString('pl-PL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' zł';
 	}
-	function fmtDate(iso: string | null | undefined) {
+	function fmtDate(iso: string | Date | null | undefined) {
 		if (!iso) return '—';
 		return new Date(iso).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
 	}
