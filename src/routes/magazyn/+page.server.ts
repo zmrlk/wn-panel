@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { pkg, item, stockMovement, booking } from '$lib/server/db/schema';
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, desc, eq, isNull } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -14,7 +14,11 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const [packages, items, movements] = await Promise.all([
 		db.select().from(pkg).orderBy(asc(pkg.sortOrder)),
-		db.select().from(item).orderBy(asc(item.category), asc(item.name)),
+		db
+			.select()
+			.from(item)
+			.where(isNull(item.archivedAt))
+			.orderBy(asc(item.category), asc(item.name)),
 		db
 			.select({
 				id: stockMovement.id,
@@ -166,6 +170,18 @@ export const actions: Actions = {
 		const reason = form.get('reason')?.toString() ?? '';
 		if (!itemId || !direction || !kind || qty <= 0) return fail(400);
 		await db.insert(stockMovement).values({ itemId, direction, kind, qty, reason });
+		return { success: true };
+	},
+
+	// Soft delete — ukryj pozycję z listy (archivedAt=now). Zachowuje historię ruchów.
+	archiveItem: async ({ request }) => {
+		const form = await request.formData();
+		const id = form.get('id')?.toString();
+		if (!id) return fail(400);
+		await db
+			.update(item)
+			.set({ archivedAt: new Date(), updatedAt: new Date() })
+			.where(eq(item.id, id));
 		return { success: true };
 	}
 };

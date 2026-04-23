@@ -249,6 +249,15 @@
 												<td class="num price">{fmtZl(it.pricePerDayCents)}</td>
 												<td class="actions">
 													<button class="row-edit" onclick={() => (editingItemId = it.id)}>Edytuj</button>
+													<form method="POST" action="?/archiveItem" style="display:inline;">
+														<input type="hidden" name="id" value={it.id} />
+														<button
+															type="submit"
+															class="row-del"
+															title="Usuń pozycję (zachowa historię ruchów)"
+															onclick={(e) => { if (!confirm(`Usunąć \"${it.name}\"? Historia ruchów zostanie zachowana.`)) e.preventDefault(); }}
+														>Usuń</button>
+													</form>
 												</td>
 											</tr>
 										{/if}
@@ -819,6 +828,17 @@
 	.data-table td.actions {
 		text-align: right;
 	}
+	.row-del {
+		padding: 0.25rem 0.55rem;
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--wn-pomidor);
+		cursor: pointer;
+		font-size: 0.75rem;
+		margin-left: 0.25rem;
+		font-family: inherit;
+	}
+	.row-del:hover { border-color: var(--wn-pomidor); }
 	.row-edit {
 		padding: 0.22rem 0.55rem;
 		background: transparent;
