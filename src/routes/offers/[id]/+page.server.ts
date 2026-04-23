@@ -1,17 +1,69 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { offer, offerItem, client, item, appSetting } from '$lib/server/db/schema';
+import { offer, offerItem, client, item, appSetting, offerDocument } from '$lib/server/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import QRCode from 'qrcode';
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const user = locals.user ?? {
 		id: 'preview',
 		name: 'Denis',
 		email: 'denis@wolnynamiot.pl',
 		role: 'admin'
 	};
+
+	// ═══ SNAPSHOT MODE: jeśli ?version=<id> → renderuj z offer_document ═══
+	const versionId = url.searchParams.get('version');
+	if (versionId) {
+		const [doc] = await db
+			.select()
+			.from(offerDocument)
+			.where(eq(offerDocument.id, versionId))
+			.limit(1);
+		if (!doc) throw error(404, { message: 'Snapshot nie istnieje' });
+		if (doc.offerId !== params.id) throw error(400, { message: 'Snapshot należy do innej oferty' });
+
+		const snap = doc.snapshot as Record<string, unknown>;
+		const snapOffer = (snap.offer ?? {}) as Record<string, unknown>;
+		const snapClient = (snap.client ?? {}) as Record<string, unknown>;
+		return {
+			user,
+			offer: {
+				id: snapOffer.id ?? params.id,
+				number: snapOffer.number ?? '?',
+				eventName: snapOffer.eventName,
+				eventStartDate: snapOffer.eventStartDate,
+				eventEndDate: snapOffer.eventEndDate,
+				venue: snapOffer.venue,
+				totalCents: snapOffer.totalCents,
+				validUntil: snapOffer.validUntil,
+				status: snapOffer.status,
+				sentAt: doc.sentAt,
+				viewedAt: null,
+				acceptedAt: null,
+				notes: snapOffer.notes,
+				createdAt: doc.createdAt,
+				clientId: snapClient.id ?? null,
+				clientName: snapClient.name ?? null,
+				clientCompany: snapClient.company ?? null,
+				clientPhone: snapClient.phone ?? null,
+				clientEmail: snapClient.email ?? null,
+				clientAddress: snapClient.address ?? null
+			},
+			items: (snap.items as unknown[]) ?? [],
+			primaryTent: snap.primaryTent ?? null,
+			company: snap.company ?? {},
+			qrSvg: snap.qrSvg ?? '',
+			qrTargetUrl: snap.qrTargetUrl ?? '',
+			snapshotInfo: {
+				id: doc.id,
+				capturedAt: doc.createdAt,
+				note: doc.note,
+				sentToEmail: doc.sentToEmail
+			}
+		};
+	}
 
 	const [o] = await db
 		.select({

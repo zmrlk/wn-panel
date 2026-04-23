@@ -334,6 +334,27 @@ export const offerItem = pgTable('offer_item', {
 	lineTotalCents: integer('line_total_cents').notNull() // snapshot (quantity × unit_price × days)
 });
 
+// Offer document snapshot — migawka stanu oferty PRZY wysłaniu / snapshot
+// Dzięki temu po edycji oferty widzimy DOKŁADNIE co dostał klient.
+export const offerDocument = pgTable('offer_document', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	offerId: uuid('offer_id')
+		.notNull()
+		.references(() => offer.id, { onDelete: 'cascade' }),
+	snapshot: jsonb('snapshot').$type<Record<string, unknown>>().notNull().default({}),
+	note: text('note'),
+	sentToEmail: text('sent_to_email'),
+	sentAt: timestamp('sent_at'),
+	resendId: text('resend_id'),
+	createdBy: text('created_by').references(() => user.id),
+	createdAt: timestamp('created_at').notNull().defaultNow()
+});
+
+export const offerDocumentRelations = relations(offerDocument, ({ one }) => ({
+	offer: one(offer, { fields: [offerDocument.offerId], references: [offer.id] }),
+	creator: one(user, { fields: [offerDocument.createdBy], references: [user.id] })
+}));
+
 // Email log — tracking wysyłek przez Resend (bounces, opens, clicks)
 export const emailLog = pgTable('email_log', {
 	id: uuid('id').primaryKey().defaultRandom(),

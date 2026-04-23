@@ -34,6 +34,11 @@
 		<a href="/zlecenia" class="back-link">← Zlecenia</a>
 		<span class="tb-number">{data.offer.number}</span>
 		<span class="tb-status status-{data.offer.status}">{data.offer.status}</span>
+		{#if data.snapshotInfo}
+			<span class="tb-snapshot-badge">
+				📸 snapshot · {fmtDate(data.snapshotInfo.capturedAt)}
+			</span>
+		{/if}
 	</div>
 	<div class="tb-right">
 		<button class="btn-ghost" disabled>✉️ Wyślij Resend (jutro)</button>
@@ -865,6 +870,20 @@
 		.tent-card.wide .tent-photo { width: 100%; aspect-ratio: 16/10; }
 		.proces-compact { grid-template-columns: 1fr 1fr; }
 		.kontakt-info { grid-template-columns: 1fr; }
+	}
+
+	/* SNAPSHOT badge w topbar */
+	.tb-snapshot-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.25rem 0.6rem;
+		background: color-mix(in srgb, #eab308 22%, transparent);
+		color: #713f12;
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 11px;
+		font-weight: 600;
+		border-radius: 4px;
 	}
 
 	/* ═══ PAGE 1b: PRIMARY TENT HERO ═══ */

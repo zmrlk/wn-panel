@@ -95,6 +95,17 @@
 			<div class="top-right">
 				{#if z.type === 'offer'}
 					<a href={`/offers/${z.id}`} class="btn-ghost">🖨️ PDF oferty</a>
+					{#if data.isAdmin}
+						<form method="POST" action="?/snapshotOffer" style="display:inline;">
+							<button
+								type="submit"
+								class="btn-ghost"
+								title="Zamrażamy aktualny stan oferty — tak widzi ją klient. Przydatne przed wysłaniem."
+							>
+								📸 Snapshot
+							</button>
+						</form>
+					{/if}
 					{#if z.client?.email && data.isAdmin}
 						<form method="POST" action="?/sendOfferEmail" style="display:inline;">
 							<button
@@ -161,6 +172,40 @@
 
 			<!-- 5. NOTATKI + ADD FORM -->
 			<NotesSection notes={z.notes} />
+
+			<!-- 5b. PDF SNAPSHOT HISTORIA (tylko offer) -->
+			{#if z.type === 'offer' && data.offerSnapshots && data.offerSnapshots.length > 0}
+				<section class="card snapshot-history">
+					<header class="sh-head">
+						<h2>📸 Wysłane wersje PDF</h2>
+						<span class="sh-count">{data.offerSnapshots.length}</span>
+					</header>
+					<p class="sh-hint">
+						Każdy snapshot zamraża aktualny stan oferty (klient, pozycje, ceny,
+						namiot hero) w momencie kliku. Po edycji oferty zobaczysz
+						<strong>dokładnie co klient dostał</strong> w danej wersji.
+					</p>
+					<ul class="sh-list">
+						{#each data.offerSnapshots as s, i}
+							<li class="sh-item">
+								<div class="sh-meta">
+									<span class="sh-version">v{data.offerSnapshots.length - i}</span>
+									<span class="sh-date">{fmtDateTime(s.createdAt)}</span>
+									{#if s.sentToEmail}
+										<span class="sh-email">→ {s.sentToEmail}</span>
+									{/if}
+								</div>
+								{#if s.note}
+									<div class="sh-note">📝 {s.note}</div>
+								{/if}
+								<a href={`/offers/${z.id}?version=${s.id}`} target="_blank" class="sh-link">
+									Otwórz tę wersję →
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</section>
+			{/if}
 
 			<!-- 6. ZMIANA STATUSU (admin only) -->
 			{#if data.isAdmin}
@@ -617,6 +662,91 @@
 		}
 		/* .photo-form-row + .photos-grid mobile → PhotoGallery.svelte */
 		/* .status-chip-btn mobile → StatusChips.svelte */
+	}
+
+	/* PDF SNAPSHOT HISTORIA */
+	.snapshot-history {
+		background: color-mix(in srgb, var(--wn-granat, #1e3a5f) 3%, var(--paper, #fff));
+	}
+	.sh-head {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-bottom: 0.6rem;
+	}
+	.sh-head h2 {
+		margin: 0;
+		font-size: 1rem;
+	}
+	.sh-count {
+		font-size: 0.72rem;
+		font-weight: 600;
+		padding: 0.15rem 0.5rem;
+		background: color-mix(in srgb, var(--wn-granat, #1e3a5f) 15%, transparent);
+		color: var(--wn-granat, #1e3a5f);
+		border-radius: 4px;
+	}
+	.sh-hint {
+		margin: 0 0 0.85rem;
+		font-size: 0.82rem;
+		color: var(--ink-2, #444);
+		line-height: 1.45;
+	}
+	.sh-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.sh-item {
+		padding: 0.65rem 0.85rem;
+		border: 1px solid var(--line, #e0e0dd);
+		border-radius: 4px;
+		background: var(--paper, #fff);
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+	}
+	.sh-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		align-items: baseline;
+		font-size: 0.82rem;
+	}
+	.sh-version {
+		font-family: var(--font-mono, monospace);
+		font-weight: 700;
+		color: var(--wn-zielony-ink, #1a5a2e);
+		padding: 0.1rem 0.45rem;
+		background: color-mix(in srgb, var(--wn-zielony, #2a8a4a) 15%, transparent);
+		border-radius: 3px;
+	}
+	.sh-date {
+		font-family: var(--font-mono, monospace);
+		color: var(--mute, #777);
+	}
+	.sh-email {
+		font-family: var(--font-mono, monospace);
+		font-size: 0.78rem;
+		color: var(--ink-2, #444);
+	}
+	.sh-note {
+		font-size: 0.85rem;
+		color: var(--ink-2, #444);
+		font-style: italic;
+	}
+	.sh-link {
+		align-self: flex-start;
+		font-size: 0.82rem;
+		color: var(--wn-zielony-ink, #1a5a2e);
+		text-decoration: none;
+		font-weight: 600;
+	}
+	.sh-link:hover {
+		text-decoration: underline;
 	}
 
 	/* AVAILABILITY CONFLICT BANNER (hard block offer→booking) */

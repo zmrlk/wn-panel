@@ -4,6 +4,7 @@ import {
 	lead,
 	offer,
 	offerItem,
+	offerDocument,
 	booking,
 	bookingTent,
 	client,
@@ -443,7 +444,30 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		availableUsers = rows.map((r) => ({ id: r.id, name: r.name, skills: r.skills ?? [] }));
 	}
 
-	return { user: me, isAdmin: me.role === 'admin', zlecenie, availableUsers };
+	// Snapshoty PDF — tylko dla type=offer (historia wysłanych wersji)
+	let offerSnapshots: Array<{
+		id: string;
+		createdAt: Date;
+		note: string | null;
+		sentToEmail: string | null;
+		sentAt: Date | null;
+	}> = [];
+	if (type === 'offer') {
+		const rows = await db
+			.select({
+				id: offerDocument.id,
+				createdAt: offerDocument.createdAt,
+				note: offerDocument.note,
+				sentToEmail: offerDocument.sentToEmail,
+				sentAt: offerDocument.sentAt
+			})
+			.from(offerDocument)
+			.where(eq(offerDocument.offerId, id))
+			.orderBy(desc(offerDocument.createdAt));
+		offerSnapshots = rows;
+	}
+
+	return { user: me, isAdmin: me.role === 'admin', zlecenie, availableUsers, offerSnapshots };
 };
 
 /**
@@ -461,6 +485,7 @@ export const actions: Actions = {
 	addPayment: bookingActions.addPayment,
 	deletePayment: bookingActions.deletePayment,
 	returnBooking: bookingActions.returnBooking,
-	sendOfferEmail: bookingActions.sendOfferEmail
+	sendOfferEmail: bookingActions.sendOfferEmail,
+	snapshotOffer: bookingActions.snapshotOffer
 };
 

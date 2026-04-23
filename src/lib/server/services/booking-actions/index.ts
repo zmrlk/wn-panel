@@ -12,3 +12,4 @@ export { uploadPhoto, deletePhoto } from './photo';
 export { addPayment, deletePayment } from './payment';
 export { returnBooking } from './return-booking';
 export { sendOfferEmail } from './send-offer';
+export { snapshotOffer } from './snapshot-offer';
