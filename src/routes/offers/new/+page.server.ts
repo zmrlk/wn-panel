@@ -1,10 +1,10 @@
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { pkg, item, client, offer, offerItem } from '$lib/server/db/schema';
+import { pkg, pkgItem, item, client, offer, offerItem, lead } from '$lib/server/db/schema';
 import { asc, sql, eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const user = locals.user ?? {
 		id: 'preview',
 		name: 'Denis',
@@ -12,13 +12,57 @@ export const load: PageServerLoad = async ({ locals }) => {
 		role: 'admin'
 	};
 
-	const [packages, items, clients] = await Promise.all([
+	const [packages, packageItems, items, clients] = await Promise.all([
 		db.select().from(pkg).where(eq(pkg.active, true)).orderBy(asc(pkg.sortOrder)),
+		db
+			.select({
+				packageId: pkgItem.packageId,
+				itemId: pkgItem.itemId,
+				customLabel: pkgItem.customLabel,
+				quantity: pkgItem.quantity,
+				itemName: item.name,
+				itemPriceCents: item.pricePerDayCents
+			})
+			.from(pkgItem)
+			.leftJoin(item, eq(pkgItem.itemId, item.id)),
 		db.select().from(item).orderBy(asc(item.category), asc(item.name)),
 		db.select().from(client).orderBy(asc(client.name))
 	]);
 
-	return { user, packages, items, clients };
+	// Prefill z leadId (jeśli user przyszedł z /zlecenia/lead-X "+ Oferta z leada")
+	let prefill: {
+		leadId?: string;
+		clientName?: string;
+		clientPhone?: string;
+		clientEmail?: string;
+		eventName?: string;
+		eventStartDate?: string;
+		eventEndDate?: string;
+		venue?: string;
+		notes?: string;
+		guestsCount?: number | null;
+	} | null = null;
+
+	const leadId = url.searchParams.get('leadId');
+	if (leadId) {
+		const [l] = await db.select().from(lead).where(eq(lead.id, leadId)).limit(1);
+		if (l) {
+			prefill = {
+				leadId: l.id,
+				clientName: l.name,
+				clientPhone: l.phone ?? undefined,
+				clientEmail: l.email ?? undefined,
+				eventName: l.eventName ?? '',
+				eventStartDate: l.eventDateHint ?? '',
+				eventEndDate: l.eventDateHint ?? '',
+				venue: l.venueHint ?? '',
+				notes: l.message ? `Z leada: ${l.message}` : '',
+				guestsCount: l.guestsCount
+			};
+		}
+	}
+
+	return { user, packages, packageItems, items, clients, prefill };
 };
 
 export const actions: Actions = {
@@ -86,11 +130,14 @@ export const actions: Actions = {
 
 		const totalCents = Math.round(lines.reduce((s, l) => s + l.lineTotal, 0) * 100);
 
-		// Insert offer
+		const leadIdFromForm = form.get('leadId')?.toString() || null;
+
+		// Insert offer (link do leada jeśli z leadId)
 		const [created] = await db
 			.insert(offer)
 			.values({
 				number,
+				leadId: leadIdFromForm,
 				clientId: resolvedClientId,
 				eventName,
 				eventStartDate,
@@ -116,6 +163,19 @@ export const actions: Actions = {
 			);
 		}
 
-		throw redirect(303, '/offers');
+		// Jeśli z leada → auto-set lead.status = 'quoted' + link convertedToClientId
+		if (leadIdFromForm) {
+			await db
+				.update(lead)
+				.set({
+					status: 'quoted',
+					convertedToClientId: resolvedClientId,
+					updatedAt: new Date()
+				})
+				.where(eq(lead.id, leadIdFromForm));
+		}
+
+		// Redirect do detail oferty (żeby user widział PDF od razu)
+		throw redirect(303, `/zlecenia/offer-${created.id}`);
 	}
 };

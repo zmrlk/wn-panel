@@ -13,9 +13,7 @@
 		lead: [
 			{ id: 'new', label: 'Nowy', emoji: '🆕' },
 			{ id: 'contacted', label: 'Skontaktowany', emoji: '📞' },
-			{ id: 'qualified', label: 'Kwalifikowany', emoji: '🎯' },
-			{ id: 'quoted', label: 'Oferta wysłana', emoji: '✉️' },
-			{ id: 'won', label: 'Wygrany', emoji: '✅' },
+			{ id: 'qualified', label: 'Kwalifikowany (hot)', emoji: '🎯' },
 			{ id: 'lost', label: 'Przegrany', emoji: '✕' },
 			{ id: 'archived', label: 'Archiwum', emoji: '📦' }
 		],
@@ -244,11 +242,15 @@
 					<form
 						method="POST"
 						action="?/addNote"
-						use:enhance={() => async ({ update }) => {
-							await update();
-							newNote = '';
-							addingNote = false;
-							await invalidateAll();
+						use:enhance={() => {
+							return async ({ result, update }) => {
+								if (result.type === 'success') {
+									newNote = '';
+									addingNote = false;
+								}
+								await update();
+								await invalidateAll();
+							};
 						}}
 						class="note-form"
 					>
@@ -261,7 +263,7 @@
 							autofocus
 						></textarea>
 						<div class="note-actions">
-							<button type="button" class="btn-ghost-sm" onclick={() => (addingNote = false)}>Anuluj</button>
+							<button type="button" class="btn-ghost-sm" onclick={() => { addingNote = false; newNote = ''; }}>Anuluj</button>
 							<button type="submit" class="btn-primary-sm">Zapisz notatkę</button>
 						</div>
 					</form>
@@ -280,12 +282,19 @@
 			<!-- 6. ZMIANA STATUSU -->
 			<section class="card">
 				<h2>Status</h2>
+				{#if z.type === 'lead'}
+					<p class="status-hint">
+						Żeby wysłać ofertę → klik <strong>"+ Oferta z leada"</strong> w prawym górnym rogu (otwiera kalkulator). Po zapisaniu oferty lead automatycznie dostanie status <em>"oferta wysłana"</em>.
+					</p>
+				{/if}
 				<form
 					method="POST"
 					action="?/updateStatus"
-					use:enhance={() => async ({ update }) => {
-						await update();
-						await invalidateAll();
+					use:enhance={() => {
+						return async ({ update }) => {
+							await update();
+							await invalidateAll();
+						};
 					}}
 					class="status-form"
 				>
@@ -511,6 +520,12 @@
 		flex-direction: column;
 		gap: 1rem;
 		max-width: 900px;
+		margin: 0 auto;
+		width: 100%;
+	}
+	.topbar {
+		padding-left: max(1.5rem, calc((100% - 900px) / 2));
+		padding-right: max(1.5rem, calc((100% - 900px) / 2));
 	}
 
 	.card {
@@ -727,6 +742,23 @@
 		font-style: italic;
 	}
 
+	.status-hint {
+		margin: 0 0 0.85rem;
+		padding: 0.6rem 0.85rem;
+		background: color-mix(in srgb, var(--wn-zielony) 8%, transparent);
+		border-left: 3px solid var(--wn-zielony);
+		border-radius: 0 6px 6px 0;
+		font-size: 0.85rem;
+		color: var(--ink-2);
+	}
+	.status-hint strong {
+		color: var(--ink);
+	}
+	.status-hint em {
+		font-style: italic;
+		color: var(--wn-zielony-ink);
+	}
+
 	/* STATUS buttons */
 	.status-chips {
 		display: flex;
@@ -796,8 +828,44 @@
 	@media (max-width: 720px) {
 		.app {
 			grid-template-columns: 1fr;
+			padding-bottom: 60px;
 		}
 		.rail {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			top: auto;
+			height: 60px;
+			width: 100%;
+			flex-direction: row;
+			border-top: 1px solid rgba(255, 255, 255, 0.08);
+			z-index: 50;
+		}
+		.logo {
+			display: none;
+		}
+		.rail-nav {
+			flex-direction: row;
+			padding: 0;
+			flex: 1;
+			justify-content: space-around;
+			gap: 0;
+		}
+		.rail-item {
+			width: auto;
+			padding: 0.4rem 0.5rem;
+		}
+		.rail-indicator {
+			top: 0;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 28px;
+			height: 2px;
+			border-radius: 0 0 2px 2px;
+		}
+		.rail-sep,
+		.rail-foot {
 			display: none;
 		}
 	}

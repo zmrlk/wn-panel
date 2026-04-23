@@ -31,17 +31,20 @@
 		unitPrice: number; // zł / dzień / sztuka
 	};
 
-	let clientMode = $state<'existing' | 'new'>('existing');
-	let selectedClientId = $state<string>(data.clients[0]?.id ?? '');
-	let newClientName = $state('');
-	let newClientPhone = $state('');
-	let newClientEmail = $state('');
+	// Prefill z leada
+	const p = data.prefill;
 
-	let eventName = $state('');
-	let eventStartDate = $state('');
-	let eventEndDate = $state('');
-	let venue = $state('');
-	let notes = $state('');
+	let clientMode = $state<'existing' | 'new'>(p ? 'new' : 'existing');
+	let selectedClientId = $state<string>(data.clients[0]?.id ?? '');
+	let newClientName = $state(p?.clientName ?? '');
+	let newClientPhone = $state(p?.clientPhone ?? '');
+	let newClientEmail = $state(p?.clientEmail ?? '');
+
+	let eventName = $state(p?.eventName ?? '');
+	let eventStartDate = $state(p?.eventStartDate ?? '');
+	let eventEndDate = $state(p?.eventEndDate ?? '');
+	let venue = $state(p?.venue ?? '');
+	let notes = $state(p?.notes ?? '');
 
 	let selectedPackageId = $state<string>('');
 
@@ -81,18 +84,33 @@
 
 	function applyPackage(pkgId: string) {
 		selectedPackageId = pkgId;
-		const p = data.packages.find((x) => x.id === pkgId);
-		if (!p) return;
-		// Pre-fill lines z pakietu (jako custom description bo pakiet nie mapuje się 1:1 na items)
-		lines = [
-			{
-				itemId: null,
-				desc: `${p.name} (pakiet)`,
-				qty: 1,
-				days: 1, // pakiet = 1 event, nie per day
-				unitPrice: p.priceFromCents / 100
-			}
-		];
+		const pkg = data.packages.find((x) => x.id === pkgId);
+		if (!pkg) return;
+
+		// Ładuj items z package_items (synced z magazynu)
+		const items = data.packageItems.filter((pi) => pi.packageId === pkgId);
+
+		if (items.length > 0) {
+			// Pakiet ma zdefiniowane pozycje z magazynu
+			lines = items.map((pi) => ({
+				itemId: pi.itemId ?? null,
+				desc: pi.itemName ?? pi.customLabel ?? 'Pozycja',
+				qty: pi.quantity,
+				days,
+				unitPrice: pi.itemPriceCents ? pi.itemPriceCents / 100 : 0
+			}));
+		} else {
+			// Pakiet bez pozycji — daj jedną flat-price line
+			lines = [
+				{
+					itemId: null,
+					desc: `${pkg.name} (cena stała)`,
+					qty: 1,
+					days: 1,
+					unitPrice: pkg.priceFromCents / 100
+				}
+			];
+		}
 	}
 
 	function lineTotal(l: Line) {
@@ -162,6 +180,9 @@
 		</header>
 
 		<form method="POST" action="?/create" use:enhance class="offer-form">
+			{#if p?.leadId}
+				<input type="hidden" name="leadId" value={p.leadId} />
+			{/if}
 			<div class="content">
 				<!-- 1. Klient -->
 				<section class="card">

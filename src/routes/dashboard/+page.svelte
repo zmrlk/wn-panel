@@ -827,11 +827,47 @@
 	}
 
 	/* ─── RESPONSIVE ──────────────────────────────────── */
-	@media (max-width: 900px) {
+	@media (max-width: 720px) {
 		.app {
 			grid-template-columns: 1fr;
+			padding-bottom: 60px;
 		}
 		.rail {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			top: auto;
+			height: 60px;
+			width: 100%;
+			flex-direction: row;
+			border-top: 1px solid rgba(255, 255, 255, 0.08);
+			z-index: 50;
+		}
+		.logo {
+			display: none;
+		}
+		.rail-nav {
+			flex-direction: row;
+			padding: 0;
+			flex: 1;
+			justify-content: space-around;
+			gap: 0;
+		}
+		.rail-item {
+			width: auto;
+			padding: 0.4rem 0.5rem;
+		}
+		.rail-indicator {
+			top: 0;
+			left: 50%;
+			transform: translateX(-50%);
+			width: 28px;
+			height: 2px;
+			border-radius: 0 0 2px 2px;
+		}
+		.rail-sep,
+		.rail-foot {
 			display: none;
 		}
 		.grid-2 {
@@ -840,6 +876,7 @@
 		.topbar {
 			flex-direction: column;
 			align-items: flex-start;
+			gap: 0.5rem;
 		}
 	}
 </style>
