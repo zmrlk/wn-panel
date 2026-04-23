@@ -204,6 +204,34 @@
 		{/if}
 
 		<div class="content">
+			{#if data.status.belowMin > 0}
+				<div class="alert-banner alert-below">
+					<span class="alert-icon">⚠️</span>
+					<div class="alert-body">
+						<strong>{data.status.belowMin} {data.status.belowMin === 1 ? 'pozycja' : 'pozycji'} poniżej min. stanu magazynowego</strong>
+						<span class="alert-items">
+							{#each data.status.belowMinItems as it, i}
+								{it.name} ({it.totalQty}/{it.minQty}){#if i < data.status.belowMinItems.length - 1}, {/if}
+							{/each}
+						</span>
+					</div>
+					<a href="/magazyn" class="alert-cta">Magazyn →</a>
+				</div>
+			{:else if data.status.atMin > 0}
+				<div class="alert-banner alert-at">
+					<span class="alert-icon">⚠</span>
+					<div class="alert-body">
+						<strong>{data.status.atMin} {data.status.atMin === 1 ? 'pozycja' : 'pozycji'} na minimum</strong>
+						<span class="alert-items">
+							{#each data.status.atMinItems as it, i}
+								{it.name} ({it.totalQty}){#if i < data.status.atMinItems.length - 1}, {/if}
+							{/each}
+						</span>
+					</div>
+					<a href="/magazyn" class="alert-cta">Magazyn →</a>
+				</div>
+			{/if}
+
 			<!-- HERO: availability matrix -->
 			<section class="card matrix-card">
 				<div class="card-head">
@@ -599,6 +627,57 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
+	}
+
+	/* ─── ALERT BANNER ─────────────────────────────────── */
+	.alert-banner {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.85rem 1.25rem;
+		border: 2px solid var(--wn-atrament);
+		background: var(--paper);
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+	}
+	.alert-banner.alert-below {
+		background: color-mix(in srgb, var(--wn-pomidor) 15%, var(--paper));
+		border-color: var(--wn-pomidor);
+		box-shadow: 3px 3px 0 var(--wn-pomidor);
+	}
+	.alert-banner.alert-at {
+		background: color-mix(in srgb, var(--wn-zarowka) 25%, var(--paper));
+		border-color: #8a6d00;
+		box-shadow: 3px 3px 0 #8a6d00;
+	}
+	.alert-icon {
+		font-size: 1.3rem;
+	}
+	.alert-body {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.alert-body strong {
+		font-size: 0.92rem;
+		color: var(--ink);
+	}
+	.alert-items {
+		font-size: 0.8rem;
+		color: var(--ink-2);
+	}
+	.alert-cta {
+		padding: 0.35rem 0.85rem;
+		background: var(--wn-atrament);
+		color: var(--wn-plotno);
+		border: 2px solid var(--wn-atrament);
+		font-size: 0.82rem;
+		font-weight: 700;
+		text-decoration: none;
+	}
+	.alert-cta:hover {
+		background: var(--wn-plotno);
+		color: var(--wn-atrament);
 	}
 
 	/* ─── CARDS ────────────────────────────────────────── */

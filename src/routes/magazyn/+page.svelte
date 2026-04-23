@@ -425,7 +425,9 @@
 										<strong>{m.direction === 'IN' ? '+' : '−'}{m.qty}</strong>
 									</td>
 									<td>
-										{#if m.bookingEvent}
+										{#if m.bookingEvent && m.bookingId}
+											<a href="/zlecenia/booking-{m.bookingId}" class="mv-booking" title="Otwórz booking">📅 {m.bookingEvent} →</a>
+										{:else if m.bookingEvent}
 											<span class="mv-booking">📅 {m.bookingEvent}</span>
 										{:else if m.reason}
 											<span class="mv-reason">{m.reason}</span>
@@ -965,11 +967,18 @@
 	}
 	.mv-booking {
 		display: inline-block;
-		padding: 0.1rem 0.4rem;
+		padding: 0.1rem 0.45rem;
 		background: color-mix(in srgb, var(--wn-granat) 10%, transparent);
 		color: var(--wn-granat);
-		border-radius: 3px;
-		font-size: 0.75rem;
+		border: 1px solid color-mix(in srgb, var(--wn-granat) 30%, transparent);
+		border-radius: 0;
+		font-size: 0.78rem;
+		text-decoration: none;
+	}
+	a.mv-booking:hover {
+		background: var(--wn-granat);
+		color: var(--wn-plotno);
+		border-color: var(--wn-granat);
 	}
 	.mv-reason {
 		color: var(--ink-2);

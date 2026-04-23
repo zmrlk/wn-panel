@@ -255,12 +255,24 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			}).length
 		: days.length;
 
+	// Alert: items poniżej min_qty (lub dokładnie na min)
+	const belowMinItems = rawItems
+		.filter((r) => r.totalQty < r.minQty && r.minQty > 0)
+		.map((r) => ({ id: r.id, name: r.name, totalQty: r.totalQty, minQty: r.minQty }));
+	const atMinItems = rawItems
+		.filter((r) => r.totalQty === r.minQty && r.minQty > 0)
+		.map((r) => ({ id: r.id, name: r.name, totalQty: r.totalQty, minQty: r.minQty }));
+
 	const status = {
 		eventsThisWeek,
 		needsAttention,
 		flagshipFreeDays,
 		flagshipName,
-		totalDays: days.length
+		totalDays: days.length,
+		belowMin: belowMinItems.length,
+		atMin: atMinItems.length,
+		belowMinItems,
+		atMinItems
 	};
 
 	// ─── Actions (bookings needing attention) ───────────────────
