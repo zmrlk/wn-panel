@@ -15,11 +15,13 @@ import {
 	photo
 } from '$lib/server/db/schema';
 import { asc, desc, eq } from 'drizzle-orm';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { getStage, type ZlecenieType } from '$lib/booking-stages';
 import { buildBookingTimeline } from '$lib/booking-timeline';
 import { parseCompoundId } from '$lib/compound-id';
 import * as bookingActions from '$lib/server/services/booking-actions';
+
+const OFFER_NUMBER_RE = /^[A-Z]+-\d{4}-\d+(-[A-Z]+)?$/i;
 
 /**
  * Unified detail page dla zlecenia.
@@ -37,6 +39,23 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	// Parse + walidacja compound ID (pure helper, 9 testów unit)
 	const parsed = parseCompoundId(params.compoundId);
 	if (!parsed.ok) {
+		// Fallback: user wkleił numer oferty ("OFF-2026-0007") zamiast compound id.
+		// Resolve numer → uuid i redirect do /zlecenia/offer-<uuid>.
+		// parseCompoundId rzuci 'type' (OFF nie w [lead,offer,booking]) — to też łapiemy.
+		if (
+			(parsed.error === 'format' || parsed.error === 'type') &&
+			OFFER_NUMBER_RE.test(params.compoundId)
+		) {
+			const [found] = await db
+				.select({ id: offer.id })
+				.from(offer)
+				.where(eq(offer.number, params.compoundId.toUpperCase()))
+				.limit(1);
+			if (found) {
+				throw redirect(303, `/zlecenia/offer-${found.id}`);
+			}
+			throw error(404, { message: `Nie znaleziono oferty ${params.compoundId}` });
+		}
 		if (parsed.error === 'format') {
 			throw error(400, { message: 'Nieprawidłowy format id zlecenia' });
 		}

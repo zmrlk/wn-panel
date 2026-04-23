@@ -1,17 +1,29 @@
 <script lang="ts">
 	import SidebarRail from '$lib/components/SidebarRail.svelte';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	let { data, form } = $props();
 
-	let activeTab = $state<'company' | 'contacts' | 'offers' | 'templates' | 'users'>('company');
+	type SettingsTab = 'company' | 'contacts' | 'offers' | 'templates' | 'users';
+	const TABS = [
+		{ id: 'company' as SettingsTab, label: 'Firma' },
+		{ id: 'contacts' as SettingsTab, label: 'Kontakty' },
+		{ id: 'offers' as SettingsTab, label: 'Numeracja' },
+		{ id: 'templates' as SettingsTab, label: 'Szablony email' },
+		{ id: 'users' as SettingsTab, label: 'Użytkownicy' }
+	] as const;
+	const VALID_TABS: SettingsTab[] = ['company', 'contacts', 'offers', 'templates', 'users'];
+	const initialTab = (page.url.searchParams.get('tab') as SettingsTab) || 'company';
+	let activeTab = $state<SettingsTab>(VALID_TABS.includes(initialTab) ? initialTab : 'company');
 	let editingUserId = $state<string | null>(null);
 
-	const TABS = [
-		{ id: 'company', label: 'Firma' },
-		{ id: 'contacts', label: 'Kontakty' },
-		{ id: 'offers', label: 'Numeracja' },
-		{ id: 'templates', label: 'Szablony email' },
-		{ id: 'users', label: 'Użytkownicy' }
-	] as const;
+	function setTab(t: SettingsTab) {
+		activeTab = t;
+		const url = new URL(page.url);
+		if (t === 'company') url.searchParams.delete('tab');
+		else url.searchParams.set('tab', t);
+		replaceState(url.pathname + url.search, {});
+	}
 
 	const TEMPLATE_KEYS = ['thank_you', 'offer_sent', 'booking_confirmed', 'event_reminder'] as const;
 	const TEMPLATE_LABELS: Record<string, string> = {
@@ -92,7 +104,7 @@
 					<button
 						class="tab"
 						class:active={activeTab === t.id}
-						onclick={() => (activeTab = t.id)}
+						onclick={() => setTab(t.id)}
 					>
 						{t.label}
 					</button>

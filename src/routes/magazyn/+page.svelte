@@ -1,11 +1,24 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	import SidebarRail from '$lib/components/SidebarRail.svelte';
 
 	let { data } = $props();
 
-	let activeTab = $state<'items' | 'packages' | 'movements'>('items');
+	type TabKey = 'items' | 'packages' | 'movements';
+	const VALID_TABS: TabKey[] = ['items', 'packages', 'movements'];
+	const initialTab = (page.url.searchParams.get('tab') as TabKey) || 'items';
+	let activeTab = $state<TabKey>(VALID_TABS.includes(initialTab) ? initialTab : 'items');
+
+	function setTab(t: TabKey) {
+		activeTab = t;
+		const url = new URL(page.url);
+		if (t === 'items') url.searchParams.delete('tab');
+		else url.searchParams.set('tab', t);
+		replaceState(url.pathname + url.search, {});
+	}
 	let editingItemId = $state<string | null>(null);
 	let addingItem = $state(false);
 	let addingMovement = $state(false);
@@ -132,15 +145,15 @@
 
 		<div class="tabs-wrap">
 			<div class="tabs">
-				<button class="tab" class:active={activeTab === 'items'} onclick={() => (activeTab = 'items')}>
+				<button class="tab" class:active={activeTab === 'items'} onclick={() => setTab('items')}>
 					<span>Przedmioty</span>
 					<span class="tab-count">{data.items.length}</span>
 				</button>
-				<button class="tab" class:active={activeTab === 'packages'} onclick={() => (activeTab = 'packages')}>
+				<button class="tab" class:active={activeTab === 'packages'} onclick={() => setTab('packages')}>
 					<span>Pakiety</span>
 					<span class="tab-count">{data.packages.length}</span>
 				</button>
-				<button class="tab" class:active={activeTab === 'movements'} onclick={() => (activeTab = 'movements')}>
+				<button class="tab" class:active={activeTab === 'movements'} onclick={() => setTab('movements')}>
 					<span>Ruchy magazynowe</span>
 					<span class="tab-count">{data.movements.length}</span>
 				</button>
