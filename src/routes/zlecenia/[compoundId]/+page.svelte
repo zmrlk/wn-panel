@@ -172,7 +172,18 @@
 			</div>
 			<div class="top-right">
 				{#if z.type === 'offer'}
-					<a href={`/offers/${z.id}`} class="btn-primary">🖨️ PDF oferty</a>
+					<a href={`/offers/${z.id}`} class="btn-ghost">🖨️ PDF oferty</a>
+					{#if z.client?.email && data.isAdmin}
+						<form method="POST" action="?/sendOfferEmail" style="display:inline;">
+							<button
+								type="submit"
+								class="btn-primary"
+								onclick={(e) => { if (!confirm(`Wysłać ofertę do ${z.client?.email}?`)) e.preventDefault(); }}
+							>
+								📤 Wyślij ofertę
+							</button>
+						</form>
+					{/if}
 				{/if}
 				{#if z.type === 'lead'}
 					<a href={`/offers/new?leadId=${z.id}`} class="btn-primary">+ Oferta z leada</a>
@@ -902,12 +913,32 @@
 		border-radius: 0;
 		font-size: 0.88rem;
 		font-weight: 700;
+		font-family: inherit;
+		cursor: pointer;
 		text-decoration: none;
 		box-shadow: 3px 3px 0 var(--wn-atrament);
 		transition: transform 0.1s, box-shadow 0.1s;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.35rem;
+	}
+	.btn-ghost {
+		padding: 0.5rem 0.95rem;
+		background: var(--paper);
+		color: var(--ink);
+		border: 1px solid var(--line);
+		border-radius: 0;
+		font-size: 0.85rem;
+		font-weight: 600;
+		text-decoration: none;
+		margin-right: 0.4rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+	.btn-ghost:hover {
+		border-color: var(--wn-zielony);
+		color: var(--wn-zielony);
 	}
 	.btn-primary:hover {
 		transform: translate(-1px, -1px);

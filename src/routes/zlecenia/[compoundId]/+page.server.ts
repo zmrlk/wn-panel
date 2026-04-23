@@ -891,5 +891,77 @@ export const actions: Actions = {
 			.set({ status: 'done', updatedAt: new Date() })
 			.where(eq(booking.id, id));
 		return { success: true };
+	},
+
+	// ═══ Wyślij ofertę email (admin, tylko dla type=offer) ═══
+	sendOfferEmail: async ({ params, url }) => {
+		const { getTemplate, renderTemplate, sendEmail } = await import('$lib/server/email');
+
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx);
+		const offerId = compound.slice(dashIdx + 1);
+		if (type !== 'offer') return fail(400, { error: 'Tylko dla ofert' });
+
+		// Pobierz ofertę + klienta
+		const [row] = await db
+			.select({
+				number: offer.number,
+				eventName: offer.eventName,
+				eventStartDate: offer.eventStartDate,
+				eventEndDate: offer.eventEndDate,
+				totalCents: offer.totalCents,
+				validUntil: offer.validUntil,
+				clientName: client.name,
+				clientEmail: client.email
+			})
+			.from(offer)
+			.leftJoin(client, eq(offer.clientId, client.id))
+			.where(eq(offer.id, offerId))
+			.limit(1);
+		if (!row) return fail(404);
+		if (!row.clientEmail) return fail(400, { error: 'Klient nie ma emaila' });
+
+		const template = await getTemplate('offer_sent');
+		if (!template) return fail(500, { error: 'Brak szablonu offer_sent' });
+
+		const origin = url.origin;
+		const totalZl = (row.totalCents / 100).toLocaleString('pl-PL', {
+			minimumFractionDigits: 0,
+			maximumFractionDigits: 0
+		});
+		const dateRange = row.eventStartDate === row.eventEndDate
+			? row.eventStartDate
+			: `${row.eventStartDate} – ${row.eventEndDate}`;
+
+		const ctx = {
+			clientName: row.clientName ?? '',
+			eventName: row.eventName,
+			eventDateRange: dateRange,
+			offerNumber: row.number,
+			totalValue: `${totalZl} zł`,
+			offerLink: `${origin}/offers/${offerId}`,
+			validUntil: row.validUntil ?? ''
+		};
+
+		const result = await sendEmail({
+			to: row.clientEmail,
+			subject: renderTemplate(template.subject, ctx),
+			body: renderTemplate(template.body, ctx),
+			offerId,
+			template: 'offer_sent'
+		});
+
+		// Update offer.sent_at
+		await db
+			.update(offer)
+			.set({
+				status: 'sent',
+				sentAt: new Date(),
+				updatedAt: new Date()
+			})
+			.where(eq(offer.id, offerId));
+
+		return { success: true, dev: 'dev' in result ? result.dev : false };
 	}
 };
