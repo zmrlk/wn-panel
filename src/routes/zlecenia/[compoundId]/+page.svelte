@@ -412,6 +412,19 @@
 								<p class="op-hint">
 									Rezerwacja potwierdzona. <strong>Wydaj na event</strong> — items znikną z magazynu do momentu zwrotu.
 								</p>
+								{#if leftZl > 0}
+									<div class="cash-reminder">
+										💰 <strong>Do pobrania od klienta: {fmtZl(leftZl * 100)}</strong>
+										{#if paidZl === 0}
+											— najczęściej klient płaci przy dostawie.
+										{:else}
+											— wpłacone już {fmtZl(paidZl * 100)}.
+										{/if}
+										Dodaj w sekcji "💰 Płatność" powyżej <em>przed</em> albo <em>po</em> wydaniu — kolejność bez znaczenia.
+									</div>
+								{:else if totalZl > 0}
+									<div class="cash-reminder ok">✓ Wszystko opłacone — lec spokojnie na event.</div>
+								{/if}
 								<button type="submit" class="btn-op dispatch">🚚 Wydaj na event</button>
 							</form>
 						{:else if z.status === 'in-progress'}
@@ -419,6 +432,13 @@
 								<p class="op-hint">
 									Event w trakcie. <strong>Zakończ + zwróć na magazyn</strong> — wpisz ile sztuk faktycznie wróciło (default = ile wydane). Różnica = strata.
 								</p>
+								{#if leftZl > 0}
+									<div class="cash-reminder urgent">
+										⚠️ <strong>Nieopłacone: {fmtZl(leftZl * 100)}</strong> — pobierz kasę przy odbiorze sprzętu albo dodaj płatność powyżej.
+									</div>
+								{:else if totalZl > 0}
+									<div class="cash-reminder ok">✓ Opłacone w całości — można zamykać event.</div>
+								{/if}
 								{#if z.bookingTents.length > 0}
 									<table class="return-table">
 										<thead>
@@ -1130,6 +1150,29 @@
 		font-size: 0.82rem;
 		color: var(--mute);
 		font-style: italic;
+	}
+	.cash-reminder {
+		padding: 0.7rem 1rem;
+		border-left: 3px solid var(--wn-zarowka);
+		background: color-mix(in srgb, var(--wn-zarowka) 20%, var(--paper));
+		font-size: 0.88rem;
+		line-height: 1.45;
+	}
+	.cash-reminder strong {
+		font-family: var(--font-mono);
+	}
+	.cash-reminder em {
+		font-style: italic;
+		color: var(--wn-atrament);
+	}
+	.cash-reminder.urgent {
+		border-left-color: var(--wn-pomidor);
+		background: color-mix(in srgb, var(--wn-pomidor) 12%, var(--paper));
+	}
+	.cash-reminder.ok {
+		border-left-color: var(--wn-zielony);
+		background: color-mix(in srgb, var(--wn-zielony) 14%, var(--paper));
+		color: var(--wn-zielony-ink);
 	}
 	.btn-op {
 		padding: 0.65rem 1.3rem;
