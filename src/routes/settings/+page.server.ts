@@ -29,6 +29,13 @@ type Offers = {
 	validDays: number;
 };
 
+type EmailTemplate = {
+	name: string;
+	subject: string;
+	body: string;
+};
+type EmailTemplates = Record<string, EmailTemplate>;
+
 export const load: PageServerLoad = async ({ locals }) => {
 	const me = locals.user ?? {
 		id: 'preview',
@@ -61,8 +68,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const company = (byKey['company'] ?? {}) as Partial<Company>;
 	const contacts = (byKey['contacts'] ?? {}) as Partial<Contacts>;
 	const offers = (byKey['offers'] ?? {}) as Partial<Offers>;
+	const emailTemplates = (byKey['email_templates'] ?? {}) as EmailTemplates;
 
-	return { user: me, isAdmin: me.role === 'admin', company, contacts, offers, users };
+	return {
+		user: me,
+		isAdmin: me.role === 'admin',
+		company,
+		contacts,
+		offers,
+		emailTemplates,
+		users
+	};
 };
 
 async function upsertSetting(key: string, value: Record<string, unknown>) {
@@ -112,6 +128,22 @@ export const actions: Actions = {
 		};
 		await upsertSetting('offers', value);
 		return { success: true, section: 'offers' };
+	},
+
+	// Zapisz wszystkie email_templates naraz (4 × name/subject/body)
+	updateTemplates: async ({ request }) => {
+		const form = await request.formData();
+		const keys = ['thank_you', 'offer_sent', 'booking_confirmed', 'event_reminder'];
+		const templates: Record<string, { name: string; subject: string; body: string }> = {};
+		for (const k of keys) {
+			templates[k] = {
+				name: (form.get(`${k}_name`) ?? '').toString(),
+				subject: (form.get(`${k}_subject`) ?? '').toString(),
+				body: (form.get(`${k}_body`) ?? '').toString()
+			};
+		}
+		await upsertSetting('email_templates', templates);
+		return { success: true, section: 'templates' };
 	},
 
 	addUser: async ({ request }) => {

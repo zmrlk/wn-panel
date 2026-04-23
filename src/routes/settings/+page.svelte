@@ -1,15 +1,37 @@
 <script lang="ts">
 	let { data, form } = $props();
 
-	let activeTab = $state<'company' | 'contacts' | 'offers' | 'users'>('company');
+	let activeTab = $state<'company' | 'contacts' | 'offers' | 'templates' | 'users'>('company');
 	let editingUserId = $state<string | null>(null);
 
 	const TABS = [
 		{ id: 'company', label: 'Firma' },
 		{ id: 'contacts', label: 'Kontakty' },
 		{ id: 'offers', label: 'Numeracja' },
+		{ id: 'templates', label: 'Szablony email' },
 		{ id: 'users', label: 'Użytkownicy' }
 	] as const;
+
+	const TEMPLATE_KEYS = ['thank_you', 'offer_sent', 'booking_confirmed', 'event_reminder'] as const;
+	const TEMPLATE_LABELS: Record<string, string> = {
+		thank_you: '🙏 Dziękujemy za kontakt (po leadzie)',
+		offer_sent: '📤 Wysłanie oferty (z linkiem do PDF)',
+		booking_confirmed: '✅ Potwierdzenie rezerwacji',
+		event_reminder: '⏰ Przypomnienie przed eventem'
+	};
+	const AVAILABLE_PLACEHOLDERS = [
+		'{{clientName}}',
+		'{{eventName}}',
+		'{{eventDateRange}}',
+		'{{venue}}',
+		'{{offerNumber}}',
+		'{{totalValue}}',
+		'{{offerLink}}',
+		'{{validUntil}}',
+		'{{paymentInfo}}',
+		'{{driverName}}',
+		'{{driverPhone}}'
+	];
 
 	const ICONS: Record<string, string> = {
 		dashboard: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9ZM9 22V12h6v10',
@@ -175,6 +197,42 @@
 						</div>
 						<div class="form-actions">
 							<button type="submit" class="btn-primary">Zapisz</button>
+						</div>
+					</form>
+				</section>
+			{/if}
+
+			{#if activeTab === 'templates'}
+				<section class="card">
+					<h2>Szablony email</h2>
+					<p class="hint">
+						4 automatyczne wiadomości. Użyj placeholderów: <code>{AVAILABLE_PLACEHOLDERS.join(' · ')}</code> — zostaną podmienione na realne dane przy wysyłce.
+					</p>
+
+					<form method="POST" action="?/updateTemplates" class="templates-form">
+						{#each TEMPLATE_KEYS as key}
+							{@const tpl = data.emailTemplates?.[key] ?? { name: '', subject: '', body: '' }}
+							<div class="template-block">
+								<h3>{TEMPLATE_LABELS[key]}</h3>
+								<div class="tpl-grid">
+									<label class="field">
+										<span>Nazwa wewnętrzna</span>
+										<input name={`${key}_name`} type="text" value={tpl.name} />
+									</label>
+									<label class="field wide">
+										<span>Temat email</span>
+										<input name={`${key}_subject`} type="text" value={tpl.subject} />
+									</label>
+									<label class="field wide">
+										<span>Treść</span>
+										<textarea name={`${key}_body`} rows="8">{tpl.body}</textarea>
+									</label>
+								</div>
+							</div>
+						{/each}
+
+						<div class="form-actions">
+							<button type="submit" class="btn-primary">Zapisz wszystkie szablony</button>
 						</div>
 					</form>
 				</section>
@@ -425,6 +483,34 @@
 		font-size: 0.78rem;
 		background: var(--paper-2);
 		padding: 0.05rem 0.3rem;
+	}
+
+	.templates-form {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	.template-block {
+		padding: 1rem 1.15rem;
+		background: var(--paper-2);
+		border-left: 3px solid var(--wn-zielony);
+	}
+	.template-block h3 {
+		margin: 0 0 0.75rem;
+		font-size: 0.95rem;
+	}
+	.tpl-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.75rem;
+	}
+	.tpl-grid .field.wide {
+		grid-column: 1 / -1;
+	}
+	.tpl-grid textarea {
+		font-family: var(--font-mono);
+		font-size: 0.82rem;
+		resize: vertical;
 	}
 
 	.form-grid {
