@@ -9,7 +9,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	const savedState = cookies.get('kc_state');
 
 	if (!code || !state || !savedState || state !== savedState) {
-		throw error(400, 'Invalid OAuth state');
+		throw error(400, { message: 'Invalid OAuth state' });
 	}
 
 	cookies.delete('kc_state', { path: '/' });
@@ -17,7 +17,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	const redirectUri = `${url.origin}/auth/callback`;
 	const tokens = await exchangeCode(code, redirectUri);
 	if (!tokens) {
-		throw error(502, 'Token exchange failed');
+		throw error(502, { message: 'Token exchange failed' });
 	}
 
 	// Access token — lax (pozwala na page nav z linków), 5 min typowo (KC default)

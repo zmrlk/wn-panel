@@ -14,6 +14,14 @@ import {
 import { and, eq, gte, inArray, isNull, lte, ne } from 'drizzle-orm';
 import { getTemplate, renderTemplate, sendEmail } from '$lib/server/email';
 
+/**
+ * Markup dla premium tier:
+ * AI-driven booking bez human touch → 20% convenience fee
+ * (pokrywa risk auto-rezerwacji + wartość natychmiastowej dostępności)
+ */
+const MCP_PREMIUM_MARKUP = 1.2;
+const MCP_NORMAL_MARKUP = 1.0;
+
 const CORS = {
 	'Access-Control-Allow-Origin': '*',
 	'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -133,8 +141,8 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		totalCents += unitPrice * req.quantity * days;
 	}
 
-	// Premium tier = +20% markup (AI convenience fee)
-	const markup = tier === 'premium' ? 1.2 : 1.0;
+	// Premium tier = +20% markup (patrz MCP_PREMIUM_MARKUP na górze)
+	const markup = tier === 'premium' ? MCP_PREMIUM_MARKUP : MCP_NORMAL_MARKUP;
 	totalCents = Math.round(totalCents * markup);
 
 	// Find or create client

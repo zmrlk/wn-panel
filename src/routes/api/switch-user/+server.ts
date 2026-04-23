@@ -11,11 +11,14 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		cookies.delete('wn-user-id', { path: '/' });
 		return json({ ok: true, cleared: true });
 	}
+	// httpOnly=true — JS nie może odczytać (zapobiega XSS session theft)
+	// secure=production only — dev HTTP nie wspiera Secure flag
 	cookies.set('wn-user-id', userId, {
 		path: '/',
-		httpOnly: false,
-		maxAge: 60 * 60 * 24 * 30, // 30 dni
-		sameSite: 'lax'
+		httpOnly: true,
+		secure: process.env.NODE_ENV === 'production',
+		sameSite: 'lax',
+		maxAge: 60 * 60 * 24 * 30 // 30 dni
 	});
 	return json({ ok: true, userId });
 };

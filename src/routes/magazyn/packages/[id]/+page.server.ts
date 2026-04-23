@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	};
 
 	const [p] = await db.select().from(pkg).where(eq(pkg.id, params.id)).limit(1);
-	if (!p) throw error(404, 'Pakiet nie istnieje');
+	if (!p) throw error(404, { message: 'Pakiet nie istnieje' });
 
 	const [pkgItems, allItems] = await Promise.all([
 		db

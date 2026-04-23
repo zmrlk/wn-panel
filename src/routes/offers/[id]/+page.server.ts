@@ -40,7 +40,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		.where(eq(offer.id, params.id))
 		.limit(1);
 
-	if (!o) throw error(404, 'Oferta nie istnieje');
+	if (!o) throw error(404, { message: 'Oferta nie istnieje' });
 
 	const items = await db.select().from(offerItem).where(eq(offerItem.offerId, params.id));
 

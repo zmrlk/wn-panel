@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	const compound = params.compoundId;
 	const dashIdx = compound.indexOf('-');
-	if (dashIdx < 0) throw error(400, 'Invalid zlecenie id');
+	if (dashIdx < 0) throw error(400, { message: 'Nieprawidłowy format id zlecenia' });
 
 	const type = compound.slice(0, dashIdx) as 'lead' | 'offer' | 'booking';
 	const id = compound.slice(dashIdx + 1);
@@ -137,7 +137,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	if (type === 'lead') {
 		const [l] = await db.select().from(lead).where(eq(lead.id, id)).limit(1);
-		if (!l) throw error(404, 'Lead nie istnieje');
+		if (!l) throw error(404, { message: 'Lead nie istnieje' });
 		const s = STAGES[`lead:${l.status}`] ?? STAGES['lead:new'];
 		zlecenie = {
 			type: 'lead',
@@ -187,7 +187,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.leftJoin(client, eq(offer.clientId, client.id))
 			.where(eq(offer.id, id))
 			.limit(1);
-		if (!o) throw error(404, 'Oferta nie istnieje');
+		if (!o) throw error(404, { message: 'Oferta nie istnieje' });
 		const items = await db.select().from(offerItem).where(eq(offerItem.offerId, id));
 		const s = STAGES[`offer:${o.offer.status}`] ?? STAGES['offer:draft'];
 		zlecenie = {
@@ -258,7 +258,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.leftJoin(client, eq(booking.clientId, client.id))
 			.where(eq(booking.id, id))
 			.limit(1);
-		if (!b) throw error(404, 'Rezerwacja nie istnieje');
+		if (!b) throw error(404, { message: 'Rezerwacja nie istnieje' });
 		// Fetch items via booking_tent join + payments + assignments + photos + movements
 		const [bookedItems, payments, assignmentsRaw, photosRaw, movementsRaw] = await Promise.all([
 			db
@@ -488,7 +488,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			acceptedAt: null
 		};
 	} else {
-		throw error(400, `Nieznany typ zlecenia: ${type}`);
+		throw error(400, { message: `Nieznany typ zlecenia: ${type}` });
 	}
 
 	// Available users do przydziału (tylko dla type=booking — UI pokazuje assign)
