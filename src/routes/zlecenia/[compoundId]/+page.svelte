@@ -536,8 +536,7 @@
 					</section>
 				{/if}
 
-				<!-- 9. PŁATNOŚĆ (admin only; pracownik nie rozlicza) -->
-				{#if data.isAdmin}
+				<!-- 9. PŁATNOŚĆ — admin pełna, pracownik: pill + quick-pay -->
 				<section class="card">
 					<div class="payments-block no-border">
 						<div class="pay-header">
@@ -552,7 +551,23 @@
 							<div class="pay-stat"><span class="pay-lbl">Zostało:</span> <strong class:pay-due={leftZl > 0}>{fmtZl(leftZl * 100)}</strong></div>
 						</div>
 
-						{#if z.payments.length > 0}
+						{#if leftZl > 0}
+							<!-- 1-click dla obu ról (kierowca zbiera gotówkę + admin szybko) -->
+							<form method="POST" action="?/addPayment" class="pay-quick">
+								<input type="hidden" name="amountZl" value={leftZl.toFixed(2)} />
+								<input type="hidden" name="method" value="gotówka" />
+								<input type="hidden" name="kind" value="pełna" />
+								<input type="hidden" name="paidAt" value={new Date().toISOString().slice(0, 10)} />
+								<button type="submit" class="btn-quick-pay">
+									💵 Zapłacił gotówką ({fmtZl(leftZl * 100)})
+								</button>
+								{#if data.isAdmin}
+									<span class="pay-quick-hint">lub pełne szczegóły ↓</span>
+								{/if}
+							</form>
+						{/if}
+
+						{#if data.isAdmin && z.payments.length > 0}
 							<table class="pay-table">
 								<thead>
 									<tr>
@@ -584,21 +599,7 @@
 							</table>
 						{/if}
 
-						{#if leftZl > 0}
-							<!-- 1-click: pełna kwota gotówka, dziś -->
-							<form method="POST" action="?/addPayment" class="pay-quick">
-								<input type="hidden" name="amountZl" value={leftZl.toFixed(2)} />
-								<input type="hidden" name="method" value="gotówka" />
-								<input type="hidden" name="kind" value="pełna" />
-								<input type="hidden" name="paidAt" value={new Date().toISOString().slice(0, 10)} />
-								<button type="submit" class="btn-quick-pay">
-									💵 Zapłacone w całości gotówką ({fmtZl(leftZl * 100)})
-								</button>
-								<span class="pay-quick-hint">lub wpisz szczegóły ↓</span>
-							</form>
-						{/if}
-
-						{#if leftZl > 0 || totalZl === 0 || z.payments.length === 0}
+						{#if data.isAdmin && (leftZl > 0 || totalZl === 0 || z.payments.length === 0)}
 							<form method="POST" action="?/addPayment" class="pay-form">
 								<label class="pay-field">
 									<span>Kwota (zł)</span>
@@ -632,7 +633,6 @@
 						{/if}
 					</div>
 				</section>
-				{/if}
 
 				<!-- 10. ZDJĘCIA (sam dół — dokumentacja) -->
 				<section class="card">

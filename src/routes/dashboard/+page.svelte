@@ -54,6 +54,7 @@
 		offers: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6',
 		calendar: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z',
 		tents: 'M3 20 L12 4 L21 20 Z M8 20 L12 13 L16 20',
+		team: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
 		clients: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75',
 		bookings: 'M3 3h18v18H3zM3 9h18M9 21V9',
 		photos: 'M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z M21 15l-5-5L5 21',
@@ -64,7 +65,8 @@
 	const MAIN = [
 		{ id: 'dashboard', label: 'Home', active: true },
 		{ id: 'zlecenia', label: 'Zlecenia' },
-		{ id: 'tents', label: 'Magazyn' }
+		{ id: 'tents', label: 'Magazyn' },
+		{ id: 'team', label: 'Zespół' }
 	];
 	const ADMIN = [{ id: 'settings', label: 'Ustaw.' }];
 
@@ -122,7 +124,7 @@
 
 		<nav class="rail-nav">
 			{#each MAIN as item, i}
-				{#if (item.id !== 'tents' || data.isAdmin) && (item.id !== 'zlecenia' || data.isAdmin)}
+				{#if (item.id !== 'tents' || data.isAdmin) && (item.id !== 'zlecenia' || data.isAdmin) && (item.id !== 'team' || data.isAdmin)}
 					<a href="/{item.id === 'dashboard' ? 'dashboard' : item.id === 'tents' ? 'magazyn' : item.id}" class="rail-item" class:active={item.active}>
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
 							<path d={ICONS[item.id]} />
