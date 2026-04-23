@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import SidebarRail from '$lib/components/SidebarRail.svelte';
+	import TimelineSection from '$lib/components/zlecenia/TimelineSection.svelte';
 	import {
 		dbStatusToUnified,
 		allowedStatusesForType,
@@ -600,21 +601,7 @@
 
 
 			<!-- 7. TIMELINE -->
-			<section class="card">
-				<h2>Przebieg</h2>
-				<ul class="timeline">
-					{#each timeline as t}
-						<li class:done={t.done} class="tl-{t.kind}">
-							<span class="t-emoji">{t.emoji}</span>
-							<div class="t-body">
-								<span class="t-label">{t.label}</span>
-								{#if t.note}<span class="t-note">{t.note}</span>{/if}
-							</div>
-							<span class="t-date">{fmtDateTime(t.date)}</span>
-						</li>
-					{/each}
-				</ul>
-			</section>
+			<TimelineSection {timeline} />
 		</div>
 	</main>
 </div>
@@ -1744,51 +1731,7 @@
 		border-color: var(--wn-zielony);
 	}
 
-	.timeline {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
-	}
-	.timeline li {
-		display: grid;
-		grid-template-columns: 28px 1fr auto;
-		gap: 0.6rem;
-		align-items: center;
-		padding: 0.5rem 0.65rem;
-		background: var(--paper-2);
-		border-radius: 6px;
-		font-size: 0.85rem;
-		opacity: 0.5;
-	}
-	.timeline li.done {
-		opacity: 1;
-	}
-	.t-body {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 0.15rem;
-	}
-	.t-note {
-		font-size: 0.78rem;
-		color: var(--mute);
-		font-style: italic;
-	}
-	.t-emoji {
-		font-size: 1.1rem;
-	}
-	.t-label {
-		color: var(--ink);
-		font-weight: 500;
-	}
-	.t-date {
-		font-family: var(--font-mono);
-		font-size: 0.75rem;
-		color: var(--mute);
-	}
+	/* .timeline / .t-* styles przeniesione do TimelineSection.svelte */
 
 	@media (max-width: 720px) {
 		.app {

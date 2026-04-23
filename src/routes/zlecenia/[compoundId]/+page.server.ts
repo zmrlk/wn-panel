@@ -42,6 +42,15 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const type = compound.slice(0, dashIdx) as ZlecenieType;
 	const id = compound.slice(dashIdx + 1);
 
+	// Walidacja: id musi być UUID, inaczej pg rzuca 22P02 → 500 (leak stacktrace)
+	if (!['lead', 'offer', 'booking'].includes(type)) {
+		throw error(400, { message: `Nieznany typ zlecenia: ${type}` });
+	}
+	const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+	if (!UUID_RE.test(id)) {
+		throw error(404, { message: `Zlecenie ${type} nie istnieje` });
+	}
+
 	type Zlecenie = {
 		type: ZlecenieType;
 		id: string;

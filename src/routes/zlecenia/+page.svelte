@@ -154,7 +154,7 @@
 					<tbody>
 						{#each data.zlecenia as z}
 							{@const until = daysUntil(z.eventDate)}
-							<tr class="row clickable type-{z.type}" class:lost={z.isLost} onclick={() => goto(detailHref(z))}>
+							<tr class="row clickable type-{z.type}" class:lost={z.isLost} data-compound-id="{z.type}-{z.id}" onclick={() => goto(detailHref(z))}>
 								<td>
 									<div class="ev-cell">
 										<span class="ev-name">{z.eventName}</span>
