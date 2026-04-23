@@ -8,9 +8,10 @@ import {
 	bookingTent,
 	client,
 	item,
-	stockMovement
+	stockMovement,
+	payment
 } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
 
 /**
@@ -59,6 +60,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		items: Array<{ description: string; quantity: number; unitPriceCents: number; lineTotalCents: number }>;
 		// Booking-only: raw booking_tent do akcji dispatch/return
 		bookingTents: Array<{ tentId: string; itemName: string; quantity: number }>;
+		// Booking-only: lista płatności + suma
+		payments: Array<{
+			id: string;
+			amountCents: number;
+			method: string;
+			kind: string;
+			paidAt: string;
+			receivedBy: string | null;
+			notes: string | null;
+		}>;
+		paidCents: number;
 		notes: string | null;
 		message: string | null;
 		source: string | null;
@@ -121,6 +133,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			totalCents: null,
 			items: [],
 			bookingTents: [],
+			payments: [],
+			paidCents: 0,
 			notes: l.notes,
 			message: l.message,
 			source: l.source,
@@ -174,6 +188,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				lineTotalCents: i.lineTotalCents
 			})),
 			bookingTents: [],
+			payments: [],
+			paidCents: 0,
 			notes: o.offer.notes,
 			message: null,
 			source: null,
@@ -190,12 +206,20 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.where(eq(booking.id, id))
 			.limit(1);
 		if (!b) throw error(404, 'Rezerwacja nie istnieje');
-		// Fetch items via booking_tent join
-		const bookedItems = await db
-			.select({ bookingTent: bookingTent, item: item })
-			.from(bookingTent)
-			.leftJoin(item, eq(bookingTent.tentId, item.id))
-			.where(eq(bookingTent.bookingId, id));
+		// Fetch items via booking_tent join + payments
+		const [bookedItems, payments] = await Promise.all([
+			db
+				.select({ bookingTent: bookingTent, item: item })
+				.from(bookingTent)
+				.leftJoin(item, eq(bookingTent.tentId, item.id))
+				.where(eq(bookingTent.bookingId, id)),
+			db
+				.select()
+				.from(payment)
+				.where(eq(payment.bookingId, id))
+				.orderBy(asc(payment.paidAt))
+		]);
+		const paidCentsTotal = payments.reduce((s, p) => s + p.amountCents, 0);
 		const s = STAGES[`booking:${b.booking.status}`] ?? STAGES['booking:confirmed'];
 		zlecenie = {
 			type: 'booking',
@@ -235,6 +259,16 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 					itemName: bi.item?.name ?? 'Pozycja',
 					quantity: bi.bookingTent.quantity
 				})),
+			payments: payments.map((p) => ({
+				id: p.id,
+				amountCents: p.amountCents,
+				method: p.method,
+				kind: p.kind,
+				paidAt: p.paidAt,
+				receivedBy: p.receivedBy,
+				notes: p.notes
+			})),
+			paidCents: paidCentsTotal,
 			notes: b.booking.notes,
 			message: null,
 			source: null,
@@ -400,6 +434,49 @@ export const actions: Actions = {
 			.update(booking)
 			.set({ status: 'in-progress', updatedAt: new Date() })
 			.where(eq(booking.id, id));
+		return { success: true };
+	},
+
+	// ═══ Płatności (v5.21) — tylko dla booking ═══
+	addPayment: async ({ request, params, locals }) => {
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx);
+		const id = compound.slice(dashIdx + 1);
+		if (type !== 'booking') return fail(400, { error: 'Płatności tylko dla bookingów' });
+
+		const form = await request.formData();
+		const amountZl = Number(form.get('amountZl') ?? '0');
+		const method = (form.get('method')?.toString() ?? 'gotówka').trim();
+		const kind = (form.get('kind')?.toString() ?? 'pełna').trim();
+		const paidAtRaw = form.get('paidAt')?.toString() || new Date().toISOString().slice(0, 10);
+		const notes = form.get('notes')?.toString()?.trim() || null;
+
+		if (!Number.isFinite(amountZl) || amountZl <= 0) return fail(400, { error: 'Kwota > 0' });
+		if (!['gotówka', 'przelew', 'inne'].includes(method)) return fail(400, { error: 'Nieznana metoda' });
+
+		await db.insert(payment).values({
+			bookingId: id,
+			amountCents: Math.round(amountZl * 100),
+			method,
+			kind,
+			paidAt: paidAtRaw,
+			receivedBy: locals.user?.id ?? null,
+			notes
+		});
+		return { success: true };
+	},
+
+	deletePayment: async ({ request, params }) => {
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx);
+		if (type !== 'booking') return fail(400);
+
+		const form = await request.formData();
+		const paymentId = form.get('paymentId')?.toString();
+		if (!paymentId) return fail(400);
+		await db.delete(payment).where(eq(payment.id, paymentId));
 		return { success: true };
 	},
 

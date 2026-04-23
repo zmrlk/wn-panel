@@ -209,7 +209,18 @@
 								<td>
 									<span class="until {until.cls}">{until.label}</span>
 								</td>
-								<td class="num price">{fmtZl(z.valueCents)}</td>
+								<td class="num price">
+									{fmtZl(z.valueCents)}
+									{#if z.type === 'booking' && z.valueCents && z.valueCents > 0}
+										{#if z.paidCents >= z.valueCents}
+											<span class="pay-badge paid" title="Opłacone">💰</span>
+										{:else if z.paidCents > 0}
+											<span class="pay-badge partial" title="Częściowo: {fmtZl(z.paidCents)}">½</span>
+										{:else}
+											<span class="pay-badge none" title="Brak płatności">✕</span>
+										{/if}
+									{/if}
+								</td>
 							</tr>
 							<tr class="notes-row clickable type-{z.type}" onclick={() => goto(detailHref(z))}>
 								<td colspan="5" class="notes-cell">
@@ -651,6 +662,20 @@
 		background: color-mix(in srgb, var(--wn-pomidor) 12%, transparent);
 		color: var(--wn-pomidor);
 		border-color: var(--wn-pomidor);
+	}
+	.pay-badge {
+		display: inline-block;
+		margin-left: 0.4rem;
+		font-size: 0.78rem;
+		padding: 0 0.3rem;
+		cursor: help;
+	}
+	.pay-badge.partial {
+		color: #8a6d00;
+		font-weight: 700;
+	}
+	.pay-badge.none {
+		color: var(--wn-pomidor);
 	}
 	.mono-num {
 		margin-left: 0.4rem;

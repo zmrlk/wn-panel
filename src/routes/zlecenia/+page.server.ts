@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { lead, offer, booking, client } from '$lib/server/db/schema';
+import { lead, offer, booking, client, payment } from '$lib/server/db/schema';
 import { desc, eq, sql } from 'drizzle-orm';
 
 /**
@@ -28,8 +28,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const tabFilter = url.searchParams.get('tab') ?? 'w-trakcie';
 
-	// Load raw data
-	const [leads, offers, bookings] = await Promise.all([
+	// Load raw data + payment sums per booking
+	const [leads, offers, bookings, paymentSums] = await Promise.all([
 		db.select().from(lead).orderBy(desc(lead.createdAt)),
 		db
 			.select({
@@ -74,8 +74,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			})
 			.from(booking)
 			.leftJoin(client, eq(booking.clientId, client.id))
-			.orderBy(desc(booking.startDate))
+			.orderBy(desc(booking.startDate)),
+		db
+			.select({
+				bookingId: payment.bookingId,
+				paid: sql<number>`coalesce(sum(${payment.amountCents}), 0)::int`
+			})
+			.from(payment)
+			.groupBy(payment.bookingId)
 	]);
+	const paidByBooking = new Map(paymentSums.map((r) => [r.bookingId, r.paid]));
 
 	// Normalize all to unified "Zlecenie" shape
 	type Zlecenie = {
@@ -93,6 +101,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		eventDateEnd: string | null;
 		venue: string | null;
 		valueCents: number | null;
+		paidCents: number; // 0 dla lead/offer, sumowane dla bookingu
 		status: string;
 		isLost: boolean;
 		notes: string | null;
@@ -158,6 +167,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			eventDateEnd: null,
 			venue: l.venueHint,
 			valueCents: null,
+			paidCents: 0,
 			status: l.status,
 			isLost: s.isLost,
 			notes: l.notes ?? l.message,
@@ -184,6 +194,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			eventDateEnd: o.eventEndDate,
 			venue: o.venue,
 			valueCents: o.totalCents,
+			paidCents: 0,
 			status: o.status,
 			isLost: s.isLost,
 			notes: o.notes,
@@ -209,6 +220,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			eventDateEnd: b.endDate,
 			venue: b.venue,
 			valueCents: b.priceCents,
+			paidCents: paidByBooking.get(b.id) ?? 0,
 			status: b.status,
 			isLost: s.isLost,
 			notes: b.notes,

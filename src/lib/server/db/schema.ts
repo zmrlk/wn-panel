@@ -135,6 +135,22 @@ export const client = pgTable('client', {
 	updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
 
+// Płatności per booking (v5.21)
+// Prostota: jedna transakcja = jeden wpis. Sumę zapłaconego liczymy SELECT SUM(amount_cents).
+export const payment = pgTable('payment', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	bookingId: uuid('booking_id')
+		.notNull()
+		.references(() => booking.id, { onDelete: 'cascade' }),
+	amountCents: integer('amount_cents').notNull(),
+	method: text('method').notNull(), // 'gotówka' | 'przelew' | 'inne'
+	kind: text('kind').notNull().default('pełna'), // 'pełna' | 'dopłata'
+	paidAt: date('paid_at').notNull(),
+	receivedBy: text('received_by').references(() => user.id),
+	notes: text('notes'),
+	createdAt: timestamp('created_at').notNull().defaultNow()
+});
+
 // Rezerwacje
 export const booking = pgTable('booking', {
 	id: uuid('id').primaryKey().defaultRandom(),
@@ -361,7 +377,13 @@ export const clientRelations = relations(client, ({ many }) => ({
 export const bookingRelations = relations(booking, ({ one, many }) => ({
 	client: one(client, { fields: [booking.clientId], references: [client.id] }),
 	bookingTents: many(bookingTent),
-	photos: many(photo)
+	photos: many(photo),
+	payments: many(payment)
+}));
+
+export const paymentRelations = relations(payment, ({ one }) => ({
+	booking: one(booking, { fields: [payment.bookingId], references: [booking.id] }),
+	receiver: one(user, { fields: [payment.receivedBy], references: [user.id] })
 }));
 
 export const bookingTentRelations = relations(bookingTent, ({ one }) => ({
