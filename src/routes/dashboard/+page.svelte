@@ -122,7 +122,7 @@
 
 		<nav class="rail-nav">
 			{#each MAIN as item, i}
-				{#if item.id !== 'tents' || data.isAdmin}
+				{#if (item.id !== 'tents' || data.isAdmin) && (item.id !== 'zlecenia' || data.isAdmin)}
 					<a href="/{item.id === 'dashboard' ? 'dashboard' : item.id === 'tents' ? 'magazyn' : item.id}" class="rail-item" class:active={item.active}>
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
 							<path d={ICONS[item.id]} />

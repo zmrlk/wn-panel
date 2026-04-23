@@ -27,6 +27,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	};
 	const isAdmin = me.role === 'admin';
 
+	// Pracownik: lista zleceń = dashboard plan pracy, nie potrzebuje tabów
+	if (!isAdmin) {
+		const { redirect } = await import('@sveltejs/kit');
+		throw redirect(303, '/dashboard');
+	}
+
 	const tabFilter = url.searchParams.get('tab') ?? 'w-trakcie';
 
 	// Dla non-admin: zbierz booking IDs gdzie user jest w zespole

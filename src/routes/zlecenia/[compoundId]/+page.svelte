@@ -129,7 +129,7 @@
 		<a href="/" class="logo"><span class="logo-mark">wn</span></a>
 		<nav class="rail-nav">
 			{#each NAV as nav}
-				{#if nav.id !== 'tents' || data.isAdmin}
+				{#if (nav.id !== 'tents' || data.isAdmin) && (nav.id !== 'zlecenia' || data.isAdmin)}
 					<a href={nav.href} class="rail-item" class:active={nav.active}>
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
 							<path d={ICONS[nav.id]} />
@@ -226,13 +226,25 @@
 					{/if}
 					<div class="e-field">
 						<span class="e-label">Miejsce</span>
-						<span class="e-val">{z.event.venue ?? '—'}</span>
+						{#if z.event.venue}
+							<a
+								class="e-val e-map-link"
+								href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(z.event.venue)}`}
+								target="_blank"
+								rel="noopener"
+								title="Otwórz w mapach"
+							>
+								📍 {z.event.venue}
+							</a>
+						{:else}
+							<span class="e-val">—</span>
+						{/if}
 					</div>
 				</div>
 			</section>
 
-			<!-- 3. POZYCJE (jeśli są) -->
-			{#if z.items.length > 0}
+			<!-- 3. POZYCJE (admin only — pracownik ma to w return form) -->
+			{#if z.items.length > 0 && data.isAdmin}
 				<section class="card">
 					<h2>Pozycje · {z.items.length}</h2>
 					<table class="items-t">
@@ -960,9 +972,19 @@
 	}
 	.cv-amount {
 		font-family: var(--font-mono);
-		font-size: 1.15rem;
-		font-weight: 700;
+		font-size: 1.85rem;
+		line-height: 1;
+		font-weight: 800;
 		color: var(--wn-zielony-ink);
+	}
+	.e-map-link {
+		color: var(--wn-granat);
+		text-decoration: none;
+		font-weight: 500;
+	}
+	.e-map-link:hover {
+		color: var(--wn-zielony);
+		text-decoration: underline;
 	}
 	.client-block {
 		display: flex;
