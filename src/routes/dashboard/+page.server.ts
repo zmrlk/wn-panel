@@ -10,7 +10,7 @@ import { and, desc, eq, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
  * - maintenance: item.status = 'maintenance' (point-in-time, applied across full range)
  * - status/funnel/actions/recentLeads: agregacje z lead/offer/booking
  */
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const user = locals.user ?? {
 		id: 'preview',
 		name: 'Denis',
@@ -18,10 +18,29 @@ export const load: PageServerLoad = async ({ locals }) => {
 		role: 'admin'
 	};
 
-	// ─── Dni (next 21 od dziś) ──────────────────────────────────
+	// ─── Range: 21d | month | season ───────────────────────────
+	const range = (url.searchParams.get('range') ?? '21d') as '21d' | 'month' | 'season';
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
-	const days = Array.from({ length: 21 }, (_, i) => {
+
+	let dayCount: number;
+	let rangeLabel: string;
+	if (range === 'month') {
+		// Do końca bieżącego miesiąca +30d lookahead
+		const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+		dayCount = Math.max(21, Math.min(45, Math.floor((endOfMonth.getTime() - today.getTime()) / 86400000) + 1));
+		rangeLabel = today.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
+	} else if (range === 'season') {
+		// Do końca września
+		const endOfSeason = new Date(today.getFullYear(), 8, 30); // 30 września
+		dayCount = Math.max(30, Math.floor((endOfSeason.getTime() - today.getTime()) / 86400000) + 1);
+		rangeLabel = `sezon do 30 września`;
+	} else {
+		dayCount = 21;
+		rangeLabel = 'najbliższe 21 dni';
+	}
+
+	const days = Array.from({ length: dayCount }, (_, i) => {
 		const d = new Date(today);
 		d.setDate(today.getDate() + i);
 		return {
@@ -225,9 +244,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 			b.status === 'draft'
 	).length;
 
-	// Free slots — prosty proxy: ile dni w zakresie ma <50% rezerwacji u namiotu 6×3 (flagship)
+	// Flagship free days — ile dni w zakresie ma wolny choć 1 szt. namiotu 6×3 (hot item)
 	const flagship = items.find((i) => i.name.includes('6×3')) ?? items.find((i) => i.group === 'Namioty');
-	const freeSlotsMay = flagship
+	const flagshipName = flagship?.name ?? 'namiot';
+	const flagshipFreeDays = flagship
 		? days.filter((d) => {
 				const r = flagship.reserved[d.iso] ?? 0;
 				const m = flagship.maintenance[d.iso] ?? 0;
@@ -235,7 +255,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 			}).length
 		: days.length;
 
-	const status = { eventsThisWeek, needsAttention, freeSlotsMay };
+	const status = {
+		eventsThisWeek,
+		needsAttention,
+		flagshipFreeDays,
+		flagshipName,
+		totalDays: days.length
+	};
 
 	// ─── Actions (bookings needing attention) ───────────────────
 	const actionsRaw = await db
@@ -327,5 +353,5 @@ export const load: PageServerLoad = async ({ locals }) => {
 		age: ageLabel(new Date(l.createdAt))
 	}));
 
-	return { user, items, days, status, actions, warehouse, funnel, recentLeads };
+	return { user, items, days, status, actions, warehouse, funnel, recentLeads, range, rangeLabel };
 };

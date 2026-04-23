@@ -21,13 +21,29 @@
 	const ADMIN = [{ id: 'settings', label: 'Ustaw.', href: '/settings' }];
 
 	const TABS = [
-		{ id: 'nowe', label: '🆕 Nowe', count: 'nowe' },
-		{ id: 'w-toku', label: '✉️ W toku', count: 'w-toku' },
-		{ id: 'potwierdzone', label: '✅ Potwierdzone', count: 'potwierdzone' },
-		{ id: 'zrobione', label: '🎉 Zrobione', count: 'done' },
-		{ id: 'przegrane', label: '✕ Przegrane', count: 'przegrane' },
+		{ id: 'nowy', label: '🆕 Nowy', count: 'nowy' },
+		{ id: 'w-trakcie', label: '⚙️ W trakcie', count: 'w-trakcie' },
+		{ id: 'wygrany', label: '✅ Wygrany', count: 'wygrany' },
+		{ id: 'przegrany', label: '✕ Przegrany', count: 'przegrany' },
+		{ id: 'archiwum', label: '📦 Archiwum', count: 'archiwum' },
 		{ id: 'wszystko', label: 'Wszystko', count: 'all' }
 	];
+
+	let searchInput = $state(data.q ?? '');
+
+	function submitSearch(ev: SubmitEvent) {
+		ev.preventDefault();
+		const params = new URLSearchParams();
+		if (data.tabFilter) params.set('tab', data.tabFilter);
+		if (searchInput.trim()) params.set('q', searchInput.trim());
+		goto(`/zlecenia?${params.toString()}`, { keepFocus: true });
+	}
+	function clearSearch() {
+		searchInput = '';
+		const params = new URLSearchParams();
+		if (data.tabFilter) params.set('tab', data.tabFilter);
+		goto(`/zlecenia?${params.toString()}`);
+	}
 
 	function fmtZl(cents: number | null | undefined) {
 		if (cents == null) return '—';
@@ -65,7 +81,8 @@
 
 	function applyTab(tab: string) {
 		const p = new URLSearchParams();
-		if (tab !== 'nowe') p.set('tab', tab);
+		if (tab !== 'w-trakcie') p.set('tab', tab);
+		if (searchInput.trim()) p.set('q', searchInput.trim());
 		goto(`/zlecenia${p.toString() ? '?' + p.toString() : ''}`);
 	}
 </script>
@@ -115,7 +132,7 @@
 			<div class="top-left">
 				<h1>Zlecenia</h1>
 				<span class="top-meta">
-					{data.counts.active} w toku · {fmtZl(data.activeValue)} pipeline · {data.counts.done} zrealizowanych
+					{data.counts['w-trakcie']} w trakcie · {fmtZl(data.activeValue)} pipeline · {data.counts.wygrany} wygranych
 				</span>
 			</div>
 			<div class="top-right">
@@ -136,6 +153,21 @@
 					</button>
 				{/each}
 			</div>
+			<form class="search-form" onsubmit={submitSearch}>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+					<circle cx="11" cy="11" r="8" />
+					<path d="m21 21-4.3-4.3" />
+				</svg>
+				<input
+					type="search"
+					bind:value={searchInput}
+					placeholder="Szukaj klienta, eventu, miejsca…"
+					aria-label="Szukaj"
+				/>
+				{#if searchInput}
+					<button type="button" class="search-clear" onclick={clearSearch} aria-label="Wyczyść">✕</button>
+				{/if}
+			</form>
 		</div>
 
 		<div class="content">
@@ -392,13 +424,52 @@
 		padding: 0.75rem 1.5rem 0;
 		border-bottom: 1px solid var(--line);
 		background: var(--paper);
-		overflow-x: auto;
+		display: flex;
+		gap: 1rem;
+		align-items: flex-end;
+		flex-wrap: wrap;
 	}
 	.tabs {
 		display: flex;
 		gap: 0.15rem;
 		white-space: nowrap;
+		overflow-x: auto;
+		flex: 1 1 auto;
 	}
+	.search-form {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.4rem 0.7rem;
+		margin-bottom: 0.35rem;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		color: var(--mute);
+		border-radius: 0;
+		min-width: 220px;
+	}
+	.search-form:focus-within {
+		border-color: var(--wn-zielony);
+		color: var(--ink);
+	}
+	.search-form input {
+		border: none;
+		outline: none;
+		background: transparent;
+		font-family: var(--font-sans);
+		font-size: 0.85rem;
+		flex: 1;
+		color: inherit;
+	}
+	.search-clear {
+		background: transparent;
+		border: none;
+		color: var(--mute);
+		cursor: pointer;
+		padding: 0 0.2rem;
+		font-size: 0.8rem;
+	}
+	.search-clear:hover { color: var(--wn-pomidor); }
 	.tab {
 		display: inline-flex;
 		align-items: center;

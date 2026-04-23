@@ -8,30 +8,51 @@
 	let newNote = $state('');
 	let addingNote = $state(false);
 
-	// Status transitions per type
-	const STATUS_OPTIONS: Record<string, Array<{ id: string; label: string; emoji: string }>> = {
-		lead: [
-			{ id: 'new', label: 'Nowy', emoji: '🆕' },
-			{ id: 'contacted', label: 'Skontaktowany', emoji: '📞' },
-			{ id: 'qualified', label: 'Kwalifikowany (hot)', emoji: '🎯' },
-			{ id: 'lost', label: 'Przegrany', emoji: '✕' },
-			{ id: 'archived', label: 'Archiwum', emoji: '📦' }
-		],
-		offer: [
-			{ id: 'draft', label: 'Szkic', emoji: '✏️' },
-			{ id: 'sent', label: 'Wysłana', emoji: '✉️' },
-			{ id: 'accepted', label: 'Zaakceptowana', emoji: '✅' },
-			{ id: 'rejected', label: 'Odrzucona', emoji: '✕' }
-		],
-		booking: [
-			{ id: 'draft', label: 'Szkic', emoji: '📝' },
-			{ id: 'confirmed', label: 'Potwierdzona', emoji: '✅' },
-			{ id: 'in-progress', label: 'W trakcie', emoji: '🚚' },
-			{ id: 'done', label: 'Zakończona', emoji: '🎉' },
-			{ id: 'cancelled', label: 'Anulowana', emoji: '✕' }
-		]
+	// UNIFIED 5-STATUS (v5.9): nowy / w-trakcie / wygrany / przegrany / archiwum
+	// ID = unified bucket, server mapuje na DB-status per-type
+	const UNIFIED_STATUSES: Array<{ id: string; label: string; emoji: string }> = [
+		{ id: 'nowy', label: 'Nowy', emoji: '🆕' },
+		{ id: 'w-trakcie', label: 'W trakcie', emoji: '⚙️' },
+		{ id: 'wygrany', label: 'Wygrany', emoji: '✅' },
+		{ id: 'przegrany', label: 'Przegrany', emoji: '✕' },
+		{ id: 'archiwum', label: 'Archiwum', emoji: '📦' }
+	];
+
+	// Mapowanie DB-status → unified bucket (do podświetlenia aktywnego chipa)
+	const DB_TO_UNIFIED: Record<string, Record<string, string>> = {
+		lead: {
+			new: 'nowy',
+			contacted: 'w-trakcie',
+			qualified: 'w-trakcie',
+			quoted: 'w-trakcie',
+			won: 'wygrany',
+			lost: 'przegrany',
+			archived: 'archiwum'
+		},
+		offer: {
+			draft: 'w-trakcie',
+			sent: 'w-trakcie',
+			viewed: 'w-trakcie',
+			accepted: 'wygrany',
+			rejected: 'przegrany',
+			expired: 'przegrany'
+		},
+		booking: {
+			draft: 'w-trakcie',
+			confirmed: 'w-trakcie',
+			'in-progress': 'w-trakcie',
+			done: 'wygrany',
+			cancelled: 'przegrany'
+		}
 	};
-	const statusList = $derived(STATUS_OPTIONS[z.type] ?? []);
+	const currentUnified = $derived(DB_TO_UNIFIED[z.type]?.[z.status] ?? z.status);
+
+	// "Nowy" ma sens tylko dla leada (offer/booking nie może wrócić do nowego)
+	const statusList = $derived(
+		z.type === 'lead'
+			? UNIFIED_STATUSES
+			: UNIFIED_STATUSES.filter((s) => s.id !== 'nowy' && (z.type !== 'booking' || s.id !== 'archiwum'))
+	);
 
 	const ICONS: Record<string, string> = {
 		dashboard: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9ZM9 22V12h6v10',
@@ -279,7 +300,7 @@
 								name="status"
 								value={s.id}
 								class="status-chip-btn"
-								class:active={z.status === s.id}
+								class:active={currentUnified === s.id}
 							>
 								<span>{s.emoji}</span>
 								<span>{s.label}</span>

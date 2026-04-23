@@ -57,23 +57,26 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		acceptedAt: Date | null;
 	};
 
+	// Unified labels — "w trakcie" dla pośrednich stanów, ale zachowujemy fine-grained sub-label
 	const STAGES: Record<string, { label: string; emoji: string }> = {
 		'lead:new': { label: 'Nowy', emoji: '🆕' },
-		'lead:contacted': { label: 'Skontaktowany', emoji: '📞' },
-		'lead:qualified': { label: 'Kwalifikowany', emoji: '🎯' },
-		'lead:quoted': { label: 'Oferta wysłana', emoji: '✉️' },
+		'lead:contacted': { label: 'W trakcie · kontakt', emoji: '📞' },
+		'lead:qualified': { label: 'W trakcie · hot', emoji: '🎯' },
+		'lead:quoted': { label: 'W trakcie · oferta', emoji: '✉️' },
 		'lead:won': { label: 'Wygrany', emoji: '✅' },
 		'lead:lost': { label: 'Przegrany', emoji: '✕' },
-		'offer:draft': { label: 'Oferta (szkic)', emoji: '✏️' },
-		'offer:sent': { label: 'Oferta wysłana', emoji: '✉️' },
-		'offer:viewed': { label: 'Klient zobaczył', emoji: '👀' },
-		'offer:accepted': { label: 'Zaakceptowana', emoji: '✅' },
-		'offer:rejected': { label: 'Odrzucona', emoji: '✕' },
-		'booking:draft': { label: 'Rezerwacja (szkic)', emoji: '📝' },
-		'booking:confirmed': { label: 'Potwierdzona', emoji: '✅' },
-		'booking:in-progress': { label: 'W trakcie', emoji: '🚚' },
-		'booking:done': { label: 'Zrealizowana', emoji: '🎉' },
-		'booking:cancelled': { label: 'Anulowana', emoji: '✕' }
+		'lead:archived': { label: 'Archiwum', emoji: '📦' },
+		'offer:draft': { label: 'W trakcie · szkic', emoji: '✏️' },
+		'offer:sent': { label: 'W trakcie · wysłana', emoji: '✉️' },
+		'offer:viewed': { label: 'W trakcie · zobaczył', emoji: '👀' },
+		'offer:accepted': { label: 'Wygrany', emoji: '✅' },
+		'offer:rejected': { label: 'Przegrany', emoji: '✕' },
+		'offer:expired': { label: 'Przegrany · wygasła', emoji: '⏰' },
+		'booking:draft': { label: 'W trakcie · szkic', emoji: '📝' },
+		'booking:confirmed': { label: 'W trakcie · potwierdzona', emoji: '✅' },
+		'booking:in-progress': { label: 'W trakcie · realizacja', emoji: '🚚' },
+		'booking:done': { label: 'Wygrany', emoji: '🎉' },
+		'booking:cancelled': { label: 'Przegrany', emoji: '✕' }
 	};
 
 	let zlecenie: Zlecenie;
@@ -230,16 +233,41 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 export const actions: Actions = {
 	updateStatus: async ({ request, params }) => {
 		const form = await request.formData();
-		const status = form.get('status')?.toString();
-		if (!status) return fail(400);
+		const bucket = form.get('status')?.toString();
+		if (!bucket) return fail(400);
 
 		const compound = params.compoundId!;
 		const dashIdx = compound.indexOf('-');
 		const type = compound.slice(0, dashIdx) as 'lead' | 'offer' | 'booking';
 		const id = compound.slice(dashIdx + 1);
 
+		// Unified bucket → DB status per-type
+		const UNIFIED_TO_DB: Record<string, Record<string, string>> = {
+			lead: {
+				nowy: 'new',
+				'w-trakcie': 'contacted',
+				wygrany: 'won',
+				przegrany: 'lost',
+				archiwum: 'archived'
+			},
+			offer: {
+				'w-trakcie': 'sent',
+				wygrany: 'accepted',
+				przegrany: 'rejected',
+				archiwum: 'expired'
+			},
+			booking: {
+				'w-trakcie': 'confirmed',
+				wygrany: 'done',
+				przegrany: 'cancelled'
+			}
+		};
+
+		// Fallback: jeśli to już surowy DB status (np. ktoś prześle "new"), pozostaw bez mapowania
+		const mapped = UNIFIED_TO_DB[type]?.[bucket] ?? bucket;
+
 		const table = type === 'lead' ? lead : type === 'offer' ? offer : booking;
-		await db.update(table).set({ status, updatedAt: new Date() }).where(eq(table.id, id));
+		await db.update(table).set({ status: mapped, updatedAt: new Date() }).where(eq(table.id, id));
 		return { success: true };
 	},
 

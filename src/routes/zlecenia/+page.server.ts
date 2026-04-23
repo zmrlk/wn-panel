@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		role: 'admin'
 	};
 
-	const tabFilter = url.searchParams.get('tab') ?? 'nowe';
+	const tabFilter = url.searchParams.get('tab') ?? 'w-trakcie';
 
 	// Load raw data
 	const [leads, offers, bookings] = await Promise.all([
@@ -98,25 +98,31 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		createdAt: Date;
 	};
 
+	// UNIFIED 5-STAGE MODEL (v5.9):
+	//   1 = Nowy       (tylko świeży lead)
+	//   2 = W trakcie  (wszystko "happening" — kontakt, oferta, rezerwacja)
+	//   3 = Wygrany    (zamknięte na plus: accepted/done/won)
+	//   4 = Przegrany  (lost/rejected/expired/cancelled)
+	//   5 = Archiwum   (lead.archived)
 	const STAGES: Record<string, { stage: number; label: string; emoji: string; isLost: boolean }> = {
-		'lead:new':           { stage: 1, label: 'Nowy',                emoji: '🆕', isLost: false },
-		'lead:contacted':     { stage: 2, label: 'Skontaktowany',       emoji: '📞', isLost: false },
-		'lead:qualified':     { stage: 3, label: 'Kwalifikowany',       emoji: '🎯', isLost: false },
-		'lead:quoted':        { stage: 4, label: 'Oferta (lead)',       emoji: '✉️', isLost: false },
-		'lead:won':           { stage: 7, label: 'Wygrany',             emoji: '✅', isLost: false },
-		'lead:lost':          { stage: 0, label: 'Przegrany',           emoji: '✕',  isLost: true  },
-		'lead:archived':      { stage: 0, label: 'Archiwum',            emoji: '📦', isLost: true  },
-		'offer:draft':        { stage: 4, label: 'Oferta (szkic)',      emoji: '✏️', isLost: false },
-		'offer:sent':         { stage: 4, label: 'Oferta wysłana',      emoji: '✉️', isLost: false },
-		'offer:viewed':       { stage: 5, label: 'Klient zobaczył',     emoji: '👀', isLost: false },
-		'offer:accepted':     { stage: 6, label: 'Zaakceptowana',       emoji: '✅', isLost: false },
-		'offer:rejected':     { stage: 0, label: 'Odrzucona',           emoji: '✕',  isLost: true  },
-		'offer:expired':      { stage: 0, label: 'Wygasła',             emoji: '⏰', isLost: true  },
-		'booking:draft':      { stage: 6, label: 'Rezerw. szkic',       emoji: '📝', isLost: false },
-		'booking:confirmed':  { stage: 7, label: 'Potwierdzona',        emoji: '✅', isLost: false },
-		'booking:in-progress':{ stage: 7, label: 'W trakcie',           emoji: '🚚', isLost: false },
-		'booking:done':       { stage: 8, label: 'Zrealizowana',        emoji: '🎉', isLost: false },
-		'booking:cancelled':  { stage: 0, label: 'Anulowana',           emoji: '✕',  isLost: true  }
+		'lead:new':           { stage: 1, label: 'Nowy',           emoji: '🆕', isLost: false },
+		'lead:contacted':     { stage: 2, label: 'W trakcie',      emoji: '📞', isLost: false },
+		'lead:qualified':     { stage: 2, label: 'W trakcie',      emoji: '📞', isLost: false },
+		'lead:quoted':        { stage: 2, label: 'W trakcie',      emoji: '✉️', isLost: false },
+		'lead:won':           { stage: 3, label: 'Wygrany',        emoji: '✅', isLost: false },
+		'lead:lost':          { stage: 4, label: 'Przegrany',      emoji: '✕',  isLost: true  },
+		'lead:archived':      { stage: 5, label: 'Archiwum',       emoji: '📦', isLost: true  },
+		'offer:draft':        { stage: 2, label: 'W trakcie',      emoji: '✏️', isLost: false },
+		'offer:sent':         { stage: 2, label: 'W trakcie',      emoji: '✉️', isLost: false },
+		'offer:viewed':       { stage: 2, label: 'W trakcie',      emoji: '👀', isLost: false },
+		'offer:accepted':     { stage: 3, label: 'Wygrany',        emoji: '✅', isLost: false },
+		'offer:rejected':     { stage: 4, label: 'Przegrany',      emoji: '✕',  isLost: true  },
+		'offer:expired':      { stage: 4, label: 'Przegrany',      emoji: '⏰', isLost: true  },
+		'booking:draft':      { stage: 2, label: 'W trakcie',      emoji: '📝', isLost: false },
+		'booking:confirmed':  { stage: 2, label: 'W trakcie',      emoji: '✅', isLost: false },
+		'booking:in-progress':{ stage: 2, label: 'W trakcie',      emoji: '🚚', isLost: false },
+		'booking:done':       { stage: 3, label: 'Wygrany',        emoji: '🎉', isLost: false },
+		'booking:cancelled':  { stage: 4, label: 'Przegrany',      emoji: '✕',  isLost: true  }
 	};
 
 	const zlecenia: Zlecenie[] = [];
@@ -204,36 +210,49 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		});
 	}
 
-	// Counts per tab (user's order: Nowe → W toku → Potwierdzone → Zrobione → Przegrane → Wszystko)
+	// Counts per tab (5-stage model)
 	const counts = {
 		all: zlecenia.length,
-		nowe: zlecenia.filter((z) => z.stage >= 1 && z.stage <= 3).length,
-		'w-toku': zlecenia.filter((z) => z.stage >= 4 && z.stage <= 6).length,
-		potwierdzone: zlecenia.filter((z) => z.stage === 7).length,
-		done: zlecenia.filter((z) => z.stage === 8).length,
-		przegrane: zlecenia.filter((z) => z.isLost).length
+		nowy: zlecenia.filter((z) => z.stage === 1).length,
+		'w-trakcie': zlecenia.filter((z) => z.stage === 2).length,
+		wygrany: zlecenia.filter((z) => z.stage === 3).length,
+		przegrany: zlecenia.filter((z) => z.stage === 4).length,
+		archiwum: zlecenia.filter((z) => z.stage === 5).length
 	};
 
+	// Search filter (q= param)
+	const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
+
 	let filtered = zlecenia;
-	if (tabFilter === 'nowe') filtered = zlecenia.filter((z) => z.stage >= 1 && z.stage <= 3);
-	else if (tabFilter === 'w-toku') filtered = zlecenia.filter((z) => z.stage >= 4 && z.stage <= 6);
-	else if (tabFilter === 'potwierdzone') filtered = zlecenia.filter((z) => z.stage === 7);
-	else if (tabFilter === 'zrobione') filtered = zlecenia.filter((z) => z.stage === 8);
-	else if (tabFilter === 'przegrane') filtered = zlecenia.filter((z) => z.isLost);
+	if (tabFilter === 'nowy') filtered = zlecenia.filter((z) => z.stage === 1);
+	else if (tabFilter === 'w-trakcie') filtered = zlecenia.filter((z) => z.stage === 2);
+	else if (tabFilter === 'wygrany') filtered = zlecenia.filter((z) => z.stage === 3);
+	else if (tabFilter === 'przegrany') filtered = zlecenia.filter((z) => z.stage === 4);
+	else if (tabFilter === 'archiwum') filtered = zlecenia.filter((z) => z.stage === 5);
 	else if (tabFilter === 'wszystko') filtered = zlecenia;
+
+	if (q) {
+		filtered = filtered.filter((z) => {
+			const hay = [z.contact, z.contactSub, z.eventName, z.venue, z.number, z.phone, z.notes]
+				.filter(Boolean)
+				.join(' ')
+				.toLowerCase();
+			return hay.includes(q);
+		});
+	}
 
 	// Sort — active first, then by stage descending, then by date
 	filtered.sort((a, b) => {
-		if (a.stage !== b.stage) return b.stage - a.stage;
+		if (a.stage !== b.stage) return a.stage - b.stage; // 1,2,3,4,5 — nowe najpierw
 		const ad = a.eventDate ? new Date(a.eventDate).getTime() : 0;
 		const bd = b.eventDate ? new Date(b.eventDate).getTime() : 0;
 		return ad - bd;
 	});
 
-	// Aggregates
+	// Aggregates — wartość aktywnych (w-trakcie + wygrany)
 	const activeValue = zlecenia
-		.filter((z) => !z.isLost && z.stage >= 4 && z.stage <= 7 && z.valueCents)
+		.filter((z) => (z.stage === 2 || z.stage === 3) && z.valueCents)
 		.reduce((s, z) => s + (z.valueCents ?? 0), 0);
 
-	return { user, zlecenia: filtered, counts, tabFilter, activeValue };
+	return { user, zlecenia: filtered, counts, tabFilter, activeValue, q };
 };

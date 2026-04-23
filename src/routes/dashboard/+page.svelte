@@ -1,5 +1,50 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	let { data } = $props();
+
+	// Dynamiczna data w nagłówku
+	const today = new Date();
+	const dateLabel = today.toLocaleDateString('pl-PL', {
+		weekday: 'long',
+		day: 'numeric',
+		month: 'long'
+	});
+	const weekdayPL = today.toLocaleDateString('pl-PL', { weekday: 'long' });
+	const seasonLabel = (() => {
+		const m = today.getMonth(); // 0-11
+		if (m >= 3 && m <= 8) {
+			// kwiecień-wrzesień = sezon
+			const monthsPL = ['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
+			return `sezon do 30 ${monthsPL[8]}`;
+		}
+		const daysToMay = Math.max(0, Math.floor((new Date(today.getFullYear(), 4, 1).getTime() - today.getTime()) / 86400000));
+		return daysToMay > 0 ? `${daysToMay} dni do majówki` : 'majówka trwa';
+	})();
+
+	// Range toggle
+	const currentRange = data.range ?? '21d';
+	function setRange(r: '21d' | 'month' | 'season') {
+		const p = new URLSearchParams();
+		if (r !== '21d') p.set('range', r);
+		goto(`/dashboard${p.toString() ? '?' + p.toString() : ''}`);
+	}
+
+	// Search (⌘K → routuje do /zlecenia?q=)
+	let searchOpen = $state(false);
+	let searchInput = $state('');
+	function submitGlobalSearch(ev: SubmitEvent) {
+		ev.preventDefault();
+		const q = searchInput.trim();
+		if (!q) return;
+		goto(`/zlecenia?tab=wszystko&q=${encodeURIComponent(q)}`);
+	}
+	function onKeydown(ev: KeyboardEvent) {
+		if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === 'k') {
+			ev.preventDefault();
+			searchOpen = true;
+		}
+		if (ev.key === 'Escape') searchOpen = false;
+	}
 
 	// VRS-style icon paths (lifted)
 	const ICONS: Record<string, string> = {
@@ -61,6 +106,8 @@
 	};
 </script>
 
+<svelte:window onkeydown={onKeydown} />
+
 <svelte:head>
 	<title>Dashboard · Wolny Namiot panel</title>
 </svelte:head>
@@ -115,17 +162,17 @@
 		<header class="topbar">
 			<div class="top-left">
 				<h1>Dashboard</h1>
-				<span class="top-date">środa · 22 kwietnia · 9 dni do majówki</span>
+				<span class="top-date">{dateLabel} · {seasonLabel}</span>
 			</div>
 			<div class="top-right">
 				<div class="status-inline">
 					<span class="si"><b>{data.status.eventsThisWeek}</b> eventy w tygodniu</span>
 					<span class="dot-sep">·</span>
-					<span class="si alert"><b>{data.status.needsAttention}</b> wymagają akcji</span>
+					<span class="si" class:alert={data.status.needsAttention > 0}><b>{data.status.needsAttention}</b> wymagają akcji</span>
 					<span class="dot-sep">·</span>
-					<span class="si"><b>{data.status.freeSlotsMay}</b> wolne terminy w maju</span>
+					<span class="si"><b>{data.status.flagshipFreeDays}</b>/{data.status.totalDays} dni wolne ({data.status.flagshipName})</span>
 				</div>
-				<button class="cmdk" type="button">
+				<button class="cmdk" type="button" onclick={() => (searchOpen = true)}>
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
 						<circle cx="11" cy="11" r="8" />
 						<path d="m21 21-4.3-4.3" />
@@ -136,15 +183,34 @@
 			</div>
 		</header>
 
+		{#if searchOpen}
+			<div class="search-overlay" onclick={() => (searchOpen = false)} role="presentation">
+				<form class="search-panel" onclick={(e) => e.stopPropagation()} onsubmit={submitGlobalSearch}>
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+						<circle cx="11" cy="11" r="8" />
+						<path d="m21 21-4.3-4.3" />
+					</svg>
+					<!-- svelte-ignore a11y_autofocus -->
+					<input
+						type="search"
+						autofocus
+						bind:value={searchInput}
+						placeholder="Szukaj klienta, eventu, miejsca…"
+					/>
+					<kbd>Esc</kbd>
+				</form>
+			</div>
+		{/if}
+
 		<div class="content">
 			<!-- HERO: availability matrix -->
 			<section class="card matrix-card">
 				<div class="card-head">
-					<h2>Dostępność</h2>
+					<h2>Dostępność — {data.rangeLabel}</h2>
 					<div class="tabs">
-						<button class="tab active">21 dni</button>
-						<button class="tab">Miesiąc</button>
-						<button class="tab">Sezon</button>
+						<button class="tab" class:active={currentRange === '21d'} onclick={() => setRange('21d')}>21 dni</button>
+						<button class="tab" class:active={currentRange === 'month'} onclick={() => setRange('month')}>Miesiąc</button>
+						<button class="tab" class:active={currentRange === 'season'} onclick={() => setRange('season')}>Sezon</button>
 					</div>
 				</div>
 
@@ -475,6 +541,7 @@
 		color: var(--mute);
 		cursor: pointer;
 	}
+	.cmdk:hover { color: var(--ink); border-color: var(--wn-zielony); }
 	.cmdk kbd {
 		font-family: var(--font-mono);
 		font-size: 0.65rem;
@@ -482,6 +549,45 @@
 		background: var(--paper-2);
 		border-radius: 3px;
 		color: var(--ink-2);
+	}
+
+	/* Search overlay */
+	.search-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0,0,0,0.4);
+		z-index: 1000;
+		display: flex;
+		align-items: flex-start;
+		justify-content: center;
+		padding-top: 15vh;
+	}
+	.search-panel {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		width: min(560px, 90vw);
+		padding: 1rem 1.25rem;
+		background: var(--paper);
+		border: 2px solid var(--ink);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
+	}
+	.search-panel input {
+		flex: 1;
+		border: none;
+		outline: none;
+		background: transparent;
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		color: var(--ink);
+	}
+	.search-panel kbd {
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		padding: 0.1rem 0.4rem;
+		background: var(--paper-2);
+		color: var(--mute);
+		border: 1px solid var(--line);
 	}
 
 	.content {
