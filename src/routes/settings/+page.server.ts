@@ -45,6 +45,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				name: user.name,
 				email: user.email,
 				role: user.role,
+				skills: user.skills,
 				emailVerified: user.emailVerified,
 				createdAt: user.createdAt
 			})
@@ -114,12 +115,14 @@ export const actions: Actions = {
 		const name = (form.get('name') ?? '').toString().trim();
 		const email = (form.get('email') ?? '').toString().trim().toLowerCase();
 		const role = ((form.get('role') ?? 'employee').toString() === 'admin') ? 'admin' : 'employee';
+		const skills = form.getAll('skills').map((s) => s.toString());
 		if (!name || !email) return fail(400, { error: 'Podaj imię i email' });
 		await db.insert(user).values({
 			id: randomUUID(),
 			name,
 			email,
 			role,
+			skills,
 			emailVerified: false
 		});
 		return { success: true, section: 'users' };
@@ -130,8 +133,12 @@ export const actions: Actions = {
 		const id = (form.get('id') ?? '').toString();
 		const name = (form.get('name') ?? '').toString().trim();
 		const role = ((form.get('role') ?? 'employee').toString() === 'admin') ? 'admin' : 'employee';
+		const skills = form.getAll('skills').map((s) => s.toString());
 		if (!id || !name) return fail(400);
-		await db.update(user).set({ name, role, updatedAt: new Date() }).where(eq(user.id, id));
+		await db
+			.update(user)
+			.set({ name, role, skills, updatedAt: new Date() })
+			.where(eq(user.id, id));
 		return { success: true, section: 'users' };
 	},
 

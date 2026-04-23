@@ -9,7 +9,9 @@ import {
 	client,
 	item,
 	stockMovement,
-	payment
+	payment,
+	user,
+	bookingAssignment
 } from '$lib/server/db/schema';
 import { asc, eq, sql } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
@@ -71,6 +73,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			notes: string | null;
 		}>;
 		paidCents: number;
+		// Booking-only: kto realizuje (driver/installer/lead)
+		assignments: Array<{
+			id: string;
+			userId: string;
+			userName: string;
+			task: string;
+			notes: string | null;
+		}>;
 		notes: string | null;
 		message: string | null;
 		source: string | null;
@@ -135,6 +145,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			bookingTents: [],
 			payments: [],
 			paidCents: 0,
+			assignments: [],
 			notes: l.notes,
 			message: l.message,
 			source: l.source,
@@ -190,6 +201,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			bookingTents: [],
 			payments: [],
 			paidCents: 0,
+			assignments: [],
 			notes: o.offer.notes,
 			message: null,
 			source: null,
@@ -206,8 +218,8 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 			.where(eq(booking.id, id))
 			.limit(1);
 		if (!b) throw error(404, 'Rezerwacja nie istnieje');
-		// Fetch items via booking_tent join + payments
-		const [bookedItems, payments] = await Promise.all([
+		// Fetch items via booking_tent join + payments + assignments
+		const [bookedItems, payments, assignmentsRaw] = await Promise.all([
 			db
 				.select({ bookingTent: bookingTent, item: item })
 				.from(bookingTent)
@@ -217,7 +229,19 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				.select()
 				.from(payment)
 				.where(eq(payment.bookingId, id))
-				.orderBy(asc(payment.paidAt))
+				.orderBy(asc(payment.paidAt)),
+			db
+				.select({
+					id: bookingAssignment.id,
+					userId: bookingAssignment.userId,
+					task: bookingAssignment.task,
+					notes: bookingAssignment.notes,
+					userName: user.name
+				})
+				.from(bookingAssignment)
+				.leftJoin(user, eq(bookingAssignment.userId, user.id))
+				.where(eq(bookingAssignment.bookingId, id))
+				.orderBy(asc(bookingAssignment.createdAt))
 		]);
 		const paidCentsTotal = payments.reduce((s, p) => s + p.amountCents, 0);
 		const s = STAGES[`booking:${b.booking.status}`] ?? STAGES['booking:confirmed'];
@@ -269,6 +293,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 				notes: p.notes
 			})),
 			paidCents: paidCentsTotal,
+			assignments: assignmentsRaw.map((a) => ({
+				id: a.id,
+				userId: a.userId,
+				userName: a.userName ?? '—',
+				task: a.task,
+				notes: a.notes
+			})),
 			notes: b.booking.notes,
 			message: null,
 			source: null,
@@ -281,7 +312,17 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		throw error(400, `Nieznany typ zlecenia: ${type}`);
 	}
 
-	return { user, zlecenie };
+	// Available users do przydziału (tylko dla type=booking — UI pokazuje assign)
+	let availableUsers: Array<{ id: string; name: string; skills: string[] }> = [];
+	if (type === 'booking') {
+		const rows = await db
+			.select({ id: user.id, name: user.name, skills: user.skills })
+			.from(user)
+			.orderBy(asc(user.name));
+		availableUsers = rows.map((r) => ({ id: r.id, name: r.name, skills: r.skills ?? [] }));
+	}
+
+	return { user, zlecenie, availableUsers };
 };
 
 export const actions: Actions = {
@@ -434,6 +475,44 @@ export const actions: Actions = {
 			.update(booking)
 			.set({ status: 'in-progress', updatedAt: new Date() })
 			.where(eq(booking.id, id));
+		return { success: true };
+	},
+
+	// ═══ Driver Flow (v5.23) — przypisania do bookingu ═══
+	assignUser: async ({ request, params }) => {
+		const compound = params.compoundId!;
+		const dashIdx = compound.indexOf('-');
+		const type = compound.slice(0, dashIdx);
+		const id = compound.slice(dashIdx + 1);
+		if (type !== 'booking') return fail(400, { error: 'Przydziały tylko dla bookingów' });
+
+		const form = await request.formData();
+		const userId = form.get('userId')?.toString();
+		const task = form.get('task')?.toString() ?? 'driver';
+		const notes = form.get('notes')?.toString()?.trim() || null;
+		if (!userId) return fail(400, { error: 'Wybierz osobę' });
+		if (!['driver', 'installer', 'lead', 'other'].includes(task)) {
+			return fail(400, { error: 'Nieprawidłowy task' });
+		}
+
+		try {
+			await db.insert(bookingAssignment).values({
+				bookingId: id,
+				userId,
+				task,
+				notes
+			});
+		} catch {
+			return fail(400, { error: 'Ta osoba jest już przypisana z tym taskiem' });
+		}
+		return { success: true };
+	},
+
+	unassignUser: async ({ request }) => {
+		const form = await request.formData();
+		const assignmentId = form.get('assignmentId')?.toString();
+		if (!assignmentId) return fail(400);
+		await db.delete(bookingAssignment).where(eq(bookingAssignment.id, assignmentId));
 		return { success: true };
 	},
 

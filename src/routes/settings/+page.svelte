@@ -191,6 +191,7 @@
 								<th>Imię</th>
 								<th>Email</th>
 								<th>Rola</th>
+								<th>Umiejętności</th>
 								<th>Dodany</th>
 								<th></th>
 							</tr>
@@ -199,17 +200,27 @@
 							{#each data.users as u}
 								{#if editingUserId === u.id}
 									<tr class="edit-row">
-										<td colspan="5">
-											<form method="POST" action="?/updateUser" class="inline-form">
+										<td colspan="6">
+											<form method="POST" action="?/updateUser" class="inline-form stacked">
 												<input type="hidden" name="id" value={u.id} />
-												<input name="name" type="text" value={u.name} placeholder="Imię" required />
-												<input type="text" value={u.email} disabled class="mute-input" />
-												<select name="role">
-													<option value="admin" selected={u.role === 'admin'}>admin</option>
-													<option value="employee" selected={u.role === 'employee'}>employee</option>
-												</select>
-												<button type="submit" class="btn-save">Zapisz</button>
-												<button type="button" class="btn-cancel" onclick={() => (editingUserId = null)}>Anuluj</button>
+												<div class="inline-row">
+													<input name="name" type="text" value={u.name} placeholder="Imię" required />
+													<input type="text" value={u.email} disabled class="mute-input" />
+													<select name="role">
+														<option value="admin" selected={u.role === 'admin'}>admin</option>
+														<option value="employee" selected={u.role === 'employee'}>employee</option>
+													</select>
+												</div>
+												<div class="skill-checks">
+													<span class="skill-lbl">Umiejętności:</span>
+													<label class="skill-box"><input type="checkbox" name="skills" value="driver" checked={u.skills?.includes('driver')} /> 🚚 Kierowca</label>
+													<label class="skill-box"><input type="checkbox" name="skills" value="installer" checked={u.skills?.includes('installer')} /> 🔨 Montażysta</label>
+													<label class="skill-box"><input type="checkbox" name="skills" value="lead" checked={u.skills?.includes('lead')} /> 👑 Lider ekipy</label>
+												</div>
+												<div class="inline-row">
+													<button type="submit" class="btn-save">Zapisz</button>
+													<button type="button" class="btn-cancel" onclick={() => (editingUserId = null)}>Anuluj</button>
+												</div>
 											</form>
 										</td>
 									</tr>
@@ -219,6 +230,17 @@
 										<td class="mute">{u.email}</td>
 										<td>
 											<span class="role-tag role-{u.role}">{u.role}</span>
+										</td>
+										<td class="skill-cell">
+											{#if u.skills && u.skills.length > 0}
+												{#each u.skills as sk}
+													<span class="skill-chip">
+														{#if sk === 'driver'}🚚 kierowca{:else if sk === 'installer'}🔨 montaż{:else if sk === 'lead'}👑 lider{:else}{sk}{/if}
+													</span>
+												{/each}
+											{:else}
+												<span class="mute">—</span>
+											{/if}
 										</td>
 										<td class="mute">{fmtDate(u.createdAt)}</td>
 										<td class="actions">
@@ -254,6 +276,14 @@
 									<option value="admin">admin</option>
 								</select>
 							</label>
+						</div>
+						<div class="skill-checks add-skills">
+							<span class="skill-lbl">Umiejętności:</span>
+							<label class="skill-box"><input type="checkbox" name="skills" value="driver" /> 🚚 Kierowca</label>
+							<label class="skill-box"><input type="checkbox" name="skills" value="installer" /> 🔨 Montażysta</label>
+							<label class="skill-box"><input type="checkbox" name="skills" value="lead" /> 👑 Lider</label>
+						</div>
+						<div class="add-row-actions">
 							<button type="submit" class="btn-primary">Dodaj</button>
 						</div>
 						<p class="hint mini">Login/hasło zostanie dodane przy integracji Keycloak (później).</p>
@@ -499,6 +529,57 @@
 		align-items: center;
 		padding: 0.4rem;
 		flex-wrap: wrap;
+	}
+	.inline-form.stacked {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	.inline-row {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		flex-wrap: wrap;
+	}
+	.skill-checks {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+		padding: 0.55rem 0;
+		flex-wrap: wrap;
+		border-top: 1px dashed var(--line);
+		border-bottom: 1px dashed var(--line);
+	}
+	.skill-checks.add-skills {
+		margin-top: 0.75rem;
+		border-bottom: none;
+	}
+	.skill-lbl {
+		font-size: 0.78rem;
+		color: var(--mute);
+		font-weight: 500;
+	}
+	.skill-box {
+		display: inline-flex;
+		gap: 0.3rem;
+		align-items: center;
+		font-size: 0.85rem;
+		cursor: pointer;
+	}
+	.skill-cell {
+		font-size: 0.82rem;
+	}
+	.skill-chip {
+		display: inline-block;
+		padding: 0.1rem 0.45rem;
+		background: var(--paper-2);
+		border: 1px solid var(--line);
+		margin-right: 0.25rem;
+		font-size: 0.75rem;
+	}
+	.add-row-actions {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 0.75rem;
 	}
 	.inline-form input, .inline-form select {
 		border: 1px solid var(--line);

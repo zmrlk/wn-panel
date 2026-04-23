@@ -321,6 +321,65 @@
 				</form>
 
 				{#if z.type === 'booking'}
+					<!-- ═══ ZESPÓŁ ═══ -->
+					<div class="team-block">
+						<div class="team-header">
+							<h3>👥 Zespół realizujący ({z.assignments.length})</h3>
+						</div>
+						{#if z.assignments.length > 0}
+							<div class="team-list">
+								{#each z.assignments as a}
+									<div class="team-member">
+										<span class="member-avatar">{a.userName.charAt(0).toUpperCase()}</span>
+										<div class="member-info">
+											<strong>{a.userName}</strong>
+											<span class="member-task">
+												{#if a.task === 'driver'}🚚 kierowca
+												{:else if a.task === 'installer'}🔨 montażysta
+												{:else if a.task === 'lead'}👑 lider
+												{:else}{a.task}{/if}
+											</span>
+										</div>
+										<form method="POST" action="?/unassignUser" style="display:inline;">
+											<input type="hidden" name="assignmentId" value={a.id} />
+											<button type="submit" class="btn-unassign" onclick={(e) => { if (!confirm(`Usunąć ${a.userName} z zespołu?`)) e.preventDefault(); }}>✕</button>
+										</form>
+									</div>
+								{/each}
+							</div>
+						{:else}
+							<p class="team-empty">Jeszcze nikt nie przypisany. Dobierz zespół poniżej.</p>
+						{/if}
+
+						<form method="POST" action="?/assignUser" class="team-form">
+							<label class="team-field">
+								<span>Osoba</span>
+								<select name="userId" required>
+									<option value="">— wybierz —</option>
+									{#each data.availableUsers as u}
+										<option value={u.id}>
+											{u.name}{u.skills.length > 0 ? ` (${u.skills.map((s) => s === 'driver' ? '🚚' : s === 'installer' ? '🔨' : s === 'lead' ? '👑' : s).join(' ')})` : ''}
+										</option>
+									{/each}
+								</select>
+							</label>
+							<label class="team-field">
+								<span>Rola</span>
+								<select name="task">
+									<option value="driver">🚚 Kierowca</option>
+									<option value="installer">🔨 Montażysta</option>
+									<option value="lead">👑 Lider ekipy</option>
+									<option value="other">Inne</option>
+								</select>
+							</label>
+							<label class="team-field wide">
+								<span>Notatka (opcjonalnie)</span>
+								<input name="notes" type="text" placeholder="np. auto + przyczepa, wozi namiot 6×12" />
+							</label>
+							<button type="submit" class="btn-assign">+ Przypisz</button>
+						</form>
+					</div>
+
 					<!-- ═══ PŁATNOŚCI ═══ -->
 					{@const totalZl = (z.totalCents ?? 0) / 100}
 					{@const paidZl = z.paidCents / 100}
@@ -977,6 +1036,122 @@
 		margin-top: 1.25rem;
 		padding-top: 1.25rem;
 		border-top: 2px solid var(--line);
+	}
+
+	/* ─── ZESPÓŁ ─────────────────────────────── */
+	.team-block {
+		margin-top: 1.25rem;
+		padding-top: 1.25rem;
+		border-top: 2px solid var(--line);
+	}
+	.team-header h3 {
+		margin: 0 0 0.85rem;
+		font-size: 1.05rem;
+		font-weight: 700;
+	}
+	.team-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+	}
+	.team-member {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.55rem 0.85rem;
+		background: var(--paper-2);
+		border: 1px solid var(--line);
+	}
+	.member-avatar {
+		width: 32px;
+		height: 32px;
+		background: var(--wn-atrament);
+		color: var(--wn-plotno);
+		display: grid;
+		place-items: center;
+		font-weight: 700;
+		font-size: 0.85rem;
+	}
+	.member-info {
+		flex: 1;
+		display: flex;
+		gap: 0.75rem;
+		align-items: baseline;
+	}
+	.member-info strong {
+		font-size: 0.95rem;
+	}
+	.member-task {
+		font-size: 0.82rem;
+		color: var(--mute);
+	}
+	.btn-unassign {
+		padding: 0.3rem 0.55rem;
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--wn-pomidor);
+		cursor: pointer;
+		font-size: 0.9rem;
+	}
+	.btn-unassign:hover { border-color: var(--wn-pomidor); }
+	.team-empty {
+		color: var(--mute);
+		font-style: italic;
+		font-size: 0.88rem;
+		padding: 0.5rem 0;
+		margin: 0 0 1rem;
+	}
+	.team-form {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		gap: 0.7rem;
+		align-items: end;
+		padding: 0.85rem;
+		background: var(--paper-2);
+		border: 1px dashed var(--line);
+	}
+	.team-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+	.team-field > span {
+		font-size: 0.7rem;
+		color: var(--mute);
+		font-weight: 500;
+	}
+	.team-field.wide { grid-column: 1 / -1; }
+	.team-field input,
+	.team-field select {
+		border: 1px solid var(--line);
+		padding: 0.4rem 0.55rem;
+		background: var(--paper);
+		font-family: inherit;
+		font-size: 0.85rem;
+		border-radius: 0;
+	}
+	.team-field input:focus,
+	.team-field select:focus {
+		outline: none;
+		border-color: var(--wn-zielony);
+	}
+	.btn-assign {
+		grid-column: 1 / -1;
+		justify-self: end;
+		padding: 0.5rem 1.15rem;
+		background: var(--wn-zielony);
+		color: var(--wn-atrament);
+		border: 2px solid var(--wn-atrament);
+		border-radius: 0;
+		font-weight: 700;
+		cursor: pointer;
+		font-family: inherit;
+		box-shadow: 3px 3px 0 var(--wn-atrament);
+	}
+	.btn-assign:hover {
+		transform: translate(-1px, -1px);
+		box-shadow: 4px 4px 0 var(--wn-atrament);
 	}
 
 	/* ─── PŁATNOŚCI ─────────────────────────────── */

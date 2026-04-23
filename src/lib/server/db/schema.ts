@@ -21,6 +21,7 @@ export const user = pgTable('user', {
 	emailVerified: boolean('email_verified').notNull().default(false),
 	image: text('image'),
 	role: text('role').notNull().default('employee'), // admin | employee
+	skills: jsonb('skills').$type<string[]>().notNull().default([]), // ['driver', 'installer', 'lead']
 	createdAt: timestamp('created_at').notNull().defaultNow(),
 	updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
@@ -133,6 +134,21 @@ export const client = pgTable('client', {
 	notes: text('notes'),
 	createdAt: timestamp('created_at').notNull().defaultNow(),
 	updatedAt: timestamp('updated_at').notNull().defaultNow()
+});
+
+// Przypisania do bookingu — kto realizuje (v5.23 Driver Flow)
+// task: 'driver' | 'installer' | 'lead' | 'other'
+export const bookingAssignment = pgTable('booking_assignment', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	bookingId: uuid('booking_id')
+		.notNull()
+		.references(() => booking.id, { onDelete: 'cascade' }),
+	userId: text('user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	task: text('task').notNull(),
+	notes: text('notes'),
+	createdAt: timestamp('created_at').notNull().defaultNow()
 });
 
 // Płatności per booking (v5.21)
@@ -384,6 +400,11 @@ export const bookingRelations = relations(booking, ({ one, many }) => ({
 export const paymentRelations = relations(payment, ({ one }) => ({
 	booking: one(booking, { fields: [payment.bookingId], references: [booking.id] }),
 	receiver: one(user, { fields: [payment.receivedBy], references: [user.id] })
+}));
+
+export const bookingAssignmentRelations = relations(bookingAssignment, ({ one }) => ({
+	booking: one(booking, { fields: [bookingAssignment.bookingId], references: [booking.id] }),
+	user: one(user, { fields: [bookingAssignment.userId], references: [user.id] })
 }));
 
 export const bookingTentRelations = relations(bookingTent, ({ one }) => ({
