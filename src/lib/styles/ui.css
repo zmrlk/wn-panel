@@ -1,0 +1,267 @@
+/*
+ * Wolny Namiot — shared UI components
+ * Brutalist sticker style (zapożyczone z /settings), używane w całym panelu
+ *
+ * Klasy:
+ *   .wn-card        — biała karta z obramowaniem, padding 1.5rem
+ *   .wn-card h2,h3  — typografia nagłówków karty
+ *   .wn-hint        — mała szara podpowiedź pod h2
+ *   .wn-form-grid   — responsive grid formularza (auto-fit 200px)
+ *   .wn-field       — label + input/textarea/select stack
+ *   .wn-btn-primary — główny CTA: zielony + sticker shadow
+ *   .wn-btn-ghost   — subtelny button (outline)
+ *   .wn-btn-danger  — czerwony (delete/cancel destructive)
+ *   .wn-saved-pill  — "✓ Zapisano" feedback
+ *   .wn-tabs        — tab bar (zielony underline na active)
+ *   .wn-table       — data table z header mute i hover rows
+ *   .wn-role-tag    — chip w stylu settings (admin/employee)
+ */
+
+/* ─── CARD ────────────────────────────────────────────── */
+.wn-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	padding: 1.5rem 1.75rem;
+}
+.wn-card + .wn-card {
+	margin-top: 1.25rem;
+}
+.wn-card h2 {
+	margin: 0 0 0.35rem;
+	font-size: 1.15rem;
+	font-family: var(--font-display, var(--font-sans));
+	font-weight: 700;
+}
+.wn-card h3 {
+	margin: 0 0 0.5rem;
+	font-size: 0.95rem;
+	font-weight: 600;
+}
+.wn-hint {
+	color: var(--mute);
+	font-size: 0.82rem;
+	margin: 0 0 1.25rem;
+	line-height: 1.45;
+}
+.wn-hint.mini {
+	font-size: 0.75rem;
+	margin-top: 0.5rem;
+}
+.wn-hint code {
+	font-family: var(--font-mono);
+	font-size: 0.78rem;
+	background: var(--paper-2);
+	padding: 0.05rem 0.3rem;
+}
+
+/* ─── FORM GRID ─────────────────────────────────────── */
+.wn-form-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 0.85rem 1rem;
+}
+.wn-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+.wn-field > span {
+	font-size: 0.75rem;
+	color: var(--mute);
+	font-weight: 500;
+}
+.wn-field.wide {
+	grid-column: 1 / -1;
+}
+.wn-field.grow {
+	flex: 1;
+}
+.wn-field input,
+.wn-field textarea,
+.wn-field select {
+	border: 1px solid var(--line);
+	padding: 0.5rem 0.65rem;
+	background: var(--paper);
+	font-family: inherit;
+	font-size: 0.9rem;
+	border-radius: 0;
+	color: var(--ink);
+}
+.wn-field input:focus,
+.wn-field textarea:focus,
+.wn-field select:focus {
+	outline: none;
+	border-color: var(--wn-zielony);
+}
+.wn-form-actions {
+	grid-column: 1 / -1;
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+.wn-preview {
+	grid-column: 1 / -1;
+	padding: 0.85rem 1rem;
+	background: var(--paper-2);
+	border-left: 3px solid var(--wn-zielony);
+	font-size: 0.88rem;
+}
+.wn-preview strong {
+	font-family: var(--font-mono);
+}
+
+/* ─── BUTTONS ─────────────────────────────────────────── */
+.wn-btn-primary {
+	padding: 0.5rem 1.3rem;
+	background: var(--wn-zielony);
+	color: var(--wn-atrament);
+	border: 2px solid var(--wn-atrament);
+	font-weight: 700;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 0.9rem;
+	box-shadow: 3px 3px 0 var(--wn-atrament);
+	border-radius: 0;
+	transition: transform 0.1s, box-shadow 0.1s;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+.wn-btn-primary:hover {
+	transform: translate(-1px, -1px);
+	box-shadow: 4px 4px 0 var(--wn-atrament);
+}
+.wn-btn-primary:active {
+	transform: translate(1px, 1px);
+	box-shadow: 1px 1px 0 var(--wn-atrament);
+}
+
+.wn-btn-ghost {
+	padding: 0.4rem 0.85rem;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-family: inherit;
+	font-size: 0.82rem;
+	cursor: pointer;
+	border-radius: 0;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+}
+.wn-btn-ghost:hover {
+	border-color: var(--wn-zielony);
+	color: var(--wn-zielony);
+}
+
+.wn-btn-danger {
+	padding: 0.3rem 0.75rem;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--wn-pomidor);
+	cursor: pointer;
+	font-size: 0.78rem;
+	font-family: inherit;
+	border-radius: 0;
+}
+.wn-btn-danger:hover {
+	border-color: var(--wn-pomidor);
+}
+
+/* ─── SAVED PILL ────────────────────────────────────── */
+.wn-saved-pill {
+	color: var(--wn-zielony);
+	font-size: 0.82rem;
+	font-weight: 600;
+}
+
+/* ─── TABS ─────────────────────────────────────────────── */
+.wn-tabs {
+	display: flex;
+	gap: 0.15rem;
+	white-space: nowrap;
+	overflow-x: auto;
+}
+.wn-tab {
+	padding: 0.55rem 0.95rem;
+	background: transparent;
+	border: none;
+	border-bottom: 2px solid transparent;
+	font-size: 0.88rem;
+	color: var(--mute);
+	cursor: pointer;
+	margin-bottom: -1px;
+	font-family: inherit;
+	font-weight: 500;
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+.wn-tab:hover {
+	color: var(--ink);
+}
+.wn-tab.active {
+	color: var(--ink);
+	border-bottom-color: var(--wn-zielony);
+}
+.wn-tab-count {
+	font-family: var(--font-mono);
+	font-size: 0.68rem;
+	padding: 0.06rem 0.35rem;
+	background: var(--paper-2);
+	color: var(--mute);
+	border-radius: 2px;
+}
+
+/* ─── TABLE ────────────────────────────────────────────── */
+.wn-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9rem;
+}
+.wn-table th,
+.wn-table td {
+	text-align: left;
+	padding: 0.55rem 0.6rem;
+	border-bottom: 1px solid var(--line);
+}
+.wn-table th {
+	font-weight: 600;
+	color: var(--mute);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+}
+.wn-table td.name {
+	font-weight: 500;
+}
+.wn-table td.mute {
+	color: var(--mute);
+}
+.wn-table td.num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+.wn-table tr.clickable {
+	cursor: pointer;
+}
+.wn-table tr.clickable:hover {
+	background: var(--paper-2);
+}
+
+/* ─── CHIPS / TAGS ──────────────────────────────────── */
+.wn-role-tag {
+	font-family: var(--font-mono);
+	font-size: 0.72rem;
+	padding: 0.15rem 0.5rem;
+	background: var(--paper-2);
+	border: 1px solid var(--line);
+	text-transform: uppercase;
+}
+.wn-role-tag.role-admin {
+	background: var(--wn-zarowka);
+	color: var(--wn-atrament);
+	border-color: var(--wn-atrament);
+}

@@ -5,7 +5,6 @@
 	let { data } = $props();
 
 	let activeTab = $state<'items' | 'packages' | 'movements'>('items');
-	let editingPackageId = $state<string | null>(null);
 	let editingItemId = $state<string | null>(null);
 	let addingItem = $state(false);
 	let addingMovement = $state(false);
@@ -320,60 +319,28 @@
 						</thead>
 						<tbody>
 							{#each data.packages as p}
-								{#if editingPackageId === p.id}
-									<tr class="edit-row">
-										<td colspan="10">
-											<form
-												method="POST"
-												action="?/updatePackage"
-												use:enhance={() => async ({ update }) => {
-													await update();
-													editingPackageId = null;
-													await invalidateAll();
-												}}
-												class="inline-form pkg-inline"
-											>
-												<input type="hidden" name="id" value={p.id} />
-												<input name="name" type="text" value={p.name} placeholder="Nazwa" class="f-name" required />
-												<input name="priceFromZl" type="number" step="0.01" value={p.priceFromCents / 100} placeholder="Cena od" class="f-num" />
-												<input name="priceToZl" type="number" step="0.01" value={p.priceToCents ? p.priceToCents / 100 : ''} placeholder="Cena do" class="f-num" />
-												<input name="minGuests" type="number" value={p.minGuests ?? ''} placeholder="Min gości" class="f-num" />
-												<input name="maxGuests" type="number" value={p.maxGuests ?? ''} placeholder="Max gości" class="f-num" />
-												<input name="areaM2" type="number" value={p.areaM2 ?? ''} placeholder="m²" class="f-num" />
-												<input name="setupMinutes" type="number" value={p.setupMinutes ?? ''} placeholder="Montaż min." class="f-num" />
-												<label class="inline-check"><input name="includesDelivery" type="checkbox" checked={p.includesDelivery} /> dostawa</label>
-												<label class="inline-check"><input name="includesInstall" type="checkbox" checked={p.includesInstall} /> montaż</label>
-												<label class="inline-check"><input name="active" type="checkbox" checked={p.active} /> aktywny</label>
-												<button type="submit" class="btn-save">Zapisz</button>
-												<button type="button" class="btn-cancel" onclick={() => (editingPackageId = null)}>Anuluj</button>
-											</form>
-										</td>
-									</tr>
-								{:else}
-									<tr class="row" class:inactive={!p.active}>
-										<td class="sku">{p.slug}</td>
-										<td class="name">{p.name}</td>
-										<td><span class="tier-tag">{tierLabel[p.tier]}</span></td>
-										<td class="num price">{priceRange(p.priceFromCents, p.priceToCents)}</td>
-										<td class="num">{p.minGuests && p.maxGuests ? `${p.minGuests}–${p.maxGuests}` : '—'}</td>
-										<td class="num">{p.areaM2 ?? '—'}</td>
-										<td class="num">{fmtSetup(p.setupMinutes)}</td>
-										<td>
-											{#if p.includesDelivery && p.includesInstall}
-												<span class="chip-yes">🚚 + 🔨</span>
-											{:else if p.includesInstall}
-												<span class="chip-yes">🔨</span>
-											{:else}
-												<span class="chip-no">odbiór własny</span>
-											{/if}
-										</td>
-										<td>{p.active ? '✓' : '✕'}</td>
-										<td class="actions">
-											<a class="row-edit" href={`/magazyn/packages/${p.id}`} title="Edytuj pakiet i items">Items →</a>
-											<button class="row-edit" onclick={() => (editingPackageId = p.id)}>Meta</button>
-										</td>
-									</tr>
-								{/if}
+								<tr class="row" class:inactive={!p.active}>
+									<td class="sku">{p.slug}</td>
+									<td class="name">{p.name}</td>
+									<td><span class="tier-tag">{tierLabel[p.tier]}</span></td>
+									<td class="num price">{priceRange(p.priceFromCents, p.priceToCents)}</td>
+									<td class="num">{p.minGuests && p.maxGuests ? `${p.minGuests}–${p.maxGuests}` : '—'}</td>
+									<td class="num">{p.areaM2 ?? '—'}</td>
+									<td class="num">{fmtSetup(p.setupMinutes)}</td>
+									<td>
+										{#if p.includesDelivery && p.includesInstall}
+											<span class="chip-yes">🚚 + 🔨</span>
+										{:else if p.includesInstall}
+											<span class="chip-yes">🔨</span>
+										{:else}
+											<span class="chip-no">odbiór własny</span>
+										{/if}
+									</td>
+									<td>{p.active ? '✓' : '✕'}</td>
+									<td class="actions">
+										<a class="row-edit" href={`/magazyn/packages/${p.id}`} title="Edytuj pakiet, cenę, items">Edytuj →</a>
+									</td>
+								</tr>
 							{/each}
 						</tbody>
 					</table>

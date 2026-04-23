@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '$lib/styles/tokens.css';
+	import '$lib/styles/ui.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
 
