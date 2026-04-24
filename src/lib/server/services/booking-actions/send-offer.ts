@@ -171,8 +171,9 @@ export async function sendOfferEmail(event: RequestEvent) {
 		const { urlToPdf } = await import('$lib/server/pdf');
 		const { buildPrintToken } = await import('$lib/server/internal-token');
 		const printToken = buildPrintToken(offerId, doc.id);
-		// Internal URL — gotenberg rozmawia bezpośrednio z app container w compose network.
-		const internalBase = process.env.INTERNAL_APP_URL ?? 'http://app:3000';
+		// Internal URL — używamy LAN IP (nie app:3000) bo Chromium HTTPS-First upgrade
+		// próbuje https://app → ERR_SSL_PROTOCOL_ERROR. Na IP adresach upgrade jest off.
+		const internalBase = process.env.INTERNAL_APP_URL ?? 'http://192.168.3.142:3000';
 		const printUrl = `${internalBase}/offers/${offerId}?version=${doc.id}`;
 		const pdfBuf = await urlToPdf(printUrl, {
 			extraHttpHeaders: { 'x-internal-print-token': printToken },
