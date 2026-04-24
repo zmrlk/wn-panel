@@ -6,6 +6,7 @@ import { user } from '$lib/server/db/schema';
 import { refreshTokens, verifyToken, type UserContext } from '$lib/server/auth';
 import { authLoginLimiter } from '$lib/server/rate-limits-config';
 import { getClientKey } from '$lib/server/rate-limit';
+import { verifyPrintToken } from '$lib/server/internal-token';
 
 /**
  * v5.54 — Keycloak SSO w miejsce cookie switcher.
@@ -88,6 +89,28 @@ export const handle: Handle = async ({ event, resolve }) => {
 		const rl = authLoginLimiter.hit(key);
 		if (!rl.allowed) {
 			throw error(429, { message: `Too many login attempts, retry in ${Math.ceil((rl.retryAfterMs ?? 0) / 1000)}s` });
+		}
+	}
+
+	// Internal print token bypass — Gotenberg renderuje /offers/[id]?version=... do PDF.
+	// Request musi mieć header x-internal-print-token z HMAC(offerId|docId|exp).
+	// Parsujemy offerId z URL (/offers/<id>), docId z query ?version=.
+	const printToken = event.request.headers.get('x-internal-print-token');
+	if (printToken && pathname.startsWith('/offers/')) {
+		const offerIdMatch = pathname.match(/^\/offers\/([^/]+)/);
+		const offerId = offerIdMatch?.[1];
+		const docId = event.url.searchParams.get('version');
+		if (offerId && docId && verifyPrintToken(printToken, offerId, docId)) {
+			// Stub locals.user jako internal-print — minimal shape żeby load() nie umarł.
+			event.locals.user = {
+				id: 'internal-print',
+				name: 'Internal Print',
+				email: 'print@internal',
+				role: 'admin',
+				skills: []
+			};
+			event.locals.session = null;
+			return resolve(event);
 		}
 	}
 

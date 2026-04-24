@@ -11,7 +11,6 @@ import {
 	offerDocument
 } from '$lib/server/db/schema';
 import { parseCompoundId } from '$lib/compound-id';
-import type { OfferPdfSnapshot } from '$lib/server/offer-pdf-template';
 
 /**
  * Wyślij ofertę email (tylko dla type=offer).
@@ -164,45 +163,21 @@ export async function sendOfferEmail(event: RequestEvent) {
 		validUntil: o.validUntil ?? ''
 	};
 
-	// 4a. Generuj PDF przez Gotenberg (fail-soft — jeśli nie działa, email leci bez załącznika)
+	// 4a. Generuj PDF renderując istniejącą stronę /offers/[id]?version=... przez Gotenberg.
+	// Auth bypass przez HMAC print token (5 min TTL, verified w hooks.server.ts).
+	// Fail-soft: jeśli Gotenberg down, email leci bez załącznika.
 	let pdfAttachment: { filename: string; content: string; contentType: string } | null = null;
 	try {
-		const { htmlToPdf } = await import('$lib/server/pdf');
-		const { renderOfferPdfHtml } = await import('$lib/server/offer-pdf-template');
-		const qrSvgForPdf = await QRCode.toString(qrTargetUrl, {
-			type: 'svg',
-			errorCorrectionLevel: 'M',
-			margin: 0,
-			width: 180
-		}).catch(() => '');
-		const html = renderOfferPdfHtml({
-			offer: {
-				number: o.number,
-				eventName: o.eventName,
-				eventStartDate: o.eventStartDate,
-				eventEndDate: o.eventEndDate,
-				venue: o.venue,
-				totalCents: o.totalCents,
-				validUntil: o.validUntil,
-				notes: o.notes
-			},
-			client: {
-				name: c.name,
-				company: c.company,
-				phone: c.phone,
-				email: c.email,
-				address: c.address
-			},
-			items: items.map((i) => ({
-				description: i.description,
-				quantity: i.quantity,
-				unitPriceCents: i.unitPriceCents,
-				lineTotalCents: i.lineTotalCents
-			})),
-			company: company as OfferPdfSnapshot['company'],
-			qrSvg: qrSvgForPdf
+		const { urlToPdf } = await import('$lib/server/pdf');
+		const { buildPrintToken } = await import('$lib/server/internal-token');
+		const printToken = buildPrintToken(offerId, doc.id);
+		// Internal URL — gotenberg rozmawia bezpośrednio z app container w compose network.
+		const internalBase = process.env.INTERNAL_APP_URL ?? 'http://app:3000';
+		const printUrl = `${internalBase}/offers/${offerId}?version=${doc.id}`;
+		const pdfBuf = await urlToPdf(printUrl, {
+			extraHttpHeaders: { 'x-internal-print-token': printToken },
+			waitDelayMs: 800 // daj czas na font load + QR render
 		});
-		const pdfBuf = await htmlToPdf(html);
 		pdfAttachment = {
 			filename: `oferta-${o.number}.pdf`,
 			content: pdfBuf.toString('base64'),
