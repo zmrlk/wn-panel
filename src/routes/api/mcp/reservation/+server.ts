@@ -21,6 +21,8 @@ import {
 	type McpTier,
 	type McpItemPrice
 } from '$lib/mcp-pricing';
+import { mcpReservationLimiter } from '$lib/server/rate-limits-config';
+import { getClientKey } from '$lib/server/rate-limit';
 
 const CORS = {
 	'Access-Control-Allow-Origin': '*',
@@ -51,6 +53,28 @@ export const OPTIONS: RequestHandler = async () =>
  * 6. Return { ok, bookingId, offerNumber, totalCents, tier }
  */
 export const POST: RequestHandler = async (event) => {
+	// Rate limit per-IP — 10 req/min burst
+	const key = getClientKey(event.request, () => event.getClientAddress());
+	const limit = mcpReservationLimiter.hit(key);
+	if (!limit.allowed) {
+		const retryAfterSec = Math.ceil((limit.retryAfterMs ?? 1000) / 1000);
+		return json(
+			{
+				ok: false,
+				error: 'Too many requests',
+				retryAfterSeconds: retryAfterSec
+			},
+			{
+				status: 429,
+				headers: {
+					...CORS,
+					'Retry-After': String(retryAfterSec),
+					'X-RateLimit-Remaining': String(limit.remaining)
+				}
+			}
+		);
+	}
+
 	try {
 		return await handleReservation(event);
 	} catch (err) {
