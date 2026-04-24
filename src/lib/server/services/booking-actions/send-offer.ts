@@ -11,6 +11,7 @@ import {
 	offerDocument
 } from '$lib/server/db/schema';
 import { parseCompoundId } from '$lib/compound-id';
+import type { OfferPdfSnapshot } from '$lib/server/offer-pdf-template';
 
 /**
  * Wyślij ofertę email (tylko dla type=offer).
@@ -163,12 +164,61 @@ export async function sendOfferEmail(event: RequestEvent) {
 		validUntil: o.validUntil ?? ''
 	};
 
+	// 4a. Generuj PDF przez Gotenberg (fail-soft — jeśli nie działa, email leci bez załącznika)
+	let pdfAttachment: { filename: string; content: string; contentType: string } | null = null;
+	try {
+		const { htmlToPdf } = await import('$lib/server/pdf');
+		const { renderOfferPdfHtml } = await import('$lib/server/offer-pdf-template');
+		const qrSvgForPdf = await QRCode.toString(qrTargetUrl, {
+			type: 'svg',
+			errorCorrectionLevel: 'M',
+			margin: 0,
+			width: 180
+		}).catch(() => '');
+		const html = renderOfferPdfHtml({
+			offer: {
+				number: o.number,
+				eventName: o.eventName,
+				eventStartDate: o.eventStartDate,
+				eventEndDate: o.eventEndDate,
+				venue: o.venue,
+				totalCents: o.totalCents,
+				validUntil: o.validUntil,
+				notes: o.notes
+			},
+			client: {
+				name: c.name,
+				company: c.company,
+				phone: c.phone,
+				email: c.email,
+				address: c.address
+			},
+			items: items.map((i) => ({
+				description: i.description,
+				quantity: i.quantity,
+				unitPriceCents: i.unitPriceCents,
+				lineTotalCents: i.lineTotalCents
+			})),
+			company: company as OfferPdfSnapshot['company'],
+			qrSvg: qrSvgForPdf
+		});
+		const pdfBuf = await htmlToPdf(html);
+		pdfAttachment = {
+			filename: `oferta-${o.number}.pdf`,
+			content: pdfBuf.toString('base64'),
+			contentType: 'application/pdf'
+		};
+	} catch (err) {
+		console.warn('[send-offer] PDF generation failed, sending email without attachment:', err);
+	}
+
 	const result = await sendEmail({
 		to: c.email,
 		subject: renderTemplate(template.subject, ctx),
 		body: renderTemplate(template.body, ctx),
 		offerId,
-		template: 'offer_sent'
+		template: 'offer_sent',
+		attachments: pdfAttachment ? [pdfAttachment] : undefined
 	});
 
 	// Zaloguj resendId do snapshotu (po wysłaniu)

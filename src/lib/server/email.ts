@@ -61,13 +61,21 @@ export async function getCompanyInfo() {
  * Z RESEND_API_KEY: prawdziwa wysyłka + log do email_log.
  * Bez: console.log + log do email_log ze status='dev-mode'.
  */
+export type EmailAttachment = {
+	filename: string;
+	/** Base64-encoded content. */
+	content: string;
+	contentType?: string;
+};
+
 export async function sendEmail(params: {
 	to: string;
 	subject: string;
-	body: string; // plain text, auto-konwertuje do HTML
+	body: string; // plain text lub pełny HTML dokument
 	offerId?: string;
 	leadId?: string;
 	template?: string;
+	attachments?: EmailAttachment[];
 }) {
 	const apiKey = process.env.RESEND_API_KEY;
 	const from = process.env.RESEND_FROM ?? 'biuro@wolnynamiot.pl';
@@ -124,7 +132,16 @@ export async function sendEmail(params: {
 				to: params.to,
 				subject: params.subject,
 				html,
-				text
+				text,
+				...(params.attachments && params.attachments.length > 0
+					? {
+							attachments: params.attachments.map((a) => ({
+								filename: a.filename,
+								content: a.content,
+								...(a.contentType ? { content_type: a.contentType } : {})
+							}))
+						}
+					: {})
 			})
 		});
 		const data = await res.json();
