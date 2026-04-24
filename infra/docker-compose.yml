@@ -44,6 +44,8 @@ services:
       - gotenberg
       - --chromium-disable-web-security=true
       - --chromium-ignore-certificate-errors=true
+      # Allow fetching internal app container (normalnie gotenberg blokuje RFC1918 SSRF guard).
+      - --chromium-allow-list=^https?://(app|localhost):3000(/.*)?$$
       - --api-port=3000
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
