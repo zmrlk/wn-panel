@@ -72,11 +72,24 @@ export async function sendEmail(params: {
 	const apiKey = process.env.RESEND_API_KEY;
 	const from = process.env.RESEND_FROM ?? 'biuro@wolnynamiot.pl';
 
-	// Konwersja plain text → prosty HTML (z paragrafami)
-	const html = params.body
-		.split('\n\n')
-		.map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-		.join('');
+	// Jeśli body jest pełnym HTML dokumentem (template) — użyj bezpośrednio.
+	// Inaczej (legacy plain-text templates) auto-konwertuj do prostego HTML.
+	const bodyTrimmed = params.body.trim();
+	const isHtml = bodyTrimmed.startsWith('<!DOCTYPE') || bodyTrimmed.startsWith('<html');
+	const html = isHtml
+		? params.body
+		: params.body
+				.split('\n\n')
+				.map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+				.join('');
+	// Plain text fallback dla klientów bez HTML supportu — wygeneruj prosty tekst
+	const text = isHtml
+		? params.body
+				.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+				.replace(/<[^>]+>/g, ' ')
+				.replace(/\s+/g, ' ')
+				.trim()
+		: params.body;
 
 	if (!apiKey) {
 		console.log('📧 [DEV MODE — brak RESEND_API_KEY] email NIE wysłany, tylko log:');
@@ -111,7 +124,7 @@ export async function sendEmail(params: {
 				to: params.to,
 				subject: params.subject,
 				html,
-				text: params.body
+				text
 			})
 		});
 		const data = await res.json();

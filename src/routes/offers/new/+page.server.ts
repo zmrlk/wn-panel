@@ -162,6 +162,12 @@ export const actions: Actions = {
 
 		const leadIdFromForm = form.get('leadId')?.toString() || null;
 
+		// Valid until — default +validDays od dziś (z cfg.validDays albo 14)
+		const validDays = cfg.validDays ?? 14;
+		const validUntilDate = new Date();
+		validUntilDate.setDate(validUntilDate.getDate() + validDays);
+		const validUntil = validUntilDate.toISOString().slice(0, 10);
+
 		// Insert offer (link do leada jeśli z leadId)
 		const [created] = await db
 			.insert(offer)
@@ -175,7 +181,8 @@ export const actions: Actions = {
 				venue,
 				totalCents,
 				status: 'draft',
-				notes: finalNotes
+				notes: finalNotes,
+				validUntil
 			})
 			.returning();
 
