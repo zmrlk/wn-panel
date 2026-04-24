@@ -1,9 +1,11 @@
 import type { Handle } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { user } from '$lib/server/db/schema';
 import { refreshTokens, verifyToken, type UserContext } from '$lib/server/auth';
+import { authLoginLimiter } from '$lib/server/rate-limits-config';
+import { getClientKey } from '$lib/server/rate-limit';
 
 /**
  * v5.54 — Keycloak SSO w miejsce cookie switcher.
@@ -80,6 +82,15 @@ async function upsertUser(ctx: UserContext): Promise<App.Locals['user']> {
 export const handle: Handle = async ({ event, resolve }) => {
 	const { pathname, search } = event.url;
 
+	// Rate limit — /auth/login brute force guard (per IP, 10/min burst)
+	if (pathname === '/auth/login') {
+		const key = getClientKey(event.request, () => event.getClientAddress());
+		const rl = authLoginLimiter.hit(key);
+		if (!rl.allowed) {
+			throw error(429, { message: `Too many login attempts, retry in ${Math.ceil((rl.retryAfterMs ?? 0) / 1000)}s` });
+		}
+	}
+
 	let ctx: UserContext | null = null;
 	const accessToken = event.cookies.get('kc_access');
 	if (accessToken) {
@@ -121,5 +132,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 		throw redirect(303, `/auth/login?return_to=${returnTo}`);
 	}
 
-	return resolve(event);
+	const response = await resolve(event);
+
+	// Security headers — HSTS tylko przez HTTPS (CF Tunnel).
+	// CSP trzymamy luźną: SvelteKit używa inline scripts dla hydration.
+	if (event.url.protocol === 'https:') {
+		response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+	}
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+	response.headers.set('Referrer-Policy', 'same-origin');
+	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+	return response;
 };

@@ -1,0 +1,28 @@
+# wn-panel Postgres na VM 143 (Proxmox vavo).
+# Bindowany na internal network 10.10.0.43:5432 (tylko app VM 142 dostęp).
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: wn-pg
+    restart: unless-stopped
+    env_file:
+      - /opt/wn-db/.env
+    ports:
+      - "10.10.0.43:5432:5432"
+    volumes:
+      - wn_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wn -d wn_panel"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+volumes:
+  wn_pgdata:
+    name: wn_pgdata

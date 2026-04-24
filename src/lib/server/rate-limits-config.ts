@@ -30,3 +30,9 @@ export const publicLeadLimiter = createRateLimiter({
 	capacity: 5,
 	refillPerSecond: 5 / 60
 });
+
+/** /auth/login GET — 10 req/min burst, refill 1 token / 6s (brute force guard) */
+export const authLoginLimiter = createRateLimiter({
+	capacity: 10,
+	refillPerSecond: 10 / 60
+});
