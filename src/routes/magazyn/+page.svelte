@@ -167,6 +167,7 @@
 					<table class="data-table">
 						<thead>
 							<tr>
+								<th>Foto</th>
 								<th>SKU</th>
 								<th>Nazwa</th>
 								<th>Kategoria</th>
@@ -182,7 +183,7 @@
 							{#each categoryOrder as cat}
 								{#if grouped[cat]}
 									<tr class="group-divider">
-										<td colspan="9">
+										<td colspan="10">
 											<span class="g-emoji">{categoryEmoji[cat]}</span>
 											<span class="g-name">{cat}</span>
 											<span class="g-count">{grouped[cat].length} typów</span>
@@ -193,7 +194,7 @@
 										{#if editingItemId === it.id}
 											<!-- INLINE EDIT ROW -->
 											<tr class="edit-row">
-												<td colspan="9">
+												<td colspan="10">
 													<form
 														method="POST"
 														action="?/updateItem"
@@ -220,6 +221,34 @@
 											</tr>
 										{:else}
 											<tr class="row">
+												<td class="photo-cell">
+													<form
+														method="POST"
+														action="?/uploadItemPhoto"
+														enctype="multipart/form-data"
+														use:enhance={() => async ({ update }) => {
+															await update();
+															await invalidateAll();
+														}}
+														class="photo-form"
+													>
+														<input type="hidden" name="itemId" value={it.id} />
+														<label class="photo-label" title="Wgraj zdjęcie (max 8 MB)">
+															{#if it.mainPhotoUrl}
+																<img src={it.mainPhotoUrl} alt={it.name} class="photo-thumb" />
+															{:else}
+																<span class="photo-placeholder">📷</span>
+															{/if}
+															<input
+																type="file"
+																name="file"
+																accept="image/*"
+																class="photo-input"
+																onchange={(e) => (e.currentTarget.form as HTMLFormElement).requestSubmit()}
+															/>
+														</label>
+													</form>
+												</td>
 												<td class="sku">{it.sku ?? '—'}</td>
 												<td class="name">{it.name}</td>
 												<td class="cat-cell">{it.category ?? '—'}</td>
@@ -252,7 +281,7 @@
 							<!-- ADD ROW -->
 							{#if addingItem}
 								<tr class="edit-row">
-									<td colspan="9">
+									<td colspan="10">
 										<form
 											method="POST"
 											action="?/addItem"
@@ -282,7 +311,7 @@
 								</tr>
 							{:else}
 								<tr class="add-row-btn">
-									<td colspan="9">
+									<td colspan="10">
 										<button class="btn-add" onclick={() => (addingItem = true)}>+ Dodaj pozycję</button>
 									</td>
 								</tr>
@@ -732,6 +761,53 @@
 		font-family: var(--font-mono);
 		font-size: 0.74rem;
 		color: var(--mute);
+	}
+	/* PHOTO CELL */
+	.data-table td.photo-cell {
+		padding: 0.35rem 0.7rem;
+		width: 56px;
+	}
+	.photo-form {
+		margin: 0;
+	}
+	.photo-label {
+		display: inline-block;
+		width: 40px;
+		height: 40px;
+		border-radius: 4px;
+		border: 1px solid var(--line);
+		background: var(--paper-2);
+		cursor: pointer;
+		overflow: hidden;
+		position: relative;
+		transition: border-color 0.1s;
+	}
+	.photo-label:hover {
+		border-color: var(--wn-zielony);
+	}
+	.photo-thumb {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+	.photo-placeholder {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+		font-size: 18px;
+		color: var(--mute);
+	}
+	.photo-input {
+		position: absolute;
+		opacity: 0;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+		cursor: pointer;
 	}
 
 	/* GROUP DIVIDER */

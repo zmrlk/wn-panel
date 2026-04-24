@@ -3,8 +3,14 @@ import { db } from '$lib/server/db';
 import { pkg, item, stockMovement, booking } from '$lib/server/db/schema';
 import { asc, desc, eq, isNull } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { redirect } from '@sveltejs/kit';
+
+const ITEM_PHOTO_DIR = 'static/uploads/items';
+const ITEM_PHOTO_MAX = 8 * 1024 * 1024; // 8 MB
+const ITEM_PHOTO_EXT_RE = /^(jpg|jpeg|png|webp|gif)$/i;
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const me = locals.user ?? {
@@ -207,6 +213,54 @@ export const actions: Actions = {
 			.update(item)
 			.set({ archivedAt: new Date(), updatedAt: new Date() })
 			.where(eq(item.id, id));
+		return { success: true };
+	},
+
+	// Upload zdjęcia per item (główne zdjęcie do PDF hero + listy)
+	uploadItemPhoto: async ({ request }) => {
+		const form = await request.formData();
+		const itemId = form.get('itemId')?.toString();
+		const file = form.get('file');
+
+		if (!itemId) return fail(400, { error: 'Brak itemId' });
+		if (!(file instanceof File) || file.size === 0) {
+			return fail(400, { error: 'Brak pliku' });
+		}
+		if (file.size > ITEM_PHOTO_MAX) {
+			return fail(400, { error: 'Plik za duży (max 8 MB)' });
+		}
+		if (!file.type.startsWith('image/')) {
+			return fail(400, { error: 'Tylko obrazy' });
+		}
+		const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+		if (!ITEM_PHOTO_EXT_RE.test(ext)) {
+			return fail(400, { error: 'Nieprawidłowe rozszerzenie' });
+		}
+
+		await mkdir(ITEM_PHOTO_DIR, { recursive: true });
+		const filename = `${itemId}-${Date.now()}.${ext}`;
+		const fullPath = join(ITEM_PHOTO_DIR, filename);
+		const bytes = new Uint8Array(await file.arrayBuffer());
+		await writeFile(fullPath, bytes);
+
+		const publicUrl = `/uploads/items/${filename}`;
+		await db
+			.update(item)
+			.set({ mainPhotoUrl: publicUrl, updatedAt: new Date() })
+			.where(eq(item.id, itemId));
+
+		return { success: true, url: publicUrl };
+	},
+
+	// Usuń zdjęcie (czyści main_photo_url, plik zostaje na dysku jako historia)
+	removeItemPhoto: async ({ request }) => {
+		const form = await request.formData();
+		const itemId = form.get('itemId')?.toString();
+		if (!itemId) return fail(400);
+		await db
+			.update(item)
+			.set({ mainPhotoUrl: null, updatedAt: new Date() })
+			.where(eq(item.id, itemId));
 		return { success: true };
 	}
 };
