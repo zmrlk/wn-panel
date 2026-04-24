@@ -72,7 +72,8 @@
 	const ADMIN = [{ id: 'settings', label: 'Ustaw.' }];
 
 	// Komórka: available vs total → kolor + label
-	function cellState(item: typeof data.items[number], iso: string) {
+	type DashItem = NonNullable<typeof data.items>[number];
+	function cellState(item: DashItem, iso: string) {
 		const reserved = item.reserved[iso] ?? 0;
 		const maint = item.maintenance[iso] ?? 0;
 		const available = item.total - reserved - maint;

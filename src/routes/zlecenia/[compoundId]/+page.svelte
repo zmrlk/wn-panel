@@ -35,14 +35,17 @@
 		totalQty: number;
 		bookings: AvailabilityConflictBooking[];
 	};
-	const availabilityConflict = $derived(
-		form?.error === 'availability_conflict'
-			? {
-					message: form.message as string,
-					conflicts: (form.conflicts as AvailabilityConflictItem[]) ?? []
-				}
-			: null
-	);
+	const availabilityConflict = $derived.by(() => {
+		if (!form || form.error !== 'availability_conflict') return null;
+		const f = form as typeof form & {
+			message?: string;
+			conflicts?: AvailabilityConflictItem[];
+		};
+		return {
+			message: f.message ?? '',
+			conflicts: f.conflicts ?? []
+		};
+	});
 
 	// State dla notes form → w NotesSection component (lokalny state)
 

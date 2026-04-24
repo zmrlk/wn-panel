@@ -471,7 +471,13 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	// Availability snapshot — tylko dla type=booking (kolizje z innymi rezerwacjami)
 	let bookingAvailability: AvailabilityResult | null = null;
-	if (type === 'booking' && zlecenie.bookingTents && zlecenie.bookingTents.length > 0) {
+	if (
+		type === 'booking' &&
+		zlecenie.bookingTents &&
+		zlecenie.bookingTents.length > 0 &&
+		zlecenie.event.startDate &&
+		zlecenie.event.endDate
+	) {
 		const spec = new Map<string, number>();
 		for (const bt of zlecenie.bookingTents) {
 			if (!bt.tentId) continue;

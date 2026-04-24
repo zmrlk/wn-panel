@@ -91,8 +91,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 		return {
 			user: me,
-			isAdmin: false,
-			employeeView: true,
+			isAdmin: false as const,
+			employeeView: true as const,
 			groups: activeGroups,
 			totalAssigned: myAssignments.length,
 			nowDate
@@ -147,6 +147,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					itemType: item.itemType,
 					category: item.category,
 					totalQty: item.totalQty,
+					minQty: item.minQty,
 					status: item.status
 				})
 				.from(item)
@@ -450,8 +451,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return {
 		user: me,
-		isAdmin: true,
-		employeeView: false,
+		isAdmin: true as const,
+		employeeView: false as const,
 		items,
 		days,
 		status,

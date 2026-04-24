@@ -112,6 +112,7 @@ export const actions: Actions = {
 			prefix?: string;
 			year?: number;
 			nextNumber?: number;
+			validDays?: number;
 		};
 		const prefix = cfg.prefix ?? 'OFF';
 		const year = cfg.year ?? new Date().getFullYear();

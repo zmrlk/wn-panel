@@ -9,7 +9,8 @@
 		if (!iso) return '—';
 		return new Date(iso).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
 	}
-	function eventRange(s: string, e: string) {
+	function eventRange(s: string | null | undefined, e: string | null | undefined) {
+		if (!s || !e) return '';
 		if (s === e) return fmtDate(s);
 		return `${fmtDate(s)} – ${fmtDate(e)}`;
 	}

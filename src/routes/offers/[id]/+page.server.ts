@@ -5,6 +5,57 @@ import { eq, inArray } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import QRCode from 'qrcode';
 
+// Shared types — live i snapshot branche zwracają TEN SAM kształt (snapshot to serializowany kadr live).
+type CompanySettings = Partial<{
+	tradeName: string;
+	legalName: string;
+	address: string;
+	email: string;
+	phone: string;
+	www: string;
+}>;
+type PrimaryTent = {
+	id: string;
+	name: string;
+	sizeLabel: string | null;
+	widthM: number | null;
+	lengthM: number | null;
+	mainPhotoUrl: string | null;
+	category: string | null;
+	qty: number;
+} | null;
+type OfferShape = {
+	id: string;
+	number: string;
+	eventName: string | null;
+	eventStartDate: string | null;
+	eventEndDate: string | null;
+	venue: string | null;
+	totalCents: number;
+	validUntil: string | null;
+	status: string;
+	sentAt: Date | null;
+	viewedAt: Date | null;
+	acceptedAt: Date | null;
+	notes: string | null;
+	createdAt: Date;
+	clientId: string | null;
+	clientName: string | null;
+	clientCompany: string | null;
+	clientPhone: string | null;
+	clientEmail: string | null;
+	clientAddress: string | null;
+};
+type OfferItemShape = {
+	id: string;
+	offerId: string;
+	tentId: string | null;
+	description: string;
+	quantity: number;
+	unitPriceCents: number;
+	lineTotalCents: number;
+};
+
 export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const user = locals.user ?? {
 		id: 'preview',
@@ -27,35 +78,36 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		const snap = doc.snapshot as Record<string, unknown>;
 		const snapOffer = (snap.offer ?? {}) as Record<string, unknown>;
 		const snapClient = (snap.client ?? {}) as Record<string, unknown>;
+		const offerShaped: OfferShape = {
+			id: (snapOffer.id as string) ?? params.id,
+			number: (snapOffer.number as string) ?? '?',
+			eventName: (snapOffer.eventName as string | null) ?? null,
+			eventStartDate: (snapOffer.eventStartDate as string | null) ?? null,
+			eventEndDate: (snapOffer.eventEndDate as string | null) ?? null,
+			venue: (snapOffer.venue as string | null) ?? null,
+			totalCents: (snapOffer.totalCents as number) ?? 0,
+			validUntil: (snapOffer.validUntil as string | null) ?? null,
+			status: (snapOffer.status as string) ?? 'draft',
+			sentAt: doc.sentAt,
+			viewedAt: null,
+			acceptedAt: null,
+			notes: (snapOffer.notes as string | null) ?? null,
+			createdAt: doc.createdAt,
+			clientId: (snapClient.id as string | null) ?? null,
+			clientName: (snapClient.name as string | null) ?? null,
+			clientCompany: (snapClient.company as string | null) ?? null,
+			clientPhone: (snapClient.phone as string | null) ?? null,
+			clientEmail: (snapClient.email as string | null) ?? null,
+			clientAddress: (snapClient.address as string | null) ?? null
+		};
 		return {
 			user,
-			offer: {
-				id: snapOffer.id ?? params.id,
-				number: snapOffer.number ?? '?',
-				eventName: snapOffer.eventName,
-				eventStartDate: snapOffer.eventStartDate,
-				eventEndDate: snapOffer.eventEndDate,
-				venue: snapOffer.venue,
-				totalCents: snapOffer.totalCents,
-				validUntil: snapOffer.validUntil,
-				status: snapOffer.status,
-				sentAt: doc.sentAt,
-				viewedAt: null,
-				acceptedAt: null,
-				notes: snapOffer.notes,
-				createdAt: doc.createdAt,
-				clientId: snapClient.id ?? null,
-				clientName: snapClient.name ?? null,
-				clientCompany: snapClient.company ?? null,
-				clientPhone: snapClient.phone ?? null,
-				clientEmail: snapClient.email ?? null,
-				clientAddress: snapClient.address ?? null
-			},
-			items: (snap.items as unknown[]) ?? [],
-			primaryTent: snap.primaryTent ?? null,
-			company: snap.company ?? {},
-			qrSvg: snap.qrSvg ?? '',
-			qrTargetUrl: snap.qrTargetUrl ?? '',
+			offer: offerShaped,
+			items: ((snap.items as unknown[]) ?? []) as OfferItemShape[],
+			primaryTent: (snap.primaryTent ?? null) as PrimaryTent,
+			company: (snap.company ?? {}) as CompanySettings,
+			qrSvg: (snap.qrSvg ?? '') as string,
+			qrTargetUrl: (snap.qrTargetUrl ?? '') as string,
 			snapshotInfo: {
 				id: doc.id,
 				capturedAt: doc.createdAt,
@@ -98,16 +150,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const items = await db.select().from(offerItem).where(eq(offerItem.offerId, params.id));
 
 	// Primary tent — hero dla cover: pierwszy namiot z magazynu w ofercie
-	let primaryTent: {
-		id: string;
-		name: string;
-		sizeLabel: string | null;
-		widthM: number | null;
-		lengthM: number | null;
-		mainPhotoUrl: string | null;
-		category: string | null;
-		qty: number;
-	} | null = null;
+	let primaryTent: PrimaryTent = null;
 
 	const tentItems = items.filter((i) => i.tentId);
 	if (tentItems.length > 0) {
@@ -146,14 +189,7 @@ export const load: PageServerLoad = async ({ params, locals, url }) => {
 		.from(appSetting)
 		.where(eq(appSetting.key, 'company'))
 		.limit(1);
-	const company = (companySetting?.value ?? {}) as Partial<{
-		tradeName: string;
-		legalName: string;
-		address: string;
-		email: string;
-		phone: string;
-		www: string;
-	}>;
+	const company = (companySetting?.value ?? {}) as CompanySettings;
 
 	// QR code → link do strony firmy z numerem oferty (trackable)
 	const wwwHost = (company.www ?? 'wolnynamiot.pl').replace(/^https?:\/\//, '');
