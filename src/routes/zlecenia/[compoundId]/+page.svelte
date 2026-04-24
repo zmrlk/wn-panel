@@ -252,6 +252,53 @@
 				<!-- paidPct + payStatus → zamknięte w PaymentBlock -->
 				<!-- totalZl/paidZl/leftZl używane przez cash-reminder w BookingOps (c4 extract) -->
 
+				<!-- 6b. STOCK CHECK — czy items bookingu mają wolny zapas w jego datach -->
+				{#if data.bookingAvailability && data.bookingAvailability.items.length > 0}
+					<section class="card stock-check" class:has-conflict={data.bookingAvailability.hasConflicts}>
+						<header class="sc-head">
+							<h2>
+								{data.bookingAvailability.hasConflicts ? '⚠️' : '✅'} Stock check
+								<span class="sc-range">({data.bookingAvailability.from} → {data.bookingAvailability.to})</span>
+							</h2>
+						</header>
+						<p class="sc-hint">
+							{#if data.bookingAvailability.hasConflicts}
+								<strong>Brakuje zapasu</strong> dla niektórych pozycji w datach tej rezerwacji.
+								Inne rezerwacje już je trzymają. Skontaktuj się z klientem konfliktującym albo
+								zmień zakres.
+							{:else}
+								Wszystkie pozycje masz w stocku — nie ma kolizji z innymi rezerwacjami w tych
+								datach.
+							{/if}
+						</p>
+						<ul class="sc-list">
+							{#each data.bookingAvailability.items as i}
+								<li class="sc-item" class:bad={!i.ok}>
+									<span class="sc-name">{i.name}</span>
+									<span class="sc-qty">
+										chcesz <strong>{i.requested}</strong>,
+										wolne <strong class:bad={!i.ok}>{i.available}/{i.totalQty}</strong>
+										{#if i.peakReserved > 0}
+											· szczyt rez. innych: {i.peakReserved}
+										{/if}
+									</span>
+									{#if i.conflicts.length > 0}
+										<details class="sc-conflicts">
+											<summary>{i.conflicts.length} kolizji</summary>
+											<ul>
+												{#each i.conflicts as c}
+													<li>
+														{c.eventName} <span class="sc-dates">({c.overlapFrom} → {c.overlapTo}, {c.quantity} szt.)</span>
+													</li>
+												{/each}
+											</ul>
+										</details>
+									{/if}
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
 
 				<!-- 7. ZESPÓŁ REALIZUJĄCY -->
 				<TeamBlock assignments={z.assignments} availableUsers={data.availableUsers} />
@@ -662,6 +709,85 @@
 		}
 		/* .photo-form-row + .photos-grid mobile → PhotoGallery.svelte */
 		/* .status-chip-btn mobile → StatusChips.svelte */
+	}
+
+	/* STOCK CHECK (booking) */
+	.stock-check {
+		background: color-mix(in srgb, var(--wn-zielony, #2a8a4a) 5%, var(--paper, #fff));
+		border-color: color-mix(in srgb, var(--wn-zielony, #2a8a4a) 30%, var(--ink, #111));
+	}
+	.stock-check.has-conflict {
+		background: color-mix(in srgb, var(--wn-pomidor, #dc2626) 6%, var(--paper, #fff));
+		border-color: var(--wn-pomidor, #dc2626);
+	}
+	.sc-head h2 {
+		margin: 0;
+		font-size: 1rem;
+	}
+	.sc-range {
+		font-family: var(--font-mono, monospace);
+		font-size: 0.75rem;
+		color: var(--mute, #777);
+		font-weight: normal;
+		margin-left: 0.5rem;
+	}
+	.sc-hint {
+		margin: 0.5rem 0 0.75rem;
+		font-size: 0.85rem;
+		color: var(--ink-2, #444);
+		line-height: 1.45;
+	}
+	.sc-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+	.sc-item {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 0.85rem;
+		align-items: baseline;
+		padding: 0.5rem 0.75rem;
+		background: var(--paper, #fff);
+		border: 1px solid var(--line, #e0e0dd);
+		border-radius: 4px;
+		font-size: 0.85rem;
+	}
+	.sc-item.bad {
+		border-color: var(--wn-pomidor, #dc2626);
+		background: color-mix(in srgb, var(--wn-pomidor, #dc2626) 5%, var(--paper, #fff));
+	}
+	.sc-name {
+		font-weight: 600;
+		color: var(--ink, #111);
+		min-width: 180px;
+	}
+	.sc-qty {
+		color: var(--ink-2, #444);
+	}
+	.sc-qty .bad {
+		color: var(--wn-pomidor, #dc2626);
+	}
+	.sc-conflicts {
+		flex-basis: 100%;
+		font-size: 0.78rem;
+		color: var(--ink-2, #444);
+	}
+	.sc-conflicts summary {
+		cursor: pointer;
+		font-weight: 500;
+		color: var(--wn-granat, #1e3a5f);
+	}
+	.sc-conflicts ul {
+		margin: 0.4rem 0 0;
+		padding-left: 1.2rem;
+	}
+	.sc-dates {
+		font-family: var(--font-mono, monospace);
+		color: var(--mute, #777);
 	}
 
 	/* PDF SNAPSHOT HISTORIA */

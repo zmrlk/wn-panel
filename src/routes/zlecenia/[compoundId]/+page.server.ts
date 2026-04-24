@@ -21,6 +21,8 @@ import { getStage, type ZlecenieType } from '$lib/booking-stages';
 import { buildBookingTimeline } from '$lib/booking-timeline';
 import { parseCompoundId } from '$lib/compound-id';
 import * as bookingActions from '$lib/server/services/booking-actions';
+import { checkAvailability, type ItemSpec } from '$lib/server/availability-check';
+import type { AvailabilityResult } from '$lib/availability';
 
 const OFFER_NUMBER_RE = /^[A-Z]+-\d{4}-\d+(-[A-Z]+)?$/i;
 
@@ -467,7 +469,34 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		offerSnapshots = rows;
 	}
 
-	return { user: me, isAdmin: me.role === 'admin', zlecenie, availableUsers, offerSnapshots };
+	// Availability snapshot — tylko dla type=booking (kolizje z innymi rezerwacjami)
+	let bookingAvailability: AvailabilityResult | null = null;
+	if (type === 'booking' && zlecenie.bookingTents && zlecenie.bookingTents.length > 0) {
+		const spec = new Map<string, number>();
+		for (const bt of zlecenie.bookingTents) {
+			if (!bt.tentId) continue;
+			spec.set(bt.tentId, (spec.get(bt.tentId) ?? 0) + bt.quantity);
+		}
+		const items: ItemSpec[] = Array.from(spec.entries()).map(([itemId, requested]) => ({
+			itemId,
+			requested
+		}));
+		bookingAvailability = await checkAvailability(
+			zlecenie.event.startDate,
+			zlecenie.event.endDate,
+			items,
+			id // excludeBookingId — nie liczymy własnej rezerwacji jako konflikt
+		);
+	}
+
+	return {
+		user: me,
+		isAdmin: me.role === 'admin',
+		zlecenie,
+		availableUsers,
+		offerSnapshots,
+		bookingAvailability
+	};
 };
 
 /**
