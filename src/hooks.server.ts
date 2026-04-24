@@ -17,7 +17,7 @@ import { getClientKey } from '$lib/server/rate-limit';
  */
 
 // Publiczne prefiksy — nie wymagają auth
-const PUBLIC_PREFIXES = ['/auth/', '/api/health', '/api/public/', '/api/mcp/'];
+const PUBLIC_PREFIXES = ['/auth/', '/api/health', '/api/public/', '/api/mcp/', '/uploads/'];
 
 function isPublicPath(pathname: string): boolean {
 	return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p));
