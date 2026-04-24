@@ -3,12 +3,16 @@ import { redirect } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ url, cookies }) => {
+	// Secure flag zgodny z actual protokołem — LAN HTTP też musi działać (brak TLS).
+	const secure = url.protocol === 'https:';
+
 	// state = CSRF token, sprawdzany w /auth/callback
 	const state = crypto.randomUUID();
 	cookies.set('kc_state', state, {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
+		secure,
 		maxAge: 60 * 10 // 10 min
 	});
 
@@ -19,6 +23,7 @@ export const GET: RequestHandler = ({ url, cookies }) => {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',
+			secure,
 			maxAge: 60 * 10
 		});
 	}

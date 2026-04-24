@@ -1,6 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
-import { dev } from '$app/environment';
 import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { user } from '$lib/server/db/schema';
@@ -92,18 +91,19 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (refreshToken) {
 			const tokens = await refreshTokens(refreshToken);
 			if (tokens) {
+				const secure = event.url.protocol === 'https:';
 				event.cookies.set('kc_access', tokens.access_token, {
 					path: '/',
 					httpOnly: true,
 					sameSite: 'lax',
-					secure: !dev,
+					secure,
 					maxAge: tokens.expires_in
 				});
 				event.cookies.set('kc_refresh', tokens.refresh_token, {
 					path: '/',
 					httpOnly: true,
 					sameSite: 'strict',
-					secure: !dev,
+					secure,
 					maxAge: tokens.refresh_expires_in
 				});
 				ctx = await verifyToken(tokens.access_token);

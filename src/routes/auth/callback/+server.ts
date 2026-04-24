@@ -1,6 +1,5 @@
 import { exchangeCode } from '$lib/server/auth';
 import { redirect, error } from '@sveltejs/kit';
-import { dev } from '$app/environment';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
@@ -20,12 +19,15 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		throw error(502, { message: 'Token exchange failed' });
 	}
 
+	// Secure flag bazowane na actual protocol — LAN HTTP deploy też musi działać.
+	const secure = url.protocol === 'https:';
+
 	// Access token — lax (pozwala na page nav z linków), 5 min typowo (KC default)
 	cookies.set('kc_access', tokens.access_token, {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
-		secure: !dev,
+		secure,
 		maxAge: tokens.expires_in
 	});
 	// Refresh token — strict (CSRF protection), 30 min typowo
@@ -33,7 +35,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'strict',
-		secure: !dev,
+		secure,
 		maxAge: tokens.refresh_expires_in
 	});
 
