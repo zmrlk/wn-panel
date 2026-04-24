@@ -258,14 +258,53 @@
 					</header>
 					<div class="card-body">
 						{#if clientMode === 'existing'}
+							{@const selectedClient = data.clients.find((c) => c.id === selectedClientId)}
+							<input type="hidden" name="clientId" value={selectedClientId} />
 							<label class="field">
-								<span>Klient</span>
-								<select name="clientId" bind:value={selectedClientId} required>
+								<span>Klient (zacznij pisać)</span>
+								<input
+									type="text"
+									list="clients-dl"
+									placeholder="np. Anna Kowalska, Zawada Events, +48..."
+									value={selectedClient
+										? `${selectedClient.name}${selectedClient.company ? ' · ' + selectedClient.company : ''}`
+										: ''}
+									oninput={(e) => {
+										const v = (e.currentTarget as HTMLInputElement).value;
+										const match = data.clients.find((c) => {
+											const label = `${c.name}${c.company ? ' · ' + c.company : ''}`;
+											return label === v;
+										});
+										if (match) selectedClientId = match.id;
+									}}
+								/>
+								<datalist id="clients-dl">
 									{#each data.clients as c}
-										<option value={c.id}>{c.name}{c.company ? ` · ${c.company}` : ''}{c.phone ? ` · ${c.phone}` : ''}</option>
+										<option value={`${c.name}${c.company ? ' · ' + c.company : ''}`}>
+											{[c.phone, c.email].filter(Boolean).join(' · ')}
+										</option>
 									{/each}
-								</select>
+								</datalist>
 							</label>
+							{#if selectedClient}
+								<div class="client-preview">
+									<div class="cp-row">
+										<span class="cp-label">Wybrany:</span>
+										<strong class="cp-name">{selectedClient.name}</strong>
+										{#if selectedClient.company}<span class="cp-company">· {selectedClient.company}</span>{/if}
+									</div>
+									{#if selectedClient.phone || selectedClient.email}
+										<div class="cp-row">
+											{#if selectedClient.phone}
+												<a href={`tel:${selectedClient.phone}`} class="cp-link">📞 {selectedClient.phone}</a>
+											{/if}
+											{#if selectedClient.email}
+												<a href={`mailto:${selectedClient.email}`} class="cp-link">✉️ {selectedClient.email}</a>
+											{/if}
+										</div>
+									{/if}
+								</div>
+							{/if}
 						{:else}
 							<input type="hidden" name="clientId" value="" />
 							<div class="row-3">
@@ -995,6 +1034,48 @@
 		color: var(--mute);
 		font-size: 0.85rem;
 	}
+	/* CLIENT PREVIEW */
+	.client-preview {
+		margin-top: 0.6rem;
+		padding: 0.6rem 0.85rem;
+		background: color-mix(in srgb, var(--wn-zielony, #2a8a4a) 6%, transparent);
+		border-left: 3px solid var(--wn-zielony, #2a8a4a);
+		border-radius: 0 4px 4px 0;
+	}
+	.cp-row {
+		display: flex;
+		gap: 0.85rem;
+		flex-wrap: wrap;
+		align-items: baseline;
+		font-size: 0.85rem;
+		color: var(--ink-2, #444);
+	}
+	.cp-row + .cp-row {
+		margin-top: 0.35rem;
+	}
+	.cp-label {
+		font-size: 0.72rem;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--mute, #777);
+	}
+	.cp-name {
+		color: var(--ink, #111);
+		font-weight: 600;
+	}
+	.cp-company {
+		color: var(--mute, #777);
+	}
+	.cp-link {
+		color: var(--wn-zielony-ink, #1a5a2e);
+		text-decoration: none;
+		font-family: var(--font-mono, monospace);
+		font-size: 0.82rem;
+	}
+	.cp-link:hover {
+		text-decoration: underline;
+	}
+
 	/* AVAILABILITY */
 	.av-banner {
 		margin: 0 1rem 0.75rem;
