@@ -515,9 +515,17 @@
 			<footer class="form-foot">
 				<a href="/offers" class="btn-ghost-lg">Anuluj</a>
 				<div class="foot-actions">
-					<button type="submit" class="btn-primary-lg">Zapisz jako draft</button>
-					<button type="submit" class="btn-send" disabled title="Jutro: Resend integration">
-						✉️ Zapisz i wyślij (jutro)
+					<button type="submit" name="sendAfter" value="0" class="btn-primary-lg">
+						Zapisz jako draft
+					</button>
+					<button
+						type="submit"
+						name="sendAfter"
+						value="1"
+						class="btn-send"
+						title="Zapisze + przejdzie do detalu gdzie klikasz „📤 Wyślij ofertę”"
+					>
+						✉️ Zapisz i wyślij
 					</button>
 				</div>
 			</footer>

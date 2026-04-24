@@ -213,7 +213,11 @@ export const actions: Actions = {
 				.where(eq(lead.id, leadIdFromForm));
 		}
 
-		// Redirect do detail oferty (żeby user widział PDF od razu)
-		throw redirect(303, `/zlecenia/offer-${created.id}`);
+		// Redirect — opcjonalnie z ?send=1 żeby detail page auto-trigger send modal
+		const sendAfter = form.get('sendAfter')?.toString() === '1';
+		const target = sendAfter
+			? `/zlecenia/offer-${created.id}?send=1`
+			: `/zlecenia/offer-${created.id}`;
+		throw redirect(303, target);
 	}
 };

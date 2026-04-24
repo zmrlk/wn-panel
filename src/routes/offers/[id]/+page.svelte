@@ -41,7 +41,7 @@
 		{/if}
 	</div>
 	<div class="tb-right">
-		<button class="btn-ghost" disabled>✉️ Wyślij Resend (jutro)</button>
+		<a href="/zlecenia/offer-{data.offer.id}" class="btn-ghost">← Edycja w panelu</a>
 		<button class="btn-primary" onclick={printPage}>🖨️ Drukuj / PDF</button>
 	</div>
 </header>
