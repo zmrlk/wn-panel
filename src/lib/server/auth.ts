@@ -5,16 +5,12 @@
  * Fail loud w prod na brak env vars — boot-time crash > silent misconfig.
  */
 import * as jose from 'jose';
-import {
-	KEYCLOAK_ISSUER,
-	KEYCLOAK_CLIENT_ID,
-	KEYCLOAK_CLIENT_SECRET
-} from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { dev } from '$app/environment';
 
-const ISSUER = KEYCLOAK_ISSUER;
-const AUDIENCE = KEYCLOAK_CLIENT_ID;
-const CLIENT_SECRET = KEYCLOAK_CLIENT_SECRET;
+const ISSUER = env.KEYCLOAK_ISSUER;
+const AUDIENCE = env.KEYCLOAK_CLIENT_ID;
+const CLIENT_SECRET = env.KEYCLOAK_CLIENT_SECRET;
 
 if (!dev) {
 	if (!ISSUER) throw new Error('[auth] KEYCLOAK_ISSUER required in production');
