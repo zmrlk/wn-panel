@@ -11,6 +11,9 @@ services:
     ports:
       # LAN bypass (bez CF Tunnel). Dla prod-only przez CF: zakomentuj.
       - "192.168.3.142:3000:3000"
+    networks:
+      default:
+        ipv4_address: 172.25.0.10
     volumes:
       - wn_uploads:/app/static/uploads
     healthcheck:
@@ -44,8 +47,8 @@ services:
       - gotenberg
       - --chromium-disable-web-security=true
       - --chromium-ignore-certificate-errors=true
-      # Allow fetching internal app (host LAN IP: Chromium HTTPS-First nie upgraduje IP adresów).
-      - --chromium-allow-list=^https?://192\.168\.3\.142:3000(/.*)?$$
+      # Allow: wn-app (IP, Chrome skip HTTPS-First) + Google Fonts dla brand typografii.
+      - --chromium-allow-list=^(https?://172\.25\.0\.10:3000|https://fonts\.(googleapis|gstatic)\.com)(/.*)?$$
       - --api-port=3000
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
@@ -58,6 +61,12 @@ services:
       options:
         max-size: "20m"
         max-file: "3"
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24
 
 volumes:
   wn_uploads:
